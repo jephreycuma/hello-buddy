@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello Buddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header Banner Section -->
+    <header class="w-full bg-gray-900 text-white py-6 shadow-md border-b border-red-600">
+        <div class="max-w-4xl mx-auto flex items-center justify-center space-x-6 px-4">
+            <div class="text-center md:text-left">
+                <h1 class="text-3xl font-extrabold tracking-wide text-white">
+                    Hello Buddy
+                </h1>
+                <p class="text-sm font-medium text-gray-400 mt-1 tracking-normal">
+                    Your Friendly Digital Storefront for Airtime & Data
+                </p>
+            </div>
+            
+            <svg class="w-10 h-10 animate-bounce mt-1" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="32" cy="24" r="14" fill="#FDBA74"/>
+                <path d="M18 20C18 13.3726 24.268 8 32 8C39.732 8 46 13.3726 46 20C46 21.5 45 22 43 21C40 19.5 37 18 32 18C27 18 24 19.5 21 21C19 22 18 21.5 18 20Z" fill="#78350F"/>
+                <circle cx="27" cy="23" r="2" fill="#1F2937"/>
+                <circle cx="37" cy="23" r="2" fill="#1F2937"/>
+                <path d="M27 29C27 31.7614 29.2386 34 32 34C34.7614 34 37 31.7614 37 29" stroke="#1F2937" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M16 54C16 44 23.1634 38 32 38C40.8366 38 48 44 48 54V60H16V54Z" fill="#EF4444"/>
+                <path d="M46 44L56 32C57.5 30 59.5 31.5 58.5 33.5L51 49" stroke="#FDBA74" stroke-width="5" stroke-linecap="round"/>
+                <path d="M46 44L51 49" stroke="#EF4444" stroke-width="6" stroke-linecap="round"/>
+                <path d="M18 44L10 52" stroke="#FDBA74" stroke-width="5" stroke-linecap="round"/>
+            </svg>
+        </div>
+    </header>
+
+    <!-- Country Selector Dropdown Region -->
+    <div class="w-full bg-gray-100 border-b border-gray-200 py-3">
+        <div class="max-w-xl mx-auto px-4 flex items-center justify-between">
+            <label for="countrySelector" class="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                Select Region:
+            </label>
+            <div class="relative min-w-[180px]">
+                <select id="countrySelector" onchange="handleCountryChange(this.value)" class="w-full bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-700 shadow-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 appearance-none cursor-pointer">
+                    <option value="ZA">South Africa (ZA)</option>
+                    <option value="NG">Nigeria (NG)</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs Section -->
+    <nav class="w-full bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+        <div class="max-w-xl mx-auto px-4 py-2">
+            <div class="flex justify-center space-x-2">
+                
+                <!-- Tab: TopUps -->
+                <div class="relative group py-1">
+                    <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
+                        TopUps
+                    </button>
+                    <div class="hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left">
+                        <div data-country="ZA">
+                            <a href="#" onclick="filterProducts('TopUps', 'Vodacom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Vodacom</a>
+                            <a href="#" onclick="filterProducts('TopUps', 'MTN')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN</a>
+                            <a href="#" onclick="filterProducts('TopUps', 'Telkom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Telkom</a>
+                            <a href="#" onclick="filterProducts('TopUps', 'Cell C')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Cell C</a>
+                        </div>
+                        <div data-country="NG" class="hidden">
+                            <a href="#" onclick="filterProducts('TopUps', 'MTN Nigeria')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN Nigeria</a>
+                            <a href="#" onclick="filterProducts('TopUps', 'Airtel')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Airtel Nigeria</a>
+                            <a href="#" onclick="filterProducts('TopUps', 'Glo')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Glo (Globacom)</a>
+                            <a href="#" onclick="filterProducts('TopUps', 'T2 Mobile')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">T2 Mobile (9mobile)</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Vouchers -->
+                <div class="relative group py-1">
+                    <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
+                        Vouchers
+                    </button>
+                    <div class="hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left">
+                        <div data-country="ZA">
+                            <a href="#" onclick="filterProducts('Airtime', 'Vodacom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Vodacom</a>
+                            <a href="#" onclick="filterProducts('Airtime', 'MTN')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN</a>
+                            <a href="#" onclick="filterProducts('Airtime', 'Telkom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Telkom</a>
+                            <a href="#" onclick="filterProducts('Airtime', 'Cell C')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Cell C</a>
+                        </div>
+                        <div data-country="NG" class="hidden">
+                            <a href="#" onclick="filterProducts('Airtime', 'MTN Nigeria')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN Nigeria</a>
+                            <a href="#" onclick="filterProducts('Airtime', 'Airtel')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Airtel Nigeria</a>
+                            <a href="#" onclick="filterProducts('Airtime', 'Glo')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Glo (Globacom)</a>
+                            <a href="#" onclick="filterProducts('Airtime', 'T2 Mobile')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">T2 Mobile (9mobile)</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Data Bundles -->
+                <div class="relative group py-1">
+                    <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
+                        Data Bundles
+                    </button>
+                    <div class="hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left">
+                        <div data-country="ZA">
+                            <a href="#" onclick="filterProducts('Data', 'Vodacom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Vodacom</a>
+                            <a href="#" onclick="filterProducts('Data', 'MTN')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN</a>
+                            <a href="#" onclick="filterProducts('Data', 'Telkom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Telkom</a>
+                            <a href="#" onclick="filterProducts('Data', 'Cell C')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Cell C</a>
+                        </div>
+                        <div data-country="NG" class="hidden">
+                            <a href="#" onclick="filterProducts('Data', 'MTN Nigeria')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN Nigeria</a>
+                            <a href="#" onclick="filterProducts('Data', 'Airtel')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Airtel Nigeria</a>
+                            <a href="#" onclick="filterProducts('Data', 'Glo')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Glo (Globacom)</a>
+                            <a href="#" onclick="filterProducts('Data', 'T2 Mobile')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">T2 Mobile (9mobile)</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Gift Cards -->
+                <div class="relative py-1">
+                    <button onclick="filterProducts('GiftCards', 'All')" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
+                        Gift Cards
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace Display Canvas -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-6">
+        <div id="viewHeader" class="mb-6 text-center hidden">
+            <h2 id="activeCategoryTitle" class="text-2xl font-bold text-gray-900">Category</h2>
+            <p id="activeNetworkSubtitle" class="text-sm text-gray-500 mt-1">Select your item package below</p>
+        </div>
+
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div id="emptyState" class="col-span-full text-center py-16 text-gray-400">
+                <span class="text-5xl block mb-3">🛒</span>
+                Hover over a menu tab above and select a network to view available products!
+            </div>
+        </div>
+    </main>
+
+    <!-- STEP 1: Recipient Phone Verification Modal -->
+	   <div id="phoneModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4">
+	    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+	        <div class="bg-gray-900 text-white p-5 border-b-2 border-red-600">
+	            <h3 class="text-lg font-extrabold tracking-wide">Delivery & Contact Details</h3>
+	            <p class="text-xs text-gray-400 mt-0.5">Specify delivery telephone and contact link</p>
+	        </div>
+	        <form id="recipientForm" onsubmit="handlePhoneVerification(event)" class="p-5 space-y-4">
+	            
+	            <div>
+	                <label id="senderPhoneLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+	                    Sender Mobile Number
+	                </label>
+	                <input type="tel" id="senderPhoneInput" required 
+	                       class="w-full p-3 border border-gray-200 rounded-xl text-lg font-bold tracking-wider focus:outline-none focus:border-red-500 transition" 
+	                       placeholder="e.g. 082 111 2222">
+	            </div>
+	
+	            <div>
+	                <label id="phoneLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+	                    Recipient Mobile Number
+	                </label>
+	                <input type="tel" id="recipientPhoneInput" required 
+	                       class="w-full p-3 border border-gray-200 rounded-xl text-lg font-bold tracking-wider focus:outline-none focus:border-red-500 transition" 
+	                       placeholder="e.g. 082 123 4567">
+	                <p class="text-[11px] text-gray-400 mt-1">Make sure this is correct. Pinless items are delivered instantly directly to the handset connection.</p>
+	            </div>
+	
+	            <div>
+	                <label id="receiverEmailLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+	                    Recipient Email Address
+	                </label>
+	                <input type="email" id="receiverEmailInput" required 
+	                       class="w-full p-3 border border-gray-200 rounded-xl text-base font-medium focus:outline-none focus:border-red-500 transition" 
+	                       placeholder="e.g. recipient@example.com">
+	            </div>
+	
+	            <div class="grid grid-cols-2 gap-3 pt-2">
+	                <button type="button" onclick="closePhoneModal()" class="w-full border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold py-3 rounded-xl text-sm transition">
+	                    Cancel
+	                </button>
+	                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
+	                    Confirm Details
+	                </button>
+	            </div>
+	        </form>
+	    </div>
+	</div>
+
+    <!-- STEP 2: Secure Checkout Gateway Modal -->
+    <div id="paymentModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+            <div class="bg-gray-900 text-white p-5 border-b-2 border-red-600">
+                <h3 class="text-lg font-extrabold tracking-wide">Secure Credit Card Gateway</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Hello Buddy Processing Desk</p>
+            </div>
+
+            <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center text-sm">
+                <div>
+                    <span class="text-xs text-gray-400 block font-semibold uppercase tracking-wider">Item Selected</span>
+                    <span id="modalItemName" class="font-bold text-gray-800">Product Line Descriptor</span>
+                    <span id="modalItemRecipient" class="text-xs block text-red-600 font-bold mt-0.5">Target: None</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-gray-400 block font-semibold uppercase tracking-wider">Total Due</span>
+                    <span id="modalItemPrice" class="font-black text-xl text-red-600">R0.00</span>
+                </div>
+            </div>
+
+            <form id="paymentForm" onsubmit="executeMockPayment(event)" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Cardholder Name</label>
+                    <input type="text" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500 transition" placeholder="e.g. J Cuma">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Card Number</label>
+                    <input type="text" id="cardNumberInput" required maxlength="19" class="w-full p-3 border border-gray-200 rounded-xl text-sm font-mono tracking-widest focus:outline-none focus:border-red-500 transition" placeholder="4524 0000 0000 0000">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Expiry Date</label>
+                        <input type="text" required maxlength="5" class="w-full p-3 border border-gray-200 rounded-xl text-sm text-center placeholder-gray-300 focus:outline-none focus:border-red-500 transition" placeholder="MM/YY">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">CVV Code</label>
+                        <input type="password" required maxlength="3" class="w-full p-3 border border-gray-200 rounded-xl text-sm text-center placeholder-gray-300 focus:outline-none focus:border-red-500 transition" placeholder="***">
+                    </div>
+                </div>
+
+                <div id="paymentErrorAlert" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600 font-medium">
+                    Payment transaction authorization declined. Please verify entry variables.
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button type="button" onclick="closePaymentModal()" class="w-full border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold py-3 rounded-xl text-sm transition">
+                        Cancel
+                    </button>
+                    <button type="submit" id="btnPaySubmit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md shadow-red-100">
+                        Authorize Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hidden Native Form Engine -->
+    <form id="purchaseRedirectForm" th:action="@{/purchase/confirm}" method="POST" class="hidden">
+        <input type="hidden" name="id" id="hiddenProductId">
+        <input type="hidden" name="name" id="hiddenProductName">
+        <input type="hidden" name="price" id="hiddenProductPrice">
+        <input type="hidden" name="transactionId" id="hiddenTxnId">
+        <!-- Expanded payload properties mapping directly into backend controller processing desks -->
+        <input type="hidden" name="phoneNumber" id="hiddenPhoneNumber">
+        <input type="hidden" name="recipientPhone" id="hiddenRecipientPhone">
+        <input type="hidden" name="recipientEmail" id="hiddenRecipientEmail">
+        <input type="hidden" name="category" id="hiddenProductCategory">        
+    </form>
+
+    <!-- Informational Modal Popup for Contact / Legal Info -->
+    <div id="infoModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+            <div class="bg-gray-900 text-white p-4 border-b border-red-600 flex justify-between items-center">
+                <h4 id="infoModalTitle" class="font-bold text-sm tracking-wide uppercase">Information Desk</h4>
+                <button onclick="closeInfoModal()" class="text-gray-400 hover:text-white font-bold text-lg">&times;</button>
+            </div>
+            <div id="infoModalBody" class="p-5 text-sm text-gray-600 space-y-3 leading-relaxed"></div>
+            <div class="p-4 bg-gray-50 border-t border-gray-100 text-right">
+                <button onclick="closeInfoModal()" class="bg-gray-800 hover:bg-gray-900 text-white font-bold px-4 py-2 rounded-xl text-xs transition">
+                    Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="w-full bg-gray-800 text-gray-300 py-6 border-t border-gray-700">
+        <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
+            <p>&copy; 2026 Hello Buddy. All Rights Reserved.</p>
+            <div class="flex space-x-8">
+                <a href="javascript:void(0);" onclick="openContactModal()" class="hover:text-red-500 font-medium transition">Contact Us</a>
+                <a href="javascript:void(0);" onclick="openAddressModal()" class="hover:text-red-500 font-medium transition">Our Address</a>
+            </div>
+        </div>
+    </footer>
+
+    <div id="contactInfoModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden items-center justify-center z-50 p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-100 my-8">
+            <div class="p-6 space-y-4">
+                
+                <div id="contactUsView" class="hidden space-y-4 pt-2">
+                    <h3 class="font-black text-gray-900 text-lg text-center">Contact Channels</h3>
+                    <p class="text-sm text-gray-600 text-center">Get in touch with our helpdesk channels instantly:</p>
+                    <div class="space-y-3">
+                        <a href="https://wa.me/27728703170" target="_blank" class="flex items-center space-x-4 bg-green-50 hover:bg-green-100 p-3.5 rounded-xl border border-green-200 transition">
+                            <span class="text-2xl">💬</span>
+                            <div>
+                                <span class="block font-bold text-gray-800 text-sm">WhatsApp Chat Support</span>
+                                <span class="text-xs text-gray-500">+27 (0) 72 870 3170</span>
+                            </div>
+                        </a>
+                        <a href="mailto:jephreycuma@hellobuddy.co.za" class="flex items-center space-x-4 bg-blue-50 hover:bg-blue-100 p-3.5 rounded-xl border border-blue-200 transition">
+                            <span class="text-2xl">✉️</span>
+                            <div>
+                                <span class="block font-bold text-gray-800 text-sm">Email Helpdesk Desk</span>
+                                <span class="text-xs text-gray-500">jephreycuma@hellobuddy.co.za</span>
+                            </div>
+                        </a>
+                        <a href="tel:+27728703170" class="flex items-center space-x-4 bg-red-50 hover:bg-red-100 p-3.5 rounded-xl border border-red-200 transition">
+                            <span class="text-2xl">📞</span>
+                            <div>
+                                <span class="block font-bold text-gray-800 text-sm">Direct Phone Line</span>
+                                <span class="text-xs text-gray-500">+27 (0) 72 870 3170</span>
+                            </div>
+                        </a>
+                    </div>
+                    <button type="button" onclick="closeContactInfoModal()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl transition text-sm mt-4">Close Info Panel</button>
+                </div>
+
+                <div id="addressView" class="hidden space-y-4 pt-2 text-center">
+                    <span class="text-4xl block">📍</span>
+                    <div>
+                        <h4 class="font-bold text-gray-800 text-base">Hello Buddy Headquarters</h4>
+                        <p class="text-sm text-gray-600 mt-2 leading-relaxed">
+                            Grand Central Office Park, Block B<br>
+                            Corner of K101 and New Road<br>
+                            Midrand, Gauteng, 1685<br>
+                            South Africa
+                        </p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs text-gray-500 mt-2">
+                        Open Monday - Friday: 08:00 - 17:00<br>
+                        Saturdays: 08:00 - 13:00
+                    </div>
+                    <button type="button" onclick="closeContactInfoModal()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl transition text-sm mt-4">Close Info Panel</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    
+
+    <script th:inline="javascript">
+    
+    /**
+     * Clears visibility variables across information views 
+     * inside the informational modal sheet.
+     */
+    function resetContactInfoViews() {
+        document.getElementById('contactUsView').classList.add('hidden');
+        document.getElementById('addressView').classList.add('hidden');
+    }
+
+    /**
+     * Uncovers the structural layout container and mounts the Contact Channels view
+     */
+    function openContactModal() {
+        resetContactInfoViews();
+        
+        // Show contact subview content
+        document.getElementById('contactUsView').classList.remove('hidden');
+        
+        // Open the primary outer container frame
+        const modal = document.getElementById('contactInfoModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    /**
+     * Uncovers the structural layout container and mounts the Address Details view
+     */
+    function openAddressModal() {
+        resetContactInfoViews();
+        
+        // Show address subview content
+        document.getElementById('addressView').classList.remove('hidden');
+        
+        // Open the primary outer container frame
+        const modal = document.getElementById('contactInfoModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    /**
+     * Gracefully tears down the main informational panel overlay
+     */
+    function closeContactInfoModal() {
+        const modal = document.getElementById('contactInfoModal');
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+        
+        resetContactInfoViews();
+    }
+
+    // Backdrop fallback listener: dismisses the modal if the user clicks the outer dim background area
+    window.addEventListener('click', function(e) {
+        const modal = document.getElementById('contactInfoModal');
+        if (e.target === modal) {
+            closeContactInfoModal();
+        }
+    });
+    
+    //Below is original
+        const backendCatalog = /*[[${javaCatalogData}]]*/ {};
+        let selectedProductContext = null;
+        let verifiedPhoneNumber = "";
+        let currentCountryIso = 'ZA';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentCountryIso = urlParams.get('country') || 'ZA';
+            document.getElementById('countrySelector').value = currentCountryIso;
+            renderCountryTabs(currentCountryIso);
+        });
+        
+        function handleCountryChange(isoName) {
+            window.location.href = "/?country=" + encodeURIComponent(isoName);
+        }
+
+        function renderCountryTabs(isoCode) {
+            document.querySelectorAll('[data-country]').forEach(el => {
+                if (el.getAttribute('data-country') === isoCode) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+        }
+
+        function filterProducts(category, networkName) {
+            const grid = document.getElementById('productGrid');
+            const viewHeader = document.getElementById('viewHeader');
+            const catTitle = document.getElementById('activeCategoryTitle');
+            const netSubtitle = document.getElementById('activeNetworkSubtitle');
+            
+            grid.innerHTML = '';
+            const targetCollection = backendCatalog[category] || [];
+            
+            const filteredItems = targetCollection.filter(item => {
+                if (networkName === 'All') return true;
+                if (!item.network) return false;
+                return item.network.toLowerCase().trim() === networkName.toLowerCase().trim();
+            });
+
+            if (filteredItems.length === 0 && category !== 'TopUps') {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-gray-400">
+                        <span class="text-4xl block mb-2">💨</span>
+                        No dynamic listings found for ${category} (${networkName}) right now.
+                    </div>`;
+                return;
+            }
+
+            viewHeader.classList.remove('hidden');
+            catTitle.textContent = category === 'Airtime' ? 'Airtime Vouchers' : category;
+            netSubtitle.textContent = networkName === 'All' ? 'Available Offers' : `Showing offers for ${networkName}`;
+
+            filteredItems.forEach(product => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl p-5 shadow-sm border border-gray-200 flex flex-col justify-between hover:shadow-md hover:border-gray-300 transition duration-200";
+                
+                product.itemCategory = category;
+                const productArg = JSON.stringify(product).replace(/"/g, '&quot;');
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-2.5 py-1 text-xs font-bold tracking-wide rounded-full bg-red-50 text-red-600 uppercase">
+                                ${product.type || category}
+                            </span>
+                        </div>
+                        <h3 class="font-bold text-gray-900 text-base mb-1">${product.name}</h3>
+                        <p class="text-xs text-gray-500 line-clamp-2 mb-4">${product.description}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-gray-400 block uppercase font-semibold tracking-wider">Price</span>
+                            <span class="text-xl font-black text-gray-900">${product.displayPrice}</span>
+                        </div>
+                        <button onclick="initiatePurchaseProcess('${productArg}')" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm">
+                            Purchase
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            if (category === 'TopUps' && networkName !== 'All') {
+                const realOperatorId = filteredItems.length > 0 ? filteredItems[0].id : 0;
+                appendAnyAmountCard(grid, networkName, realOperatorId);
+            }
+        }
+
+        function appendAnyAmountCard(grid, networkName, operatorId) {
+            const card = document.createElement('div');
+            card.className = "bg-gradient-to-b from-white to-gray-50 rounded-2xl p-5 shadow-sm border-2 border-dashed border-red-200 flex flex-col justify-between hover:border-red-300 transition duration-200";
+            
+            const currencySymbol = currentCountryIso === 'NG' ? '₦' : 'R';
+            const minLimit = currentCountryIso === 'NG' ? '100.00' : '2.00';
+            const maxLimit = currentCountryIso === 'NG' ? '50000.00' : '1000.00';
+
+            card.innerHTML = `
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="px-2.5 py-1 text-xs font-bold tracking-wide rounded-full bg-gray-700 text-white uppercase">
+                            Flexible
+                        </span>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-base mb-1">Any Amount (${networkName})</h3>
+                    <p class="text-xs text-gray-500 mb-4">Enter your preferred custom recharge value below.</p>
+                    
+                    <div class="relative mt-2 rounded-xl shadow-sm">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <span class="text-gray-400 font-bold text-sm">${currencySymbol}</span>
+                        </div>
+                        <input type="number" id="anyAmountInput" min="${minLimit}" max="${maxLimit}" step="1" 
+                            class="w-full p-3 pl-8 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition" 
+                            placeholder="0.00">
+                    </div>
+                    <span class="text-[10px] text-gray-400 block mt-1 px-1">Limits: ${currencySymbol}${minLimit} to ${currencySymbol}${maxLimit}</span>
+                </div>
+                <div class="mt-4 pt-3 border-t border-gray-100">
+                    <button onclick="handleAnyAmountPurchase('${networkName}', ${operatorId})" 
+                        class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm">
+                        Purchase Custom Amount
+                    </button>
+                </div>
+            `;
+            grid.appendChild(card);
+        }
+
+        function handleAnyAmountPurchase(networkName, operatorId) {
+            const inputField = document.getElementById('anyAmountInput');
+            const numericValue = parseFloat(inputField.value);
+            const currencySymbol = currentCountryIso === 'NG' ? '₦' : 'R';
+            const minAmt = currentCountryIso === 'NG' ? 100.00 : 2.00;
+            const maxAmt = currentCountryIso === 'NG' ? 50000.00 : 1000.00;
+
+            if (isNaN(numericValue) || numericValue < minAmt || numericValue > maxAmt) {
+                alert(`Please type a valid amount between ${currencySymbol}${minAmt} and ${currencySymbol}${maxAmt}.`);
+                inputField.focus();
+                return;
+            }
+
+            const dynamicProduct = {
+                id: operatorId, 
+                name: `${networkName} Custom ${currencySymbol}${numericValue.toFixed(2)} TopUp`,
+                network: networkName,
+                price: numericValue,
+                displayPrice: `${currencySymbol}${numericValue.toFixed(2)}`,
+                type: "AIRTIME TOPUP",
+                itemCategory: "TopUps",
+                description: `Custom generated dynamic top-up item package entry for ${networkName}.`
+            };
+
+            initiatePurchaseProcess(JSON.stringify(dynamicProduct));
+        }
+
+        // Intercepts context to decide if phone validation step is required
+		function initiatePurchaseProcess(productStringData) {
+            const product = JSON.parse(productStringData);
+            selectedProductContext = product;
+            verifiedPhoneNumber = "";
+
+            // Evaluate directly against clear categorical tracking variables
+            if (product.itemCategory === "TopUps" || product.itemCategory === "Data") {
+                openPhoneModal();
+            } else {
+                openPaymentCheckout();
+            }
+        }
+
+        function openPhoneModal() {
+            const labelHelp = document.getElementById('phoneLabelHelp');
+            document.getElementById('recipientForm').reset();
+            
+            if(currentCountryIso === 'NG') {
+                labelHelp.textContent = "Nigerian Mobile Number (NG)";
+                document.getElementById('recipientPhoneInput').placeholder = "e.g. 0803 123 4567";
+            } else {
+                labelHelp.textContent = "South African Mobile Number (ZA)";
+                document.getElementById('recipientPhoneInput').placeholder = "e.g. 082 123 4567";
+            }
+            
+            document.getElementById('phoneModal').classList.remove('hidden');
+        }
+
+        function closePhoneModal() {
+            document.getElementById('phoneModal').classList.add('hidden');
+        }
+
+     // Global variables to hold the verified details
+        let verifiedSenderPhone = "";
+        let verifiedRecipientPhone = "";
+        let verifiedReceiverEmail = "";
+
+        function handlePhoneVerification(event) {
+            event.preventDefault();
+            
+            // 1. Extract values and strip empty spaces from phone numbers
+            const senderPhoneInput = document.getElementById('senderPhoneInput').value.replace(/\s+/g, '');
+            const recipientPhoneInput = document.getElementById('recipientPhoneInput').value.replace(/\s+/g, '');
+            const receiverEmailInput = document.getElementById('receiverEmailInput').value.trim();
+            
+            // 2. Validations
+            if (senderPhoneInput.length < 7) {
+                alert("Please enter a valid sender cellular number.");
+                return;
+            }
+
+            if (recipientPhoneInput.length < 7) {
+                alert("Please enter a valid recipient cellular number.");
+                return;
+            }
+            
+            // HTML5 'required' and type="email" handles basic email format, 
+            // but this acts as an extra failsafe check
+            if (!receiverEmailInput.includes("@") || receiverEmailInput.length < 5) {
+                alert("Please enter a valid email address.");
+                return;
+            }
+            
+            // 3. Assign data to global state/variables
+            verifiedSenderPhone = senderPhoneInput;
+            verifiedRecipientPhone = recipientPhoneInput;
+            verifiedReceiverEmail = receiverEmailInput;
+            
+            // 4. Modal Flow Control
+            closePhoneModal();
+            openPaymentCheckout();
+        }
+
+        function openPaymentCheckout() {
+            const product = selectedProductContext;
+            document.getElementById('modalItemName').textContent = product.name;
+            document.getElementById('modalItemPrice').textContent = product.displayPrice;
+            
+            const recipientLabel = document.getElementById('modalItemRecipient');
+            if (verifiedPhoneNumber) {
+                recipientLabel.textContent = "Direct Topup To: " + verifiedPhoneNumber;
+                recipientLabel.classList.remove('hidden');
+            } else {
+                recipientLabel.classList.add('hidden');
+            }
+
+            document.getElementById('paymentErrorAlert').classList.add('hidden');
+            document.getElementById('paymentForm').reset();
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        function executeMockPayment(event) {
+            event.preventDefault();
+            const errorAlert = document.getElementById('paymentErrorAlert');
+            const submitBtn = document.getElementById('btnPaySubmit');
+            
+            errorAlert.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Processing Authorization...";
+
+            fetch('/api/v1/payments/charge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cardNumber: document.getElementById('cardNumberInput').value,
+                    amount: selectedProductContext.price,
+                    productId: selectedProductContext.id,
+                    // Updated payload keys matching your modal variables
+                    senderPhone: verifiedSenderPhone,
+                    recipientPhone: verifiedRecipientPhone,
+                    recipientEmail: verifiedReceiverEmail
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Populate original values
+                    document.getElementById('hiddenProductId').value = selectedProductContext.id;
+                    document.getElementById('hiddenProductName').value = selectedProductContext.name;
+                    document.getElementById('hiddenProductPrice').value = selectedProductContext.price;
+                    document.getElementById('hiddenTxnId').value = data.transactionId;
+                    document.getElementById('hiddenProductCategory').value = selectedProductContext.itemCategory;
+                    
+                    // Map state to the hidden form elements for the backend controller POST mapping
+                    document.getElementById('hiddenPhoneNumber').value = verifiedSenderPhone; // Maps to @RequestParam("phoneNumber")
+                    document.getElementById('hiddenRecipientPhone').value = verifiedRecipientPhone; // Maps to @RequestParam("recipientPhone")
+                    document.getElementById('hiddenRecipientEmail').value = verifiedReceiverEmail; // Maps to @RequestParam("recipientEmail")
+                    
+                    // Fire the native form transmission out to PurchaseController
+                    document.getElementById('purchaseRedirectForm').submit();
+                } else {
+                    throw new Error(data.message || "Transaction unauthorized.");
+                }
+            })
+            .catch(err => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Authorize Payment";
+                errorAlert.textContent = err.message || "Payment verification timed out.";
+                errorAlert.classList.remove('hidden');
+            });
+        }
+
+        /**
+         * Enhanced footer click routing logic engine
+         * @param {string} type - Context descriptor type target
+         */
+        function showFooterInfo(type) {
+            if (type === 'contact') {
+                openSupportModal();
+            } else if (type === 'legal') {
+                // Keep standard modal behavior or redirect patterns for terms
+                alert("Hello Buddy Terms of Service configuration documentation will be presented here.");
+            }
+        }
+
+        function openSupportModal() {
+            const modal = document.getElementById('supportModal');
+            modal.classList.remove('hidden');
+            // Allow display swap lifecycle boundary to resolve before executing opacity animation triggers
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeSupportModal() {
+            const modal = document.getElementById('supportModal');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        /**
+         * Handlers to launch native communications clients
+         */
+        function openWhatsAppChannel() {
+            const supportPhone = "27820000000"; // Replace with your company's actual South African support phone string
+            const initialTemplateMessage = encodeURIComponent("Hi Hello Buddy Support, I need assistance with my recent transaction platform purchase request.");
+            
+            // Clean universal API scheme format mapping works natively across Android/iOS/Desktop Web
+            const targetUrl = `https://api.whatsapp.com/send?phone=${supportPhone}&text=${initialTemplateMessage}`;
+            window.open(targetUrl, '_blank');
+        }
+
+        function openEmailClient() {
+            const destinationSupportMail = "support@hellobuddy.co.za"; // Target operational workspace mailbox link
+            const subjectTemplate = encodeURIComponent("Hello Buddy Transaction Support Inquiry");
+            const bodyTemplate = encodeURIComponent("Hi Support Team,\n\nI need assistance with my payment profile order.\n\nTransaction ID (if known):\nPhone Number Used:\nIssue Details:\n");
+            
+            // Invoke native system component context handler
+            window.location.href = `mailto:${destinationSupportMail}?subject=${subjectTemplate}&body=${bodyTemplate}`;
+        }
+
+        // Close interactive overlay gracefully if a click event leaks into backplane target bounds
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('supportModal');
+            if (event.target === modal) {
+                closeSupportModal();
+            }
+        });
+
+        function closeInfoModal() {
+            document.getElementById('infoModal').classList.add('hidden');
+        }
+
+        document.getElementById('cardNumberInput').addEventListener('input', function (e) {
+            let targetValue = e.target.value.replace(/\W/gi, '').replace(/(.{4})/g, '$1 ').trim();
+            e.target.value = targetValue;
+        });
+        
+    </script>
+</body>
+</html>
