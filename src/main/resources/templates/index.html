@@ -60,7 +60,7 @@
                 <!-- Tab: TopUps -->
                 <div class="relative group py-1">
                     <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
-                        TopUps
+                        Airtime TopUps
                     </button>
                     <div class="hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left">
                         <div data-country="ZA">
@@ -79,7 +79,7 @@
                 </div>
 
                 <!-- Tab: Vouchers -->
-                <div class="relative group py-1">
+               <!--  <div class="relative group py-1">
                     <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
                         Vouchers
                     </button>
@@ -97,7 +97,7 @@
                             <a href="#" onclick="filterProducts('Airtime', 'T2 Mobile')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">T2 Mobile (9mobile)</a>
                         </div>
                     </div>
-                </div>
+                </div>-->
 
                 <!-- Tab: Data Bundles -->
                 <div class="relative group py-1">
@@ -147,7 +147,7 @@
     </main>
 
     <!-- STEP 1: Recipient Phone Verification Modal -->
-	   <div id="phoneModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4">
+	<div id="phoneModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4">
 	    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
 	        <div class="bg-gray-900 text-white p-5 border-b-2 border-red-600">
 	            <h3 class="text-lg font-extrabold tracking-wide">Delivery & Contact Details</h3>
@@ -159,15 +159,20 @@
 	                <label id="senderPhoneLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
 	                    Sender Mobile Number
 	                </label>
-	                <input type="tel" id="senderPhoneInput" required 
+	                <input type="tel" id="senderPhoneInput" 
 	                       class="w-full p-3 border border-gray-200 rounded-xl text-lg font-bold tracking-wider focus:outline-none focus:border-red-500 transition" 
 	                       placeholder="e.g. 082 111 2222">
 	            </div>
 	
 	            <div>
-	                <label id="phoneLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-	                    Recipient Mobile Number
-	                </label>
+	                <!-- UPDATED: Flex row setup splits label text to the left and red star to the right -->
+	                <div class="flex items-center justify-between mb-1">
+	                    <label id="phoneLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+	                        Recipient Mobile Number
+	                    </label>
+	                    <span class="text-red-600 text-sm font-black select-none" title="Required field">*</span>
+	                </div>
+	                
 	                <input type="tel" id="recipientPhoneInput" required 
 	                       class="w-full p-3 border border-gray-200 rounded-xl text-lg font-bold tracking-wider focus:outline-none focus:border-red-500 transition" 
 	                       placeholder="e.g. 082 123 4567">
@@ -178,7 +183,7 @@
 	                <label id="receiverEmailLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
 	                    Recipient Email Address
 	                </label>
-	                <input type="email" id="receiverEmailInput" required 
+	                <input type="email" id="receiverEmailInput" 
 	                       class="w-full p-3 border border-gray-200 rounded-xl text-base font-medium focus:outline-none focus:border-red-500 transition" 
 	                       placeholder="e.g. recipient@example.com">
 	            </div>
@@ -196,60 +201,67 @@
 	</div>
 
     <!-- STEP 2: Secure Checkout Gateway Modal -->
-    <div id="paymentModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
-            <div class="bg-gray-900 text-white p-5 border-b-2 border-red-600">
-                <h3 class="text-lg font-extrabold tracking-wide">Secure Credit Card Gateway</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Hello Buddy Processing Desk</p>
-            </div>
-
-            <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center text-sm">
-                <div>
-                    <span class="text-xs text-gray-400 block font-semibold uppercase tracking-wider">Item Selected</span>
-                    <span id="modalItemName" class="font-bold text-gray-800">Product Line Descriptor</span>
-                    <span id="modalItemRecipient" class="text-xs block text-red-600 font-bold mt-0.5">Target: None</span>
-                </div>
-                <div class="text-right">
-                    <span class="text-xs text-gray-400 block font-semibold uppercase tracking-wider">Total Due</span>
-                    <span id="modalItemPrice" class="font-black text-xl text-red-600">R0.00</span>
-                </div>
-            </div>
-
-            <form id="paymentForm" onsubmit="executeMockPayment(event)" class="p-5 space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Cardholder Name</label>
-                    <input type="text" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500 transition" placeholder="e.g. J Cuma">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Card Number</label>
-                    <input type="text" id="cardNumberInput" required maxlength="19" class="w-full p-3 border border-gray-200 rounded-xl text-sm font-mono tracking-widest focus:outline-none focus:border-red-500 transition" placeholder="4524 0000 0000 0000">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Expiry Date</label>
-                        <input type="text" required maxlength="5" class="w-full p-3 border border-gray-200 rounded-xl text-sm text-center placeholder-gray-300 focus:outline-none focus:border-red-500 transition" placeholder="MM/YY">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">CVV Code</label>
-                        <input type="password" required maxlength="3" class="w-full p-3 border border-gray-200 rounded-xl text-sm text-center placeholder-gray-300 focus:outline-none focus:border-red-500 transition" placeholder="***">
-                    </div>
-                </div>
-
-                <div id="paymentErrorAlert" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600 font-medium">
-                    Payment transaction authorization declined. Please verify entry variables.
-                </div>
-
-                <div class="grid grid-cols-2 gap-3 pt-2">
-                    <button type="button" onclick="closePaymentModal()" class="w-full border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold py-3 rounded-xl text-sm transition">
-                        Cancel
-                    </button>
-                    <button type="submit" id="btnPaySubmit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md shadow-red-100">
-                        Authorize Payment
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+	<div id="paymentModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+	    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+	        <div class="bg-gray-900 text-white p-5 border-b-2 border-red-600">
+	            <h3 class="text-lg font-extrabold tracking-wide">Secure Credit Card Gateway</h3>
+	            <p class="text-xs text-gray-400 mt-0.5">Hello Buddy Processing Desk</p>
+	        </div>
+	
+	        <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center text-sm">
+	            <div>
+	                <span class="text-xs text-gray-400 block font-semibold uppercase tracking-wider">Item Selected</span>
+	                <span id="modalItemName" class="font-bold text-gray-800">Product Line Descriptor</span>
+	                <span id="modalItemRecipient" class="text-xs block text-red-600 font-bold mt-0.5">Target: None</span>
+	            </div>
+	            <div class="text-right">
+	                <span class="text-xs text-gray-400 block font-semibold uppercase tracking-wider">Total Due</span>
+	                <span id="modalItemPrice" class="font-black text-xl text-red-600">R0.00</span>
+	            </div>
+	        </div>
+	
+	        <form id="paymentForm" onsubmit="executeMockPayment(event)" class="p-5 space-y-4">
+	            <div>
+	                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Cardholder Name</label>
+	                <input type="text" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500 transition" placeholder="e.g. J Cuma">
+	            </div>
+	            <div>
+	                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Card Number</label>
+	                <input type="text" id="cardNumberInput" required maxlength="19" class="w-full p-3 border border-gray-200 rounded-xl text-sm font-mono tracking-widest focus:outline-none focus:border-red-500 transition" placeholder="4524 0000 0000 0000">
+	            </div>
+	            <div class="grid grid-cols-2 gap-4">
+	                <div>
+					    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Expiry Date</label>
+					    <input type="text" 
+					           id="cardExpiryInput" 
+					           required 
+					           maxlength="5" 
+					           oninput="formatCardExpiry(this)"
+					           onkeydown="handleExpiryBackspace(event, this)"
+					           class="w-full p-3 border border-gray-200 rounded-xl text-sm text-center placeholder-gray-300 focus:outline-none focus:border-red-500 transition" 
+					           placeholder="MM/YY">
+					</div>
+	                <div>
+	                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">CVV Code</label>
+	                    <input type="password" required maxlength="3" class="w-full p-3 border border-gray-200 rounded-xl text-sm text-center placeholder-gray-300 focus:outline-none focus:border-red-500 transition" placeholder="***">
+	                </div>
+	            </div>
+	
+	            <div id="paymentErrorAlert" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600 font-medium">
+	                Payment transaction authorization declined. Please verify entry variables.
+	            </div>
+	
+	            <div class="grid grid-cols-2 gap-3 pt-2">
+	                <button type="button" onclick="closePaymentModal()" class="w-full border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold py-3 rounded-xl text-sm transition">
+	                    Cancel
+	                </button>
+	                <button type="submit" id="btnPaySubmit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md shadow-red-100">
+	                    Authorize Payment
+	                </button>
+	            </div>
+	        </form>
+	    </div>
+	</div>
 
     <!-- Hidden Native Form Engine -->
     <form id="purchaseRedirectForm" th:action="@{/purchase/confirm}" method="POST" class="hidden">
@@ -583,10 +595,10 @@
             document.getElementById('recipientForm').reset();
             
             if(currentCountryIso === 'NG') {
-                labelHelp.textContent = "Nigerian Mobile Number (NG)";
+                labelHelp.textContent = "Recipient Nigerian Mobile Number (NG)";
                 document.getElementById('recipientPhoneInput').placeholder = "e.g. 0803 123 4567";
             } else {
-                labelHelp.textContent = "South African Mobile Number (ZA)";
+                labelHelp.textContent = "Recipient South African Mobile Number (ZA)";
                 document.getElementById('recipientPhoneInput').placeholder = "e.g. 082 123 4567";
             }
             
@@ -610,35 +622,239 @@
             const recipientPhoneInput = document.getElementById('recipientPhoneInput').value.replace(/\s+/g, '');
             const receiverEmailInput = document.getElementById('receiverEmailInput').value.trim();
             
-            // 2. Validations
-            if (senderPhoneInput.length < 7) {
-                alert("Please enter a valid sender cellular number.");
+            // 2. Country-Specific Validation Logic
+            
+            // Clean string for checking length (remove "+" if user included it)
+            const cleanPhone = recipientPhoneInput.replace('+', '');
+            
+            // Check if it's purely digits
+            if (!/^\d+$/.test(cleanPhone)) {
+                alert("Please enter a numeric phone number containing digits only.");
                 return;
             }
 
-            if (recipientPhoneInput.length < 7) {
-                alert("Please enter a valid recipient cellular number.");
-                return;
+            let isValid = false;
+            let expectedFormatHelp = "";
+
+            if (currentCountryIso === 'ZA') {
+                // South Africa: 
+                // Local: Starts with '0' -> Length must be exactly 10 digits (e.g., 0821234567)
+                // International: Starts with '27' -> Length must be exactly 11 digits (e.g., 27821234567)
+                if (cleanPhone.startsWith('0')) {
+                    isValid = (cleanPhone.length === 10);
+                    expectedFormatHelp = "10 digits starting with 0";
+                } else if (cleanPhone.startsWith('27')) {
+                    isValid = (cleanPhone.length === 11);
+                    expectedFormatHelp = "11 digits starting with 27";
+                } else {
+                    isValid = false;
+                    expectedFormatHelp = "a local code starting with 0 or international starting with 27";
+                }
+            } else if (currentCountryIso === 'NG') {
+                // Nigeria: 
+                // Local: Starts with '0' -> Length must be exactly 11 digits (e.g., 08031234567)
+                // International: Starts with '234' -> Length must be exactly 13 digits (e.g., 2348031234567)
+                if (cleanPhone.startsWith('0')) {
+                    isValid = (cleanPhone.length === 11);
+                    expectedFormatHelp = "11 digits starting with 0";
+                } else if (cleanPhone.startsWith('234')) {
+                    isValid = (cleanPhone.length === 13);
+                    expectedFormatHelp = "13 digits starting with 234";
+                } else {
+                    isValid = false;
+                    expectedFormatHelp = "a local code starting with 0 or international starting with 234";
+                }
+            } else {
+                // Fallback catch-all default rule for unexpected configurations
+                isValid = cleanPhone.length >= 7;
+                expectedFormatHelp = "at least 7 digits";
             }
-            
-            // HTML5 'required' and type="email" handles basic email format, 
-            // but this acts as an extra failsafe check
-            if (!receiverEmailInput.includes("@") || receiverEmailInput.length < 5) {
-                alert("Please enter a valid email address.");
+
+            // Trigger error alert if structural conditions fail
+            if (!isValid) {
+                alert(`Invalid recipient mobile number structure for the selected country.\nExpected format: ${expectedFormatHelp}.`);
+                document.getElementById('recipientPhoneInput').focus();
                 return;
             }
             
             // 3. Assign data to global state/variables
             verifiedSenderPhone = senderPhoneInput;
-            verifiedRecipientPhone = recipientPhoneInput;
+            verifiedRecipientPhone = recipientPhoneInput; // Preserves any user-written '+' character
             verifiedReceiverEmail = receiverEmailInput;
             
             // 4. Modal Flow Control
             closePhoneModal();
             openPaymentCheckout();
         }
-
+        
+        
         function openPaymentCheckout() {
+            const product = selectedProductContext;
+            document.getElementById('modalItemName').textContent = product.name;
+            document.getElementById('modalItemPrice').textContent = product.displayPrice;
+            
+            const recipientLabel = document.getElementById('modalItemRecipient');
+            if (verifiedPhoneNumber) {
+                recipientLabel.textContent = "Direct Topup To: " + verifiedPhoneNumber;
+                recipientLabel.classList.remove('hidden');
+            } else {
+                recipientLabel.classList.add('hidden');
+            }
+
+            document.getElementById('paymentErrorAlert').classList.add('hidden');
+            document.getElementById('paymentForm').reset();
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        // --- GLOBAL FORMATTING HELPERS (Now accessible by HTML elements) ---
+
+        /**
+         * Automatically inserts a '/' after the first two digits are typed
+         */
+        function formatCardExpiry(input) {
+            // 1. Strip out anything that isn't a digit
+            let value = input.value.replace(/\D/g, '');
+            
+            // 2. If they've typed more than 2 digits, inject the slash in the middle
+            if (value.length > 2) {
+                input.value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            } else {
+                input.value = value;
+            }
+        }
+
+        /**
+         * Handles backspacing so the user can easily clear the slash 
+         * without getting stuck in an infinite formatting loop.
+         */
+        function handleExpiryBackspace(event, input) {
+            if (event.key === 'Backspace' && input.value.length === 3) {
+                input.value = input.value.substring(0, 2);
+                event.preventDefault();
+            }
+        }
+
+        // --- VALIDATION HELPER FUNCTIONS ---
+
+        function validateLuhn(cardNumber) {
+            const digits = cardNumber.replace(/\D/g, "");
+            if (digits.length < 13 || digits.length > 19) return false;
+            let sum = 0;
+            let isSecond = false;
+            for (let i = digits.length - 1; i >= 0; i--) {
+                let d = parseInt(digits.charAt(i), 10);
+                if (isSecond) {
+                    d *= 2;
+                    if (d > 9) d -= 9;
+                }
+                sum += d;
+                isSecond = !isSecond;
+            }
+            return (sum % 10 === 0);
+        }
+
+        function validateExpiry(expiryValue) {
+            const parts = expiryValue.split('/');
+            if (parts.length !== 2) return { valid: false, error: "Please enter expiry date in MM/YY format." };
+
+            const month = parseInt(parts[0], 10);
+            const yearShort = parseInt(parts[1], 10);
+
+            if (isNaN(month) || isNaN(yearShort) || parts[0].length !== 2 || parts[1].length !== 2) {
+                return { valid: false, error: "Please enter a valid MM/YY string layout." };
+            }
+            if (month < 1 || month > 12) {
+                return { valid: false, error: `${parts[0]} is not a valid month.` };
+            }
+
+            const currentDate = new Date();
+            const currentYearShort = currentDate.getFullYear() % 100; // 26
+            const currentMonth = currentDate.getMonth() + 1;           // 6
+
+            const fullYear = 2000 + yearShort;
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+            if (yearShort < currentYearShort || (yearShort === currentYearShort && month < currentMonth)) {
+                return { valid: false, error: `The card already expired since ${monthNames[month - 1]} ${fullYear} has passed.` };
+            }
+            return { valid: true };
+        }
+
+        // --- SUBMIT TRANSACTION PROCESSOR ---
+
+        function executeMockPayment(event) {
+            event.preventDefault();
+            const errorAlert = document.getElementById('paymentErrorAlert');
+            const submitBtn = document.getElementById('btnPaySubmit');
+            
+            errorAlert.classList.add('hidden');
+
+            // 1. Check: Luhn validation
+            const rawCardNumber = document.getElementById('cardNumberInput').value;
+            if (!validateLuhn(rawCardNumber)) {
+                errorAlert.textContent = "The credit card number fails checksum validation. Please check your entries.";
+                errorAlert.classList.remove('hidden');
+                document.getElementById('cardNumberInput').focus();
+                return;
+            }
+
+            // 2. Check: Expiry validation check
+            const expiryValue = document.getElementById('cardExpiryInput').value;
+            const expiryCheck = validateExpiry(expiryValue);
+            if (!expiryCheck.valid) {
+                errorAlert.textContent = expiryCheck.error;
+                errorAlert.classList.remove('hidden');
+                document.getElementById('cardExpiryInput').focus();
+                return;
+            }
+
+            // 3. Payment backend submission sequence
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Processing Authorization...";
+
+            fetch('/api/v1/payments/charge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cardNumber: rawCardNumber,
+                    amount: selectedProductContext.price,
+                    productId: selectedProductContext.id,
+                    senderPhone: verifiedSenderPhone,
+                    recipientPhone: verifiedRecipientPhone,
+                    recipientEmail: verifiedReceiverEmail
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('hiddenProductId').value = selectedProductContext.id;
+                    document.getElementById('hiddenProductName').value = selectedProductContext.name;
+                    document.getElementById('hiddenProductPrice').value = selectedProductContext.price;
+                    document.getElementById('hiddenTxnId').value = data.transactionId;
+                    document.getElementById('hiddenProductCategory').value = selectedProductContext.itemCategory;
+                    
+                    document.getElementById('hiddenPhoneNumber').value = verifiedSenderPhone; 
+                    document.getElementById('hiddenRecipientPhone').value = verifiedRecipientPhone; 
+                    document.getElementById('hiddenRecipientEmail').value = verifiedReceiverEmail; 
+                    
+                    document.getElementById('purchaseRedirectForm').submit();
+                } else {
+                    throw new Error(data.message || "Transaction unauthorized.");
+                }
+            })
+            .catch(err => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Authorize Payment";
+                errorAlert.textContent = err.message || "Payment verification timed out.";
+                errorAlert.classList.remove('hidden');
+            });
+        }
+
+       /* function openPaymentCheckout() {
             const product = selectedProductContext;
             document.getElementById('modalItemName').textContent = product.name;
             document.getElementById('modalItemPrice').textContent = product.displayPrice;
@@ -709,7 +925,7 @@
                 errorAlert.textContent = err.message || "Payment verification timed out.";
                 errorAlert.classList.remove('hidden');
             });
-        }
+        }*/
 
         /**
          * Enhanced footer click routing logic engine

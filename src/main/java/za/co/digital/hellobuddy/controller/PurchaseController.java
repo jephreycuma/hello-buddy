@@ -29,7 +29,7 @@ public class PurchaseController {
 	                               @RequestParam("category") String category, // <-- Added parameter mapping
 	                               @RequestParam("transactionId") String transactionId,
 	                               @RequestParam(value = "phoneNumber", required = false, defaultValue = "") String phoneNumber,
-	                               @RequestParam(value = "recipientPhone", required = false,defaultValue = "0728703170") String recipientPhone,
+	                               @RequestParam(value = "recipientPhone", required = false,defaultValue = "") String recipientPhone,
 	                               @RequestParam(value = "recipientEmail", required = false) String recipientEmail,
 	                               @RequestParam(value = "country", required = false, defaultValue = "ZA") String countryIso,
 	                               Model model) {
@@ -38,9 +38,9 @@ public class PurchaseController {
 		if(phoneNumber == null || phoneNumber.trim().isEmpty()) {
 			phoneNumber = "0";
 		}
-		if(recipientPhone == null || recipientPhone.trim().isEmpty()) {
-			recipientPhone = "0";
-		}
+		
+		recipientPhone = validatePhoneNumber(recipientPhone, countryIso);
+
 		String senderPhone = phoneNumber.replaceAll("\\D", ""); // Remove non-digit characters
 		String receiverPhone = recipientPhone.replaceAll("\\D", ""); // Remove non-digit characters
 		
@@ -59,13 +59,17 @@ public class PurchaseController {
 				.body(new ParameterizedTypeReference<TopupResponse>() {});
 		
 		
-		//System.out.println("TopupResponse received in PurchaseController: " + response.toString());
-	    
 	    model.addAttribute("productId", id);
 	    model.addAttribute("productName", name);
 	    model.addAttribute("productPrice", price);
 	    model.addAttribute("referenceId", transactionId);
 	    model.addAttribute("phoneNumber", recipientPhone);
+	    
+	    if(response == null) {
+	        model.addAttribute("errorMessage", "Failed to process the top-up. Please try again later.");
+	        return "receipt"; // Redirect to an error page or display an error message
+	    }
+
 	    System.out.println("Category received in PurchaseController: " + category);
 	    System.out.println("Country ISO received in PurchaseController: " + countryIso);
 	    // Clean evaluation using the concrete Category string instead of checking keywords!
@@ -79,5 +83,15 @@ public class PurchaseController {
 	    }
 	    
 	    return "receipt"; 
+	}
+	
+	private String validatePhoneNumber(String recipientPhone, String countryIso) {
+		recipientPhone = recipientPhone.replaceAll("\\D", ""); // Remove non-digit characters
+		if(countryIso.equalsIgnoreCase("ZA") && !recipientPhone.startsWith("+27") && !recipientPhone.startsWith("27") && recipientPhone.length() == 10) {
+			recipientPhone = "27" + recipientPhone.substring(1);
+		} else if(countryIso.equalsIgnoreCase("NG") && !recipientPhone.startsWith("+234") && !recipientPhone.startsWith("234") && recipientPhone.length() == 11) {
+			recipientPhone =  "234" + recipientPhone.substring(1);			
+		}
+	    return recipientPhone;
 	}
 }
