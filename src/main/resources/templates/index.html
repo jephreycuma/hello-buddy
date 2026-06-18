@@ -62,7 +62,7 @@
                     <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
                         Airtime TopUps
                     </button>
-                    <div class="hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left">
+                    <div class="dropdown-menu hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left">
                         <div data-country="ZA">
                             <a href="#" onclick="filterProducts('TopUps', 'Vodacom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Vodacom</a>
                             <a href="#" onclick="filterProducts('TopUps', 'MTN')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN</a>
@@ -104,7 +104,7 @@
                     <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
                         Data Bundles
                     </button>
-                    <div class="hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left">
+                    <div class="dropdown-menu hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left">
                         <div data-country="ZA">
                             <a href="#" onclick="filterProducts('Data', 'Vodacom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Vodacom</a>
                             <a href="#" onclick="filterProducts('Data', 'MTN')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN</a>
@@ -161,7 +161,7 @@
 	                </label>
 	                <input type="tel" id="senderPhoneInput" 
 	                       class="w-full p-3 border border-gray-200 rounded-xl text-lg font-bold tracking-wider focus:outline-none focus:border-red-500 transition" 
-	                       placeholder="e.g. 082 111 2222">
+	                       placeholder="Optional">
 	            </div>
 	
 	            <div>
@@ -175,7 +175,7 @@
 	                
 	                <input type="tel" id="recipientPhoneInput" required 
 	                       class="w-full p-3 border border-gray-200 rounded-xl text-lg font-bold tracking-wider focus:outline-none focus:border-red-500 transition" 
-	                       placeholder="e.g. 082 123 4567">
+	                       placeholder="Required">
 	                <p class="text-[11px] text-gray-400 mt-1">Make sure this is correct. Pinless items are delivered instantly directly to the handset connection.</p>
 	            </div>
 	
@@ -185,7 +185,7 @@
 	                </label>
 	                <input type="email" id="receiverEmailInput" 
 	                       class="w-full p-3 border border-gray-200 rounded-xl text-base font-medium focus:outline-none focus:border-red-500 transition" 
-	                       placeholder="e.g. recipient@example.com">
+	                       placeholder="Optional">
 	            </div>
 	
 	            <div class="grid grid-cols-2 gap-3 pt-2">
@@ -223,7 +223,7 @@
 	        <form id="paymentForm" onsubmit="executeMockPayment(event)" class="p-5 space-y-4">
 	            <div>
 	                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Cardholder Name</label>
-	                <input type="text" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500 transition" placeholder="e.g. J Cuma">
+	                <input type="text" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500 transition" placeholder="J Cuma">
 	            </div>
 	            <div>
 	                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Card Number</label>
@@ -448,6 +448,17 @@
         }
 
         function filterProducts(category, networkName) {
+        	document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                // Temporarily force override display style
+                menu.style.display = 'none';
+                
+                // Restore default template styling immediately afterwards 
+                // so standard desktop mouse hover animations continue to work normally later
+                setTimeout(() => {
+                    menu.style.display = '';
+                }, 100);
+            });
+        	
             const grid = document.getElementById('productGrid');
             const viewHeader = document.getElementById('viewHeader');
             const catTitle = document.getElementById('activeCategoryTitle');
@@ -472,8 +483,41 @@
             }
 
             viewHeader.classList.remove('hidden');
-            catTitle.textContent = category === 'Airtime' ? 'Airtime Vouchers' : category;
-            netSubtitle.textContent = networkName === 'All' ? 'Available Offers' : `Showing offers for ${networkName}`;
+         // Force vertical stacking: category on top, subtitle below
+           // viewHeader.classList.add('flex', 'flex-col', 'items-start');
+            
+            viewHeader.className = "w-full flex flex-row justify-between items-center mb-6"; 
+
+            // Wrap the titles in a vertical stack on the left side
+            viewHeader.innerHTML = `
+                <div class="flex flex-col">
+                    <h2 id="activeCategoryTitle" class="text-2xl font-black text-gray-900 tracking-tight">
+                        ${category === 'Airtime' ? 'Airtime Vouchers' : category}
+                    </h2>
+                    <div id="activeNetworkSubtitle" class="text-sm text-gray-500 mt-1">
+                        ${networkName === 'All' ? 'Available Offers' : `Showing offers for ${networkName}`}
+                    </div>
+                </div>
+            `;
+            //catTitle.textContent = category === 'Airtime' ? 'Airtime Vouchers' : category;
+
+            if (networkName !== 'All') {
+	        const networkLogo = (filteredItems.length > 0 && filteredItems[0].logoUrl) ? filteredItems[0].logoUrl : '';
+	
+	        if (networkLogo) {
+	            // Create a dedicated container for the enlarged logo image
+	            const logoContainer = document.createElement('div');
+	            logoContainer.className = "flex items-center justify-end pl-4";
+	            
+	            // Increased size to h-12 or h-14 (adjust as needed for your design)
+	            logoContainer.innerHTML = `
+	                <img src="${networkLogo}" alt="${networkName} logo" class="h-12 md:h-14 w-auto object-contain rounded-xl shadow-sm border border-gray-100 bg-white p-1" />
+	            `;
+	            
+	            // Append it to the right side of the viewHeader row
+	            viewHeader.appendChild(logoContainer);
+	        	}
+	    	}
 
             filteredItems.forEach(product => {
                 const card = document.createElement('div');
@@ -596,10 +640,10 @@
             
             if(currentCountryIso === 'NG') {
                 labelHelp.textContent = "Recipient Nigerian Mobile Number (NG)";
-                document.getElementById('recipientPhoneInput').placeholder = "e.g. 0803 123 4567";
+                document.getElementById('recipientPhoneInput').placeholder = "Required";
             } else {
                 labelHelp.textContent = "Recipient South African Mobile Number (ZA)";
-                document.getElementById('recipientPhoneInput').placeholder = "e.g. 082 123 4567";
+                document.getElementById('recipientPhoneInput').placeholder = "Required";
             }
             
             document.getElementById('phoneModal').classList.remove('hidden');
@@ -710,8 +754,6 @@
             document.getElementById('paymentModal').classList.add('hidden');
         }
 
-        // --- GLOBAL FORMATTING HELPERS (Now accessible by HTML elements) ---
-
         /**
          * Automatically inserts a '/' after the first two digits are typed
          */
@@ -737,8 +779,6 @@
                 event.preventDefault();
             }
         }
-
-        // --- VALIDATION HELPER FUNCTIONS ---
 
         function validateLuhn(cardNumber) {
             const digits = cardNumber.replace(/\D/g, "");
@@ -783,8 +823,6 @@
             }
             return { valid: true };
         }
-
-        // --- SUBMIT TRANSACTION PROCESSOR ---
 
         function executeMockPayment(event) {
             event.preventDefault();
@@ -853,79 +891,6 @@
                 errorAlert.classList.remove('hidden');
             });
         }
-
-       /* function openPaymentCheckout() {
-            const product = selectedProductContext;
-            document.getElementById('modalItemName').textContent = product.name;
-            document.getElementById('modalItemPrice').textContent = product.displayPrice;
-            
-            const recipientLabel = document.getElementById('modalItemRecipient');
-            if (verifiedPhoneNumber) {
-                recipientLabel.textContent = "Direct Topup To: " + verifiedPhoneNumber;
-                recipientLabel.classList.remove('hidden');
-            } else {
-                recipientLabel.classList.add('hidden');
-            }
-
-            document.getElementById('paymentErrorAlert').classList.add('hidden');
-            document.getElementById('paymentForm').reset();
-            document.getElementById('paymentModal').classList.remove('hidden');
-        }
-
-        function closePaymentModal() {
-            document.getElementById('paymentModal').classList.add('hidden');
-        }
-
-        function executeMockPayment(event) {
-            event.preventDefault();
-            const errorAlert = document.getElementById('paymentErrorAlert');
-            const submitBtn = document.getElementById('btnPaySubmit');
-            
-            errorAlert.classList.add('hidden');
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Processing Authorization...";
-
-            fetch('/api/v1/payments/charge', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    cardNumber: document.getElementById('cardNumberInput').value,
-                    amount: selectedProductContext.price,
-                    productId: selectedProductContext.id,
-                    // Updated payload keys matching your modal variables
-                    senderPhone: verifiedSenderPhone,
-                    recipientPhone: verifiedRecipientPhone,
-                    recipientEmail: verifiedReceiverEmail
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    // Populate original values
-                    document.getElementById('hiddenProductId').value = selectedProductContext.id;
-                    document.getElementById('hiddenProductName').value = selectedProductContext.name;
-                    document.getElementById('hiddenProductPrice').value = selectedProductContext.price;
-                    document.getElementById('hiddenTxnId').value = data.transactionId;
-                    document.getElementById('hiddenProductCategory').value = selectedProductContext.itemCategory;
-                    
-                    // Map state to the hidden form elements for the backend controller POST mapping
-                    document.getElementById('hiddenPhoneNumber').value = verifiedSenderPhone; // Maps to @RequestParam("phoneNumber")
-                    document.getElementById('hiddenRecipientPhone').value = verifiedRecipientPhone; // Maps to @RequestParam("recipientPhone")
-                    document.getElementById('hiddenRecipientEmail').value = verifiedReceiverEmail; // Maps to @RequestParam("recipientEmail")
-                    
-                    // Fire the native form transmission out to PurchaseController
-                    document.getElementById('purchaseRedirectForm').submit();
-                } else {
-                    throw new Error(data.message || "Transaction unauthorized.");
-                }
-            })
-            .catch(err => {
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Authorize Payment";
-                errorAlert.textContent = err.message || "Payment verification timed out.";
-                errorAlert.classList.remove('hidden');
-            });
-        }*/
 
         /**
          * Enhanced footer click routing logic engine

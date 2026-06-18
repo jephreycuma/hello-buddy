@@ -11,8 +11,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestClient;
 
+import tools.jackson.databind.ObjectMapper;
 import za.co.digital.hellobuddy.dto.Product;
+import za.co.digital.hellobuddy.dto.ReloadlyTopupResult;
 import za.co.digital.hellobuddy.dto.TopupResponse;
+import za.co.digital.hellobuddy.errors.ReloadlyErrorResponse;
 
 @Controller
 @RequestMapping("/purchase")
@@ -44,7 +47,7 @@ public class PurchaseController {
 		String senderPhone = phoneNumber.replaceAll("\\D", ""); // Remove non-digit characters
 		String receiverPhone = recipientPhone.replaceAll("\\D", ""); // Remove non-digit characters
 		
-		TopupResponse response = restClient.post()
+		ReloadlyTopupResult results = restClient.post()
 				.uri(uriBuilder -> uriBuilder
 						.path("/api/v1/telecom/topups")
 						.queryParam("amount", price)
@@ -56,23 +59,30 @@ public class PurchaseController {
 						.queryParam("useLocalAmount", true)
 						.build())
 				.retrieve()
-				.body(new ParameterizedTypeReference<TopupResponse>() {});
+				.body(new ParameterizedTypeReference<ReloadlyTopupResult>() {});
 		
 		
 	    model.addAttribute("productId", id);
 	    model.addAttribute("productName", name);
-	    model.addAttribute("productPrice", price);
-	    model.addAttribute("referenceId", transactionId);
+	    model.addAttribute("productPrice", price);	    
 	    model.addAttribute("phoneNumber", recipientPhone);
 	    
-	    if(response == null) {
-	        model.addAttribute("errorMessage", "Failed to process the top-up. Please try again later.");
-	        return "receipt"; // Redirect to an error page or display an error message
-	    }
+	    if (results.isSuccessful()) {
+	    TopupResponse successData = results.getTopupResponse();
+	    model.addAttribute("referenceId", successData.getTransactionId());
+		} else {
+		    ObjectMapper mapper = new ObjectMapper();
+		    
+		    try {
+		        ReloadlyErrorResponse errorResponse = mapper.readValue(results.getRawBody(), ReloadlyErrorResponse.class);
+		        
+		        model.addAttribute("errorMessage", errorResponse.getMessage());
+		        
+		    } catch (Exception e) {
+		        model.addAttribute("errorMessage", "An error occurred: " + results.getRawBody());
+		    }
+		}
 
-	    System.out.println("Category received in PurchaseController: " + category);
-	    System.out.println("Country ISO received in PurchaseController: " + countryIso);
-	    // Clean evaluation using the concrete Category string instead of checking keywords!
 	    if ("Airtime".equalsIgnoreCase(category) || "GiftCards".equalsIgnoreCase(category)) {
 	        String mockPin = String.format("%04d-%04d-%04d-%04d", 
 	            (int)(Math.random() * 10000), (int)(Math.random() * 10000), 

@@ -1,36 +1,56 @@
 package za.co.digital.hellobuddy.dto;
 
 public class Product {
-    private String id;
-    private String network; // VODACOM, MTN, CELL_C, TELKOM
-    private String type;    // AIRTIME, DATA
-    private String pinType; // PIN, PINLESS
-    private double price;
-    private String description;
-    private boolean generateLocalDenominations;
-    private String currencySymbol; // New field for currency symbol
-    private String destinationCurrencyCode; // New field for destination currency code
+	private String id;
+	private String network; // VODACOM, MTN, CELL_C, TELKOM
+	private String type; // AIRTIME, DATA
+	private String pinType; // PIN, PINLESS
+	private double price;
+	private String description;
+	private boolean generateLocalDenominations;
+	private String currencySymbol; // New field for currency symbol
+	private String destinationCurrencyCode; // New field for destination currency code
+	private String logoUrl;
 
-    // Constructor
-    public Product(String id, String network, String type, String pinType, double price, String description,boolean generateLocalDenominations, String currencySymbol, String destinationCurrencyCode) {
-        this.id = id;
-        this.network = network;
-        this.type = type;
-        this.pinType = pinType;
-        this.price = price;
-        this.description = description;
-        this.generateLocalDenominations = generateLocalDenominations;
-        this.currencySymbol = currencySymbol; // Initialize the new field
-        this.destinationCurrencyCode = destinationCurrencyCode; // Initialize the new field
-    }
+	// Constructor
+	public Product(String id, String network, String type, String pinType, double price, String description,
+			boolean generateLocalDenominations, String currencySymbol, String destinationCurrencyCode,String logoUrl) {
+		this.id = id;
+		this.network = network;
+		this.type = type;
+		this.pinType = pinType;
+		this.price = price;
+		this.description = description;
+		this.generateLocalDenominations = generateLocalDenominations;
+		this.currencySymbol = currencySymbol; // Initialize the new field
+		this.destinationCurrencyCode = destinationCurrencyCode; // Initialize the new field
+		this.logoUrl = logoUrl;
+	}
 
-    // Getters and Setters
-    public String getId() { return id; }
-    public String getNetwork() { return network; }
-    public String getType() { return type; }
-    public String getPinType() { return pinType; }
-    public double getPrice() { return price; }
-    public String getDescription() { return description; }
+	// Getters and Setters
+	public String getId() {
+		return id;
+	}
+
+	public String getNetwork() {
+		return network;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public String getPinType() {
+		return pinType;
+	}
+
+	public double getPrice() {
+		return price;
+	}
+
+	public String getDescription() {
+		return description;
+	}
 
 	public boolean isGenerateLocalDenominations() {
 		return generateLocalDenominations;
@@ -54,5 +74,13 @@ public class Product {
 
 	public void setDestinationCurrencyCode(String destinationCurrencyCode) {
 		this.destinationCurrencyCode = destinationCurrencyCode;
+	}
+
+	public String getLogoUrl() {
+		return logoUrl;
+	}
+
+	public void setLogoUrl(String logoUrl) {
+		this.logoUrl = logoUrl;
 	}
 }

@@ -52,7 +52,7 @@ public class StorefrontController {
                     
                     String cleanedNetwork = getNetworkName(prod.getNetwork());
                     
-                    String detailedName = cleanedNetwork + " " + displayPrice + " Option";
+                    String detailedName = cleanedNetwork + " " + displayPrice;
                     
                     String type = prod.getType();
                     
@@ -68,7 +68,8 @@ public class StorefrontController {
                             price,
                             displayPrice,
                             type,
-                            description
+                            description,
+                            prod.getLogoUrl()
                     );
 
                     if ("DATA BUNDLES".equalsIgnoreCase(prod.getType())) {
@@ -106,7 +107,7 @@ public class StorefrontController {
     		
     		String displayPrice = prod.getCurrencySymbol() + String.format("%.2f", Double.parseDouble(denomination));
     		BigDecimal price = BigDecimal.valueOf(Double.parseDouble(denomination));
-    		String detailedName = cleanedNetwork + " " + displayPrice + " Option";
+    		String detailedName = cleanedNetwork + " " + displayPrice;
     	 ProductItemDTO dto = new ProductItemDTO(
                  Integer.parseInt(prod.getId().replaceAll("\\D", "")),
                  detailedName, 
@@ -114,7 +115,8 @@ public class StorefrontController {
                  price,
                  displayPrice,
                  prod.getType(),
-                 prod.getDescription()
+                 prod.getDescription(),
+                 prod.getLogoUrl()
          );
     	 topupList.add(dto); 
     	}
@@ -154,6 +156,7 @@ public class StorefrontController {
 		case "Airtel Nigeria Bundle":
 		case "Airtel Nigeria Data":
 		case "Airtel Nigeria Special Bundle":
+		case "Airtel Nigeria":
 			return "Airtel";
 		case "Glo Nigeria":
 		case "Glo Nigeria Bundle":
