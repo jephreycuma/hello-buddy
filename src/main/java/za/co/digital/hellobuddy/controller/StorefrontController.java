@@ -1,5 +1,6 @@
 package za.co.digital.hellobuddy.controller;
 
+import za.co.digital.hellobuddy.cache.HelloBuddyInnerMemory;
 import za.co.digital.hellobuddy.dto.Product;
 import za.co.digital.hellobuddy.dto.ProductItemDTO;
 import org.springframework.stereotype.Controller;
@@ -26,153 +27,11 @@ public class StorefrontController {
     @GetMapping("/") // Keeping mapped to a distinct path to avoid collisions with ShopController
     public String showStorefront(@RequestParam(value = "country", required = false, defaultValue = "ZA") String countryIso, 
     	    Model model) {
-        Map<String, List<ProductItemDTO>> catalogMap = new HashMap<>();
+        Map<String, List<ProductItemDTO>> catalogMap = HelloBuddyInnerMemory.getInstance(restClient, countryIso).getReloadlyProducts(countryIso);
         
-        // Initialize the targeted container array contexts
-        List<ProductItemDTO> airtimeList = new ArrayList<>();
-        List<ProductItemDTO> topupList = new ArrayList<>();
-        List<ProductItemDTO> dataList = new ArrayList<>();
-        List<ProductItemDTO> giftCardsList = new ArrayList<>();
-
-        try {
-            // 1. Fetch the products from the remote routing-service API endpoint
-        	List<Product> remoteProducts = restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/api/v1/telecom/products")
-                            .queryParam("country", countryIso) // Sends ?country=ZA or ?country=NG to your backend service
-                            .build())
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<List<Product>>() {});
-
-            if (remoteProducts != null) {
-                for (Product prod : remoteProducts) {
-                	
-                    BigDecimal price = BigDecimal.valueOf(prod.getPrice());
-                    String displayPrice = prod.getCurrencySymbol() + String.format("%.2f", prod.getPrice());
-                    
-                    String cleanedNetwork = getNetworkName(prod.getNetwork());
-                    
-                    String detailedName = cleanedNetwork + " " + displayPrice;
-                    
-                    String type = prod.getType();
-                    
-                    String description = (prod.getDescription() != null && !prod.getDescription().trim().isEmpty()) 
-                                         ? prod.getDescription() 
-                                         : "Premium high-speed standard topup package delivery.";
-
-                    // Build the updated product DTO
-                    ProductItemDTO dto = new ProductItemDTO(
-                            Integer.parseInt(prod.getId().replaceAll("\\D", "")),
-                            detailedName, 
-                            cleanedNetwork, 
-                            price,
-                            displayPrice,
-                            type,
-                            description,
-                            prod.getLogoUrl()
-                    );
-
-                    if ("DATA BUNDLES".equalsIgnoreCase(prod.getType())) {
-                        dataList.add(dto);
-                    } else if ("AIRTIME VOUCHER".equalsIgnoreCase(prod.getType())) {
-                        airtimeList.add(dto);
-                    } else if ("AIRTIME TOPUP".equalsIgnoreCase(prod.getType())) {
-                    	generateLocalDenominations(cleanedNetwork, prod,topupList);
-                        //topupList.add(dto);                        
-                    } else {
-                        giftCardsList.add(dto);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Fallback strategy: log failure and render empty lists gracefully or load system default objects
-            System.err.println("Failed to fetch upstream catalog properties: " + e.getMessage());
-        }
-
-        // 4. Wrap elements back into the structure your script layer expects
-        catalogMap.put("Airtime", airtimeList);
-        catalogMap.put("TopUps", topupList); 
-        catalogMap.put("Data", dataList);
-        catalogMap.put("GiftCards", giftCardsList);
-
         model.addAttribute("javaCatalogData", catalogMap);
 
         return "index";
     }
-    
-    private void generateLocalDenominations(String cleanedNetwork, Product prod,List<ProductItemDTO> topupList) {
-    	
-    	String []denominations = denominations(prod);
-    	for(String denomination : denominations) {
-    		
-    		String displayPrice = prod.getCurrencySymbol() + String.format("%.2f", Double.parseDouble(denomination));
-    		BigDecimal price = BigDecimal.valueOf(Double.parseDouble(denomination));
-    		String detailedName = cleanedNetwork + " " + displayPrice;
-    	 ProductItemDTO dto = new ProductItemDTO(
-                 Integer.parseInt(prod.getId().replaceAll("\\D", "")),
-                 detailedName, 
-                 cleanedNetwork, 
-                 price,
-                 displayPrice,
-                 prod.getType(),
-                 prod.getDescription(),
-                 prod.getLogoUrl()
-         );
-    	 topupList.add(dto); 
-    	}
-    }
-    
-    private String[] denominations(Product prod) {
-    	String []denominations = {"10.00", "20.00", "25.00", "50.00", "100.00", "150.00", "200.00", "250.00", "500.00", "1000.00"};
-    	
-    	switch(prod.getDestinationCurrencyCode()) {
-    		case "ZAR":
-				return denominations;
-			case "NGN":
-				return new String[] {"100.00", "200.00", "500.00", "1000.00", "1500.00", "2000.00", "2500.00", "5000.00", "10000.00"};
-			default:
-				return denominations; // Default to ZAR denominations if currency is unrecognized
-    	}
-    }
-    
-    private String getNetworkName(String network) {
-    	if(network != null) {
-			if(network.contains("Telkom Mobile South Africa")) {
-				return "Telkom";
-			}
-    	}
-		switch(network) {
-		case "Vodacom South Africa":
-		case "Vodacom South Africa Data":
-			return "Vodacom";
-		case "MTN South Africa":
-		case "MTN South Africa Data":
-			return "MTN";
-		case "Cell C South Africa":
-		case "Cell C South Africa Data":
-			return "Cell C";
-		case "ONE kuphela Universal South Africa PIN":
-			return "ONE";
-		case "Airtel Nigeria Bundle":
-		case "Airtel Nigeria Data":
-		case "Airtel Nigeria Special Bundle":
-		case "Airtel Nigeria":
-			return "Airtel";
-		case "Glo Nigeria":
-		case "Glo Nigeria Bundle":
-		case "Glo Nigeria Data":
-		case "Glo Nigeria Special Bundle":
-			return "Glo";
-		case "MTN Nigeria":
-		case "MTN Nigeria Bundles":
-		case "MTN Nigeria Data":
-			return "MTN Nigeria";
-		case "T2 Mobile Nigeria":
-		case "T2 Mobile Nigeria Data":
-			return "T2 Mobile";
-		default:
-			return network;
-		}
-	}
     
 }
