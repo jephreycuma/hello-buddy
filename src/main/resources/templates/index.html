@@ -79,27 +79,6 @@
                     </div>
                 </div>
 
-                <!-- Tab: Vouchers -->
-               <!--  <div class="relative group py-1">
-                    <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
-                        Vouchers
-                    </button>
-                    <div class="hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left">
-                        <div data-country="ZA">
-                            <a href="#" onclick="filterProducts('Airtime', 'Vodacom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Vodacom</a>
-                            <a href="#" onclick="filterProducts('Airtime', 'MTN')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN</a>
-                            <a href="#" onclick="filterProducts('Airtime', 'Telkom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Telkom</a>
-                            <a href="#" onclick="filterProducts('Airtime', 'Cell C')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Cell C</a>
-                        </div>
-                        <div data-country="NG" class="hidden">
-                            <a href="#" onclick="filterProducts('Airtime', 'MTN Nigeria')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN Nigeria</a>
-                            <a href="#" onclick="filterProducts('Airtime', 'Airtel')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Airtel Nigeria</a>
-                            <a href="#" onclick="filterProducts('Airtime', 'Glo')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Glo (Globacom)</a>
-                            <a href="#" onclick="filterProducts('Airtime', 'T2 Mobile')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">T2 Mobile (9mobile)</a>
-                        </div>
-                    </div>
-                </div>-->
-
                 <!-- Tab: Data Bundles -->
                 <div class="relative group py-1">
                     <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
@@ -201,15 +180,18 @@
 	    </div>
 	</div>
 
-    <!-- STEP 2: Secure Checkout Gateway Modal -->
+	<!-- STEP 2: Secure Checkout Gateway Modal (Streamlined for Stripe) -->
 	<div id="paymentModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
 	    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+	        
+	        <!-- Header Panel -->
 	        <div class="bg-gray-900 text-white p-5 border-b-2 border-red-600">
-	            <h3 class="text-lg font-extrabold tracking-wide">Secure Credit Card Gateway</h3>
-	            <p class="text-xs text-gray-400 mt-0.5">Hello Buddy Processing Desk</p>
+	            <h3 class="text-lg font-extrabold tracking-wide">Review Your Order</h3>
+	            <p class="text-xs text-gray-400 mt-0.5">Hello Buddy Secure Checkout Desk</p>
 	        </div>
-	
-	        <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center text-sm">
+	        
+	        <!-- Summary Context Deck -->
+	        <div class="bg-gray-50 px-5 py-5 border-b border-gray-100 flex justify-between items-center text-sm">
 	            <div>
 	                <span class="text-xs text-gray-400 block font-semibold uppercase tracking-wider">Item Selected</span>
 	                <span id="modalItemName" class="font-bold text-gray-800">Product Line Descriptor</span>
@@ -221,43 +203,31 @@
 	            </div>
 	        </div>
 	
-	        <form id="paymentForm" onsubmit="executeMockPayment(event)" class="p-5 space-y-4">
-	            <div>
-	                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Cardholder Name</label>
-	                <input type="text" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500 transition" placeholder="J Cuma">
-	            </div>
-	            <div>
-	                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Card Number</label>
-	                <input type="text" id="cardNumberInput" required maxlength="19" class="w-full p-3 border border-gray-200 rounded-xl text-sm font-mono tracking-widest focus:outline-none focus:border-red-500 transition" placeholder="4524 0000 0000 0000">
-	            </div>
-	            <div class="grid grid-cols-2 gap-4">
-	                <div>
-					    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Expiry Date</label>
-					    <input type="text" 
-					           id="cardExpiryInput" 
-					           required 
-					           maxlength="5" 
-					           oninput="formatCardExpiry(this)"
-					           onkeydown="handleExpiryBackspace(event, this)"
-					           class="w-full p-3 border border-gray-200 rounded-xl text-sm text-center placeholder-gray-300 focus:outline-none focus:border-red-500 transition" 
-					           placeholder="MM/YY">
-					</div>
-	                <div>
-	                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">CVV Code</label>
-	                    <input type="password" required maxlength="3" class="w-full p-3 border border-gray-200 rounded-xl text-sm text-center placeholder-gray-300 focus:outline-none focus:border-red-500 transition" placeholder="***">
+	        <!-- Intercepted Form Submission Container -->
+	        <!-- Update your paymentForm tag to look exactly like this -->
+			<form id="paymentForm" onsubmit="event.preventDefault(); handleCheckout();" class="p-5 space-y-4">
+	            
+	            <!-- Secure Notice Framework -->
+	            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3.5 flex items-start space-x-3">
+	                <span class="text-xl select-none">🛡️</span>
+	                <div class="text-xs text-blue-800 leading-relaxed">
+	                    <span class="font-bold block mb-0.5">Hosted Stripe Checkout</span>
+	                    You will be redirected safely to Stripe to finalize your billing details. Hello Buddy never logs or processes your credit card numbers locally.
 	                </div>
 	            </div>
 	
+	            <!-- Dynamic Network Execution Error Feedback -->
 	            <div id="paymentErrorAlert" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600 font-medium">
-	                Payment transaction authorization declined. Please verify entry variables.
+	                Could not connect to the Stripe payment gateway. Please verify server connectivity.
 	            </div>
 	
+	            <!-- Action Controllers -->
 	            <div class="grid grid-cols-2 gap-3 pt-2">
 	                <button type="button" onclick="closePaymentModal()" class="w-full border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold py-3 rounded-xl text-sm transition">
 	                    Cancel
 	                </button>
 	                <button type="submit" id="btnPaySubmit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md shadow-red-100">
-	                    Authorize Payment
+	                    Pay Securely via Stripe
 	                </button>
 	            </div>
 	        </form>
@@ -621,13 +591,17 @@
             initiatePurchaseProcess(JSON.stringify(dynamicProduct));
         }
 
-        // Intercepts context to decide if phone validation step is required
-		function initiatePurchaseProcess(productStringData) {
+        function initiatePurchaseProcess(productStringData) {
             const product = JSON.parse(productStringData);
             selectedProductContext = product;
             verifiedPhoneNumber = "";
 
-            // Evaluate directly against clear categorical tracking variables
+            // FIX: Explicitly populate the hidden native inputs right now
+            document.getElementById('hiddenProductId').value = product.id || "";
+            document.getElementById('hiddenProductName').value = product.name || "";
+            document.getElementById('hiddenProductPrice').value = product.price || "";
+            document.getElementById('hiddenProductCategory').value = product.itemCategory || "";
+
             if (product.itemCategory === "TopUps" || product.itemCategory === "Data") {
                 openPhoneModal();
             } else {
@@ -727,7 +701,17 @@
             verifiedRecipientPhone = recipientPhoneInput; // Preserves any user-written '+' character
             verifiedReceiverEmail = receiverEmailInput;
             
-            // 4. Modal Flow Control
+            document.getElementById('hiddenRecipientPhone').value = recipientPhoneInput;
+            document.getElementById('hiddenRecipientEmail').value = receiverEmailInput;
+            document.getElementById('hiddenPhoneNumber').value = senderPhoneInput; // Maps to sender phone
+
+            // Update Step 2 checkout UI Summary components
+            if (selectedProductContext) {
+                document.getElementById('modalItemName').innerText = selectedProductContext.name;
+                document.getElementById('modalItemPrice').innerText = selectedProductContext.displayPrice || "R" + selectedProductContext.price;
+            }
+            document.getElementById('modalItemRecipient').innerText = "Target: " + recipientPhoneInput;
+            
             closePhoneModal();
             openPaymentCheckout();
         }
@@ -962,6 +946,92 @@
             let targetValue = e.target.value.replace(/\W/gi, '').replace(/(.{4})/g, '$1 ').trim();
             e.target.value = targetValue;
         });
+        
+        /**
+         * Hooks into the Hello Buddy UI system to process payments securely via Stripe Checkout
+         * instead of utilizing the local, non-PCI compliant mock credit card form.
+         */
+        async function handleCheckout() {
+            // Retrieve dynamic product properties cached inside the hidden native form engine
+            const productId = document.getElementById('hiddenProductId').value;
+            const productName = document.getElementById('hiddenProductName').value;
+            const productPrice = document.getElementById('hiddenProductPrice').value;
+            const productCategory = document.getElementById('hiddenProductCategory').value;
+            
+            // Retrieve validated delivery metrics populated by Step 1 (phoneModal)
+            const senderPhone = document.getElementById('senderPhoneInput').value;
+            const recipientPhone = document.getElementById('hiddenRecipientPhone').value;
+            const recipientEmail = document.getElementById('hiddenRecipientEmail').value;
+            
+            // Derive currency type safely based on current active storefront context rules
+            const currentRegion = document.getElementById('countrySelector').value; // "ZA" or "NG"
+            const currency = (currentRegion === 'NG' || (productName && productName.includes('₦'))) ? 'ngn' : 'zar';
+
+            // Show UI loading state on the button if available
+            const payButton = document.getElementById('btnPaySubmit');
+            const originalButtonText = payButton ? payButton.innerText : "Authorize Payment";
+            if (payButton) {
+                payButton.disabled = true;
+                payButton.innerText = "Connecting to Gateway...";
+            }
+
+         // Inside your handleCheckout() function, update the fetch block:
+            try {
+            	const response = await fetch('/api/stripe/create-session', {
+            	    method: 'POST',
+            	    headers: {
+            	        'Content-Type': 'application/json'
+            	    },
+            	    body: JSON.stringify({
+            	        productId: productId,
+            	        productName: productName,
+            	        price: parseFloat(productPrice),
+            	        category: productCategory,
+            	        currency: currency.toLowerCase(),
+            	        senderPhone: senderPhone,
+            	        recipientPhone: recipientPhone,
+            	        recipientEmail: recipientEmail
+            	    })
+            	});
+
+                if (!response.ok) {
+                    throw new Error("Backend server returned an error status: " + response.status);
+                }
+
+                const data = await response.json();
+                
+                // This is what redirects the user to the Stripe page where they input credit card info
+                if (data && data.stripeUrl) {
+                    window.location.href = data.stripeUrl;
+                } else {
+                    alert("The backend did not return a valid Stripe redirect URL.");
+                    if (payButton) {
+                        payButton.disabled = false;
+                        payButton.innerText = originalButtonText;
+                    }
+                }
+            } catch (error) {
+                console.error("Stripe initialization fault occurred:", error);
+                alert("Connection Error: " + error.message);
+                
+                if (payButton) {
+                    payButton.disabled = false;
+                    payButton.innerText = originalButtonText;
+                }
+            }
+        }
+
+        /**
+         * CONNECT TO CURRENT SITE WORKFLOW:
+         * Intercept your existing 'paymentModal' form submission to fire Stripe instead.
+         */
+        const localPaymentForm = document.getElementById('paymentForm');
+        if (localPaymentForm) {
+            localPaymentForm.onsubmit = function(event) {
+                event.preventDefault(); // Halt old mock engine execution path
+                handleCheckout();       // Execute secure cloud billing handoff
+            };
+        }
         
     </script>
 </body>
