@@ -17,6 +17,8 @@ public class MockPaymentApiController {
     // 1. Inject the key directly from application.properties
     @Value("${stripe.api.key}")
     private String stripeApiKey;
+    @Value("${hello.buddy.url}")
+    private String helloBuddyUrl;
 
     @PostMapping("/create-session")
     public ResponseEntity<Map<String, Object>> processStripeSession(@RequestBody Map<String, Object> payload) {
@@ -27,6 +29,10 @@ public class MockPaymentApiController {
             
             // 2. CRITICAL: Authenticate your Stripe SDK using your secret key
             Stripe.apiKey = this.stripeApiKey;
+            String productPriceUsd = payload.get("price").toString(); // The $14.99 USD retail checkout amount
+         // Safely fetch your custom raw original localized price sent from the frontend DOM attributes
+            String originalLocalPrice = (String) payload.getOrDefault("originalPrice", "0.0"); 
+            String currentRegion = (String) payload.getOrDefault("countryIso", "ZA"); // Storefront context ("ZA" or "NG")
             
             String productName = (String) payload.getOrDefault("productName", "Hello Buddy Voucher");
             String currencyCode = (String) payload.getOrDefault("currency", "zar");
@@ -44,11 +50,14 @@ public class MockPaymentApiController {
             Map<String, String> metadata = new HashMap<>();
             metadata.put("productId", (String) payload.getOrDefault("productId", ""));
             metadata.put("productName", (String) payload.getOrDefault("productName", ""));
-            metadata.put("price", priceObj != null ? priceObj.toString() : "0.0");
+            metadata.put("checkoutPriceUsd", productPriceUsd); // Kept for bookkeeping/receipts
+            metadata.put("originalPrice", originalLocalPrice);
+            //metadata.put("price", priceObj != null ? priceObj.toString() : "0.0");
             metadata.put("category", (String) payload.getOrDefault("category", ""));
             metadata.put("senderPhone", (String) payload.getOrDefault("senderPhone", ""));
             metadata.put("recipientPhone", (String) payload.getOrDefault("recipientPhone", ""));
             metadata.put("recipientEmail", (String) payload.getOrDefault("recipientEmail", ""));
+            metadata.put("countryIso", currentRegion);
             // Derive country code based on the storefront region
             metadata.put("countryIso", currencyCode.equalsIgnoreCase("ngn") ? "NG" : "ZA");
 
@@ -56,8 +65,8 @@ public class MockPaymentApiController {
             long stripeAmount = Math.round(orderAmount * 100);
             SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl("http://localhost:9091/success?session_id={CHECKOUT_SESSION_ID}")
-                .setCancelUrl("http://localhost:9091/")
+                .setSuccessUrl(helloBuddyUrl+"/success?session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl(helloBuddyUrl+"/")
                 .putAllMetadata(metadata)
                 .addLineItem(
                     SessionCreateParams.LineItem.builder()

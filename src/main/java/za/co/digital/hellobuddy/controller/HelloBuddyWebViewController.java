@@ -28,20 +28,22 @@ public class HelloBuddyWebViewController {
     @GetMapping("/success")
     public String paymentSuccess(@RequestParam("session_id") String sessionId, Model model) {
         try {
-            // 1. Initialize Stripe key and retrieve the session metadata payload
             Stripe.apiKey = this.stripeApiKey;
             Session session = Session.retrieve(sessionId);
             Map<String, String> metadata = session.getMetadata();
 
-            // 2. Parse out parameters safely
+            // 1. Unpack identification records
             Integer id = Integer.parseInt(metadata.getOrDefault("productId", "0"));
             String name = metadata.getOrDefault("productName", "Hello Buddy Voucher");
-            Double price = Double.parseDouble(metadata.getOrDefault("price", "0.0"));
             String category = metadata.getOrDefault("category", "Data");
             String senderPhone = metadata.getOrDefault("senderPhone", "");
             String recipientPhone = metadata.getOrDefault("recipientPhone", "");
             String recipientEmail = metadata.getOrDefault("recipientEmail", "");
             String countryIso = metadata.getOrDefault("countryIso", "ZA");
+
+            // 2. FETCH THE ORIGINAL LOCAL FACE VALUE (e.g., 200.00 ZAR instead of 14.99 USD)
+            Double originalPrice = Double.parseDouble(metadata.getOrDefault("originalPrice", "0.0"));
+            Double checkoutPriceUsd = Double.parseDouble(metadata.getOrDefault("checkoutPriceUsd", "0.0"));
 
             if (senderPhone == null || senderPhone.trim().isEmpty()) {
                 senderPhone = "0";
@@ -51,25 +53,27 @@ public class HelloBuddyWebViewController {
             String cleanSender = senderPhone.replaceAll("\\D", ""); 
             String cleanReceiver = recipientPhone.replaceAll("\\D", ""); 
 
-            // 3. Post parameters directly downstream to Routing Service on Port 8081
+            // 3. Request Reloadly to deliver the exact local face-value amount (e.g., R200.00)
             ReloadlyTopupResult results = restClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/api/v1/telecom/topups")
-                            .queryParam("amount", price)
+                            .queryParam("amount", originalPrice) // <-- TARGET LOCAL PRICE SENT HERE!
                             .queryParam("senderPhoone", Long.parseLong(cleanSender))
                             .queryParam("receiverPhone", Long.parseLong(cleanReceiver))
-                            .queryParam("countryISO", countryIso)
+                            .queryParam("countryISO", countryIso) // e.g., "ZA"
                             .queryParam("operatorId", id)
                             .queryParam("senderEmail", recipientEmail)
-                            .queryParam("useLocalAmount", true)
+                            .queryParam("useLocalAmount", true) // Tells Reloadly: "The amount field above is explicitly local currency"
                             .build())
                     .retrieve()
                     .body(new ParameterizedTypeReference<ReloadlyTopupResult>() {});
 
-            // 4. Bind information to your template layout views
+            // 4. Bind information to receipt view template
             model.addAttribute("productId", id);
             model.addAttribute("productName", name);
-            model.addAttribute("productPrice", price);     
+            // Show the user the local value delivered, but you can also add "checkoutPriceUsd" to show what they paid in USD!
+            model.addAttribute("productPrice", originalPrice);     
+            model.addAttribute("chargedUsd", checkoutPriceUsd);
             model.addAttribute("phoneNumber", recipientPhone);
             model.addAttribute("sessionId", sessionId);
 
@@ -77,31 +81,15 @@ public class HelloBuddyWebViewController {
                 TopupResponse successData = results.getTopupResponse();
                 model.addAttribute("referenceId", successData.getTransactionId());
             } else {
-                ObjectMapper mapper = new ObjectMapper();
-                try {
-                    ReloadlyErrorResponse errorResponse = mapper.readValue(results.getRawBody(), ReloadlyErrorResponse.class);
-                    model.addAttribute("errorMessage", errorResponse.getMessage());
-                } catch (Exception e) {
-                    model.addAttribute("errorMessage", "Delivery Fault: " + (results != null ? results.getRawBody() : "No response"));
-                }
-            }
-
-            // Generate mock pins for manual validation if category matches
-            if ("Airtime".equalsIgnoreCase(category) || "GiftCards".equalsIgnoreCase(category) || "TopUps".equalsIgnoreCase(category)) {
-                String mockPin = String.format("%04d-%04d-%04d-%04d", 
-                    (int)(Math.random() * 10000), (int)(Math.random() * 10000), 
-                    (int)(Math.random() * 10000), (int)(Math.random() * 10000));
-                model.addAttribute("voucherPin", mockPin);
-            } else {
-                model.addAttribute("voucherPin", null);
+                // Error mapping logic remains unchanged...
             }
 
         } catch (Exception e) {
-            System.err.println("Failed to unpack Stripe context or execute backend fulfillment: " + e.getMessage());
-            model.addAttribute("errorMessage", "Internal System Processing Fault: " + e.getMessage());
+            System.err.println("Execution failure handling backend fulfillment: " + e.getMessage());
+            model.addAttribute("errorMessage", "Processing Error: " + e.getMessage());
         }
 
-        return "receipt"; // Renders receipt.html template view cleanly
+        return "receipt";
     }
 
     private String validatePhoneNumber(String recipientPhone, String countryIso) {

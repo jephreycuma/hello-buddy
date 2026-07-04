@@ -85,7 +85,8 @@ public class HelloBuddyInnerMemory {
                             displayPrice,
                             type,
                             detailedName,
-                            prod.getLogoUrl()
+                            prod.getLogoUrl(),
+                            prod.getUsdPrice()
                     );
 
                     if ("DATA BUNDLES".equalsIgnoreCase(prod.getType())) {
@@ -144,7 +145,8 @@ private void generateLocalDenominations(String cleanedNetwork, Product prod,List
                  displayPrice,
                  prod.getType(),
                  "",
-                 prod.getLogoUrl()
+                 prod.getLogoUrl(),
+                 prod.getUsdPrice()
          );
     	 topupList.add(dto); 
     	}

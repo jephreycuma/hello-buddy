@@ -594,12 +594,24 @@
         function initiatePurchaseProcess(productStringData) {
             const product = JSON.parse(productStringData);
             selectedProductContext = product;
-            verifiedPhoneNumber = "";
+            verifiedPhoneNumber = "";            
+
+            let baseUsdCost = product.usdPrice && parseFloat(product.usdPrice) > 0 
+            ? parseFloat(product.usdPrice) 
+            : (parseFloat(product.price) * 0.055);
+
+            // 3. Apply your Retail Strategy (Wholesale Cost + Your Markup Buffer)
+            let retailUsdPrice = baseUsdCost + 0.99; // Adding a $0.99 platform markup
+            
+            if (retailUsdPrice < 0.50) {
+                retailUsdPrice = 0.50;
+            }
 
             // FIX: Explicitly populate the hidden native inputs right now
             document.getElementById('hiddenProductId').value = product.id || "";
             document.getElementById('hiddenProductName').value = product.name || "";
-            document.getElementById('hiddenProductPrice').value = product.price || "";
+            document.getElementById('hiddenProductPrice').value = retailUsdPrice.toFixed(2);
+            document.getElementById('hiddenProductPrice').setAttribute('data-original-price', product.price);
             document.getElementById('hiddenProductCategory').value = product.itemCategory || "";
 
             if (product.itemCategory === "TopUps" || product.itemCategory === "Data") {
@@ -958,6 +970,8 @@
             const productPrice = document.getElementById('hiddenProductPrice').value;
             const productCategory = document.getElementById('hiddenProductCategory').value;
             
+            const originalPrice = document.getElementById('hiddenProductPrice').getAttribute('data-original-price');	
+            
             // Retrieve validated delivery metrics populated by Step 1 (phoneModal)
             const senderPhone = document.getElementById('senderPhoneInput').value;
             const recipientPhone = document.getElementById('hiddenRecipientPhone').value;
@@ -965,7 +979,8 @@
             
             // Derive currency type safely based on current active storefront context rules
             const currentRegion = document.getElementById('countrySelector').value; // "ZA" or "NG"
-            const currency = (currentRegion === 'NG' || (productName && productName.includes('₦'))) ? 'ngn' : 'zar';
+            const currency = 'usd';
+            //const currency = (currentRegion === 'NG' || (productName && productName.includes('₦'))) ? 'ngn' : 'zar';
 
             // Show UI loading state on the button if available
             const payButton = document.getElementById('btnPaySubmit');
@@ -986,8 +1001,10 @@
             	        productId: productId,
             	        productName: productName,
             	        price: parseFloat(productPrice),
+            	        originalPrice: originalPrice,
             	        category: productCategory,
             	        currency: currency.toLowerCase(),
+            	        countryIso: currentRegion,
             	        senderPhone: senderPhone,
             	        recipientPhone: recipientPhone,
             	        recipientEmail: recipientEmail

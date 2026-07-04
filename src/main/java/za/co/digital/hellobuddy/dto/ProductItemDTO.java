@@ -11,12 +11,13 @@ public class ProductItemDTO {
 	private String type;
 	private String description;
 	private String logoUrl;
+    private Double usdPrice;
 
 	public ProductItemDTO() {
 	}
 
 	public ProductItemDTO(Integer id, String name, String network, BigDecimal price, String displayPrice, String type,
-			String description,String logoUrl) {
+			String description,String logoUrl,Double usdPrice) {
 		this.id = id;
 		this.name = name;
 		this.network = network;
@@ -25,6 +26,7 @@ public class ProductItemDTO {
 		this.type = type;
 		this.description = description;
 		this.logoUrl = logoUrl;
+		this.usdPrice = usdPrice;
 	}
 
 	// Include getters and setters for the new network field
@@ -91,5 +93,13 @@ public class ProductItemDTO {
 
 	public void setLogoUrl(String logoUrl) {
 		this.logoUrl = logoUrl;
+	}
+
+	public Double getUsdPrice() {
+		return usdPrice;
+	}
+
+	public void setUsdPrice(Double usdPrice) {
+		this.usdPrice = usdPrice;
 	}
 }

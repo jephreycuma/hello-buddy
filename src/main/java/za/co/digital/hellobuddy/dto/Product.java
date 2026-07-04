@@ -5,16 +5,21 @@ public class Product {
 	private String network; // VODACOM, MTN, CELL_C, TELKOM
 	private String type; // AIRTIME, DATA
 	private String pinType; // PIN, PINLESS
-	private double price;
+	private double price; // Face value (e.g., 16.00 ZAR)
 	private String description;
 	private boolean generateLocalDenominations;
 	private String currencySymbol; // New field for currency symbol
 	private String destinationCurrencyCode; // New field for destination currency code
 	private String logoUrl;
+	
+	// FX Data Translation Fields
+	private Double fxRate;      // Exchange rate from Reloadly (e.g., 18.15)
+	private Double usdPrice;    // Calculated wholesale or markup cost in USD
 
-	// Constructor
+	// Updated Constructor
 	public Product(String id, String network, String type, String pinType, double price, String description,
-			boolean generateLocalDenominations, String currencySymbol, String destinationCurrencyCode,String logoUrl) {
+			boolean generateLocalDenominations, String currencySymbol, String destinationCurrencyCode, String logoUrl,
+			Double fxRate) {
 		this.id = id;
 		this.network = network;
 		this.type = type;
@@ -22,9 +27,17 @@ public class Product {
 		this.price = price;
 		this.description = description;
 		this.generateLocalDenominations = generateLocalDenominations;
-		this.currencySymbol = currencySymbol; // Initialize the new field
-		this.destinationCurrencyCode = destinationCurrencyCode; // Initialize the new field
+		this.currencySymbol = currencySymbol; 
+		this.destinationCurrencyCode = destinationCurrencyCode; 
 		this.logoUrl = logoUrl;
+		
+		// Map the FX context details dynamically
+		this.fxRate = fxRate;
+		if (fxRate != null && fxRate > 0) {
+			this.usdPrice = this.price / fxRate;
+		} else {
+			this.usdPrice = 0.0;
+		}
 	}
 
 	// Getters and Setters
@@ -82,5 +95,25 @@ public class Product {
 
 	public void setLogoUrl(String logoUrl) {
 		this.logoUrl = logoUrl;
+	}
+
+	public Double getFxRate() {
+		return fxRate;
+	}
+
+	// Setting the fxRate automatically updates the calculated usdPrice field
+	public void setFxRate(Double fxRate) {
+		this.fxRate = fxRate;
+		if (this.price > 0 && fxRate != null && fxRate > 0) {
+			this.usdPrice = this.price / fxRate;
+		}
+	}
+
+	public Double getUsdPrice() {
+		return usdPrice;
+	}
+
+	public void setUsdPrice(Double usdPrice) {
+		this.usdPrice = usdPrice;
 	}
 }
