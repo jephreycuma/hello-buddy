@@ -6,11 +6,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.client.RestClient;
 
 import za.co.digital.hellobuddy.dto.Product;
 import za.co.digital.hellobuddy.dto.ProductItemDTO;
+
 
 public class HelloBuddyInnerMemory {
 	
@@ -21,19 +23,19 @@ public class HelloBuddyInnerMemory {
 	private static long nigeriaLastLoadTime = 0;
 	private static long TIME_OUT_IN_MINUTES = 240000;
 	
-	private HelloBuddyInnerMemory(RestClient restClient, String countryIso) {
-		loadReloadlyProducts(restClient, countryIso);
+	private HelloBuddyInnerMemory(RestClient restClient, String countryIso, double platformMarkup) {
+		loadReloadlyProducts(restClient, countryIso, platformMarkup);
 	}
 
-	public static HelloBuddyInnerMemory getInstance(RestClient restClient, String countryIso) {
+	public static HelloBuddyInnerMemory getInstance(RestClient restClient, String countryIso, double platformMarkup) {
 		if(instance == null) {
-			instance = new HelloBuddyInnerMemory(restClient, countryIso);
+			instance = new HelloBuddyInnerMemory(restClient, countryIso, platformMarkup);
 		}else if(catalogMaps.get(countryIso) == null ||
 				(countryIso.equals("ZA") && southAfricaLastLoadTime < (System.currentTimeMillis() - TIME_OUT_IN_MINUTES))) {
-			instance = new HelloBuddyInnerMemory(restClient, countryIso);	
+			instance = new HelloBuddyInnerMemory(restClient, countryIso, platformMarkup);	
 		}else if(catalogMaps.get(countryIso) == null ||
 				(countryIso.equals("NG") && nigeriaLastLoadTime < (System.currentTimeMillis() - TIME_OUT_IN_MINUTES))) {
-			instance = new HelloBuddyInnerMemory(restClient, countryIso);
+			instance = new HelloBuddyInnerMemory(restClient, countryIso, platformMarkup);
 		}
 		return instance;
 	}
@@ -42,13 +44,15 @@ public class HelloBuddyInnerMemory {
 		return catalogMaps.get(countryIso);
 	}
 	
-	private void loadReloadlyProducts(RestClient restClient, String countryIso) {
+	private void loadReloadlyProducts(RestClient restClient, String countryIso, double platformMarkup) {
 		
 		 // Initialize the targeted container array contexts
         List<ProductItemDTO> airtimeList = new ArrayList<>();
         List<ProductItemDTO> topupList = new ArrayList<>();
         List<ProductItemDTO> dataList = new ArrayList<>();
         List<ProductItemDTO> giftCardsList = new ArrayList<>();
+        
+        System.out.println("Platform markup: " +platformMarkup);
         
         try {
             // 1. Fetch the products from the remote routing-service API endpoint
@@ -70,7 +74,7 @@ public class HelloBuddyInnerMemory {
                     
                     String detailedName = cleanedNetwork + " " + displayPrice;
                     
-                    String type = prod.getType();
+                    String type = prod.getType();                   
                     
                     String description = (prod.getDescription() != null && !prod.getDescription().trim().isEmpty()) 
                                          ? prod.getDescription() 
@@ -86,7 +90,7 @@ public class HelloBuddyInnerMemory {
                             type,
                             detailedName,
                             prod.getLogoUrl(),
-                            prod.getUsdPrice()
+                            prod.getUsdPrice()+platformMarkup
                     );
 
                     if ("DATA BUNDLES".equalsIgnoreCase(prod.getType())) {
@@ -94,7 +98,7 @@ public class HelloBuddyInnerMemory {
                     } else if ("AIRTIME VOUCHER".equalsIgnoreCase(prod.getType())) {
                         airtimeList.add(dto);
                     } else if ("AIRTIME TOPUP".equalsIgnoreCase(prod.getType())) {
-                    	generateLocalDenominations(cleanedNetwork, prod,topupList);
+                    	generateLocalDenominations(cleanedNetwork, prod,topupList,platformMarkup);
                         //topupList.add(dto);                        
                     } else {
                         giftCardsList.add(dto);
@@ -129,7 +133,7 @@ public class HelloBuddyInnerMemory {
 		}
 	}
 	
-private void generateLocalDenominations(String cleanedNetwork, Product prod,List<ProductItemDTO> topupList) {
+private void generateLocalDenominations(String cleanedNetwork, Product prod,List<ProductItemDTO> topupList,double platformMarkup) {
     	
     	String []denominations = denominations(prod);
     	for(String denomination : denominations) {
@@ -146,7 +150,7 @@ private void generateLocalDenominations(String cleanedNetwork, Product prod,List
                  prod.getType(),
                  "",
                  prod.getLogoUrl(),
-                 prod.getUsdPrice()
+                 prod.getUsdPrice()+platformMarkup
          );
     	 topupList.add(dto); 
     	}

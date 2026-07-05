@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 
 import java.math.BigDecimal;
@@ -18,6 +19,9 @@ import java.util.Map;
 
 @Controller
 public class StorefrontController {
+	
+	@Value("${platform.markup}")
+	private double platformMarkup;
 
     // Initialize RestClient targeting your routing-service system deployment base
     private final RestClient restClient = RestClient.builder()
@@ -27,7 +31,7 @@ public class StorefrontController {
     @GetMapping("/") // Keeping mapped to a distinct path to avoid collisions with ShopController
     public String showStorefront(@RequestParam(value = "country", required = false, defaultValue = "ZA") String countryIso, 
     	    Model model) {
-        Map<String, List<ProductItemDTO>> catalogMap = HelloBuddyInnerMemory.getInstance(restClient, countryIso).getReloadlyProducts(countryIso);
+        Map<String, List<ProductItemDTO>> catalogMap = HelloBuddyInnerMemory.getInstance(restClient, countryIso,platformMarkup).getReloadlyProducts(countryIso);
         
         model.addAttribute("javaCatalogData", catalogMap);
 

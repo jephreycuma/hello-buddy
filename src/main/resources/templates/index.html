@@ -9,49 +9,45 @@
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
-    <!-- Header Banner Section -->
-    <header class="w-full bg-gray-900 text-white py-6 shadow-md border-b border-red-600">
-        <div class="max-w-4xl mx-auto flex items-center justify-center space-x-6 px-4">
-            <div class="text-center md:text-left">
-                <h1 class="text-3xl font-extrabold tracking-wide text-white">
-                    Hello Buddy
-                </h1>
-                <p class="text-sm font-medium text-gray-400 mt-1 tracking-normal">
-                    Your Friendly Digital Storefront for Airtime & Data
-                </p>
-            </div>
-            
-            <svg class="w-10 h-10 animate-bounce mt-1" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="32" cy="24" r="14" fill="#FDBA74"/>
-                <path d="M18 20C18 13.3726 24.268 8 32 8C39.732 8 46 13.3726 46 20C46 21.5 45 22 43 21C40 19.5 37 18 32 18C27 18 24 19.5 21 21C19 22 18 21.5 18 20Z" fill="#78350F"/>
-                <circle cx="27" cy="23" r="2" fill="#1F2937"/>
-                <circle cx="37" cy="23" r="2" fill="#1F2937"/>
-                <path d="M27 29C27 31.7614 29.2386 34 32 34C34.7614 34 37 31.7614 37 29" stroke="#1F2937" stroke-width="2.5" stroke-linecap="round"/>
-                <path d="M16 54C16 44 23.1634 38 32 38C40.8366 38 48 44 48 54V60H16V54Z" fill="#EF4444"/>
-                <path d="M46 44L56 32C57.5 30 59.5 31.5 58.5 33.5L51 49" stroke="#FDBA74" stroke-width="5" stroke-linecap="round"/>
-                <path d="M46 44L51 49" stroke="#EF4444" stroke-width="6" stroke-linecap="round"/>
-                <path d="M18 44L10 52" stroke="#FDBA74" stroke-width="5" stroke-linecap="round"/>
-            </svg>
-        </div>
-    </header>
+	<!-- Header Banner Section -->
+	<header class="w-full bg-gray-900 text-white py-6 shadow-md border-b border-red-600">
+	    <div class="max-w-4xl mx-auto px-4">
+	        <div class="text-center md:text-left">
+	            <!-- Wrapped text and SVG inside a flex row to align them on the same line -->
+	            <h1 class="text-3xl font-extrabold tracking-wide text-white flex items-center justify-center md:justify-start space-x-3">
+	                <span>Hello Buddy</span>
+	                
+	                <!-- Handshake image inline right next to the text -->
+	                <svg class="w-8 h-8 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-label="Handshake icon">
+	                    <image href="/images/images.png" x="0" y="0" height="24" width="24" />
+	                </svg>
+	            </h1>
+	            
+	            <p class="text-sm font-medium text-gray-400 mt-2 tracking-normal">
+	                Purchase international airtime and data top-ups for family and friends through our secure digital platform.
+	            </p>
+	        </div>
+	    </div>
+	</header>
 
     <!-- Country Selector Dropdown Region -->
-    <div class="w-full bg-gray-100 border-b border-gray-200 py-3">
-        <div class="max-w-xl mx-auto px-4 flex items-center justify-between">
-            <label for="countrySelector" class="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                Select Region:
-            </label>
-            <div class="relative min-w-[180px]">
-                <select id="countrySelector" onchange="handleCountryChange(this.value)" class="w-full bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-700 shadow-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 appearance-none cursor-pointer">
-                    <option value="ZA">South Africa (ZA)</option>
-                    <option value="NG">Nigeria (NG)</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-            </div>
-        </div>
-    </div>
+	   <div class="w-full bg-gray-100 border-b border-gray-200 py-3">
+	    <!-- Changed 'justify-between' to 'justify-start' and added 'space-x-3' to tighten the gap -->
+	    <div class="max-w-xl mx-auto px-4 flex items-center justify-start space-x-3">
+	        <label for="countrySelector" class="text-xs font-bold text-gray-600 uppercase tracking-wider shrink-0">
+	            Select Country:
+	        </label>
+	        <div class="relative min-w-[180px]">
+	            <select id="countrySelector" onchange="handleCountryChange(this.value)" class="w-full bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-700 shadow-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 appearance-none cursor-pointer">
+	                <option value="ZA">South Africa (ZA)</option>
+	                <option value="NG">Nigeria (NG)</option>
+	            </select>
+	            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+	                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+	            </div>
+	        </div>
+	    </div>
+	</div>
 
     <!-- Navigation Tabs Section -->
     <nav class="w-full bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
@@ -293,7 +289,7 @@
                             <span class="text-2xl">✉️</span>
                             <div>
                                 <span class="block font-bold text-gray-800 text-sm">Email Helpdesk Desk</span>
-                                <span class="text-xs text-gray-500">jephreycuma@hellobuddy.co.za</span>
+                                <span class="text-xs text-gray-500">support@hellobuddy.co.za</span>
                             </div>
                         </a>
                         <a href="tel:+27728703170" class="flex items-center space-x-4 bg-red-50 hover:bg-red-100 p-3.5 rounded-xl border border-red-200 transition">
@@ -601,11 +597,11 @@
             : (parseFloat(product.price) * 0.055);
 
             // 3. Apply your Retail Strategy (Wholesale Cost + Your Markup Buffer)
-            let retailUsdPrice = baseUsdCost + 0.99; // Adding a $0.99 platform markup
+            let retailUsdPrice = baseUsdCost; // Adding a $0.99 platform markup
             
-            if (retailUsdPrice < 0.50) {
+           /* if (retailUsdPrice < 0.50) {
                 retailUsdPrice = 0.50;
-            }
+            }*/
 
             // FIX: Explicitly populate the hidden native inputs right now
             document.getElementById('hiddenProductId').value = product.id || "";
@@ -749,144 +745,6 @@
 
         function closePaymentModal() {
             document.getElementById('paymentModal').classList.add('hidden');
-        }
-
-        /**
-         * Automatically inserts a '/' after the first two digits are typed
-         */
-        function formatCardExpiry(input) {
-            // 1. Strip out anything that isn't a digit
-            let value = input.value.replace(/\D/g, '');
-            
-            // 2. If they've typed more than 2 digits, inject the slash in the middle
-            if (value.length > 2) {
-                input.value = value.substring(0, 2) + '/' + value.substring(2, 4);
-            } else {
-                input.value = value;
-            }
-        }
-
-        /**
-         * Handles backspacing so the user can easily clear the slash 
-         * without getting stuck in an infinite formatting loop.
-         */
-        function handleExpiryBackspace(event, input) {
-            if (event.key === 'Backspace' && input.value.length === 3) {
-                input.value = input.value.substring(0, 2);
-                event.preventDefault();
-            }
-        }
-
-        function validateLuhn(cardNumber) {
-            const digits = cardNumber.replace(/\D/g, "");
-            if (digits.length < 13 || digits.length > 19) return false;
-            let sum = 0;
-            let isSecond = false;
-            for (let i = digits.length - 1; i >= 0; i--) {
-                let d = parseInt(digits.charAt(i), 10);
-                if (isSecond) {
-                    d *= 2;
-                    if (d > 9) d -= 9;
-                }
-                sum += d;
-                isSecond = !isSecond;
-            }
-            return (sum % 10 === 0);
-        }
-
-        function validateExpiry(expiryValue) {
-            const parts = expiryValue.split('/');
-            if (parts.length !== 2) return { valid: false, error: "Please enter expiry date in MM/YY format." };
-
-            const month = parseInt(parts[0], 10);
-            const yearShort = parseInt(parts[1], 10);
-
-            if (isNaN(month) || isNaN(yearShort) || parts[0].length !== 2 || parts[1].length !== 2) {
-                return { valid: false, error: "Please enter a valid MM/YY string layout." };
-            }
-            if (month < 1 || month > 12) {
-                return { valid: false, error: `${parts[0]} is not a valid month.` };
-            }
-
-            const currentDate = new Date();
-            const currentYearShort = currentDate.getFullYear() % 100; // 26
-            const currentMonth = currentDate.getMonth() + 1;           // 6
-
-            const fullYear = 2000 + yearShort;
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-            if (yearShort < currentYearShort || (yearShort === currentYearShort && month < currentMonth)) {
-                return { valid: false, error: `The card already expired since ${monthNames[month - 1]} ${fullYear} has passed.` };
-            }
-            return { valid: true };
-        }
-
-        function executeMockPayment(event) {
-            event.preventDefault();
-            const errorAlert = document.getElementById('paymentErrorAlert');
-            const submitBtn = document.getElementById('btnPaySubmit');
-            
-            errorAlert.classList.add('hidden');
-
-            // 1. Check: Luhn validation
-            const rawCardNumber = document.getElementById('cardNumberInput').value;
-            if (!validateLuhn(rawCardNumber)) {
-                errorAlert.textContent = "The credit card number fails checksum validation. Please check your entries.";
-                errorAlert.classList.remove('hidden');
-                document.getElementById('cardNumberInput').focus();
-                return;
-            }
-
-            // 2. Check: Expiry validation check
-            const expiryValue = document.getElementById('cardExpiryInput').value;
-            const expiryCheck = validateExpiry(expiryValue);
-            if (!expiryCheck.valid) {
-                errorAlert.textContent = expiryCheck.error;
-                errorAlert.classList.remove('hidden');
-                document.getElementById('cardExpiryInput').focus();
-                return;
-            }
-
-            // 3. Payment backend submission sequence
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Processing Authorization...";
-
-            fetch('/api/v1/payments/charge', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    cardNumber: rawCardNumber,
-                    amount: selectedProductContext.price,
-                    productId: selectedProductContext.id,
-                    senderPhone: verifiedSenderPhone,
-                    recipientPhone: verifiedRecipientPhone,
-                    recipientEmail: verifiedReceiverEmail
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('hiddenProductId').value = selectedProductContext.id;
-                    document.getElementById('hiddenProductName').value = selectedProductContext.name;
-                    document.getElementById('hiddenProductPrice').value = selectedProductContext.price;
-                    document.getElementById('hiddenTxnId').value = data.transactionId;
-                    document.getElementById('hiddenProductCategory').value = selectedProductContext.itemCategory;
-                    
-                    document.getElementById('hiddenPhoneNumber').value = verifiedSenderPhone; 
-                    document.getElementById('hiddenRecipientPhone').value = verifiedRecipientPhone; 
-                    document.getElementById('hiddenRecipientEmail').value = verifiedReceiverEmail; 
-                    
-                    document.getElementById('purchaseRedirectForm').submit();
-                } else {
-                    throw new Error(data.message || "Transaction unauthorized.");
-                }
-            })
-            .catch(err => {
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Authorize Payment";
-                errorAlert.textContent = err.message || "Payment verification timed out.";
-                errorAlert.classList.remove('hidden');
-            });
         }
 
         /**
