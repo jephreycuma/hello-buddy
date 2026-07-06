@@ -10,10 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestClient;
 import com.stripe.Stripe;
 import com.stripe.model.checkout.Session;
-import tools.jackson.databind.ObjectMapper;
 import za.co.digital.hellobuddy.dto.ReloadlyTopupResult;
 import za.co.digital.hellobuddy.dto.TopupResponse;
-import za.co.digital.hellobuddy.errors.ReloadlyErrorResponse;
 
 @Controller
 public class HelloBuddyWebViewController {
@@ -41,7 +39,7 @@ public class HelloBuddyWebViewController {
             String recipientEmail = metadata.getOrDefault("recipientEmail", "");
             String countryIso = metadata.getOrDefault("countryIso", "ZA");
 
-            // 2. FETCH THE ORIGINAL LOCAL FACE VALUE (e.g., 200.00 ZAR instead of 14.99 USD)
+            // 2. Fetch prices
             Double originalPrice = Double.parseDouble(metadata.getOrDefault("originalPrice", "0.0"));
             Double checkoutPriceUsd = Double.parseDouble(metadata.getOrDefault("checkoutPriceUsd", "0.0"));
 
@@ -53,26 +51,30 @@ public class HelloBuddyWebViewController {
             String cleanSender = senderPhone.replaceAll("\\D", ""); 
             String cleanReceiver = recipientPhone.replaceAll("\\D", ""); 
 
-            // 3. Request Reloadly to deliver the exact local face-value amount (e.g., R200.00)
+            // 3. Request Reloadly to deliver
             ReloadlyTopupResult results = restClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/api/v1/telecom/topups")
-                            .queryParam("amount", originalPrice) // <-- TARGET LOCAL PRICE SENT HERE!
+                            .queryParam("amount", originalPrice)
                             .queryParam("senderPhoone", Long.parseLong(cleanSender))
                             .queryParam("receiverPhone", Long.parseLong(cleanReceiver))
-                            .queryParam("countryISO", countryIso) // e.g., "ZA"
+                            .queryParam("countryISO", countryIso)
                             .queryParam("operatorId", id)
                             .queryParam("senderEmail", recipientEmail)
-                            .queryParam("useLocalAmount", true) // Tells Reloadly: "The amount field above is explicitly local currency"
+                            .queryParam("useLocalAmount", true)
                             .build())
                     .retrieve()
                     .body(new ParameterizedTypeReference<ReloadlyTopupResult>() {});
 
-            // 4. Bind information to receipt view template
+            // 4. Resolve Currency Symbol cleanly
+            // Fallback checking sequence: session currency string -> country ISO string
+            String currencySymbol = getCurrencySymbol(session.getCurrency(), countryIso);
+
+            // 5. Bind information to receipt view template
             model.addAttribute("productId", id);
             model.addAttribute("productName", name);
-            // Show the user the local value delivered, but you can also add "checkoutPriceUsd" to show what they paid in USD!
             model.addAttribute("productPrice", originalPrice);     
+            model.addAttribute("currencySymbol", currencySymbol); // <-- NEW ATTR PASSED TO VIEW
             model.addAttribute("chargedUsd", checkoutPriceUsd);
             model.addAttribute("phoneNumber", recipientPhone);
             model.addAttribute("sessionId", sessionId);
@@ -81,7 +83,7 @@ public class HelloBuddyWebViewController {
                 TopupResponse successData = results.getTopupResponse();
                 model.addAttribute("referenceId", successData.getTransactionId());
             } else {
-                // Error mapping logic remains unchanged...
+                // Error mapping logic...
             }
 
         } catch (Exception e) {
@@ -90,6 +92,34 @@ public class HelloBuddyWebViewController {
         }
 
         return "receipt";
+    }
+
+    /**
+     * Determines the appropriate local currency symbol using Stripe currency or Country ISO fallbacks.
+     */
+    private String getCurrencySymbol(String stripeCurrency, String countryIso) {
+        /*if (stripeCurrency != null && !stripeCurrency.isEmpty()) {
+            switch (stripeCurrency.toLowerCase()) {
+                case "zar": return "R";
+                case "ngn": return "₦";
+                case "usd": return "$";
+                case "gbp": return "£";
+                case "eur": return "€";
+                case "kes": return "KSh";
+                case "ghs": return "GH₵";
+            }
+        }*/
+        
+        // Fallback safety layer checking via Metadata Country code if currency isn't captured
+        if (countryIso != null) {
+            switch (countryIso.toUpperCase()) {
+                case "ZA": return "R";
+                case "NG": return "₦";
+                case "KE": return "KSh";
+                case "GH": return "GH₵";
+            }
+        }
+        return "R"; // Final global default
     }
 
     private String validatePhoneNumber(String recipientPhone, String countryIso) {

@@ -2,10 +2,10 @@ package za.co.digital.hellobuddy.controller;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Value; // Import this
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.stripe.Stripe; // Import this
+import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
@@ -14,7 +14,6 @@ import com.stripe.param.checkout.SessionCreateParams;
 @RequestMapping("/api/stripe")
 public class MockPaymentApiController {
 
-    // 1. Inject the key directly from application.properties
     @Value("${stripe.api.key}")
     private String stripeApiKey;
     @Value("${hello.buddy.url}")
@@ -27,13 +26,10 @@ public class MockPaymentApiController {
         try {
             System.out.println("Hello Buddy frontend received checkout payload: " + payload);
             
-            // 2. CRITICAL: Authenticate your Stripe SDK using your secret key
             Stripe.apiKey = this.stripeApiKey;
-            String productPriceUsd = payload.get("price").toString(); // The $14.99 USD retail checkout amount
-         // Safely fetch your custom raw original localized price sent from the frontend DOM attributes
+            String productPriceUsd = payload.get("price").toString(); 
             String originalLocalPrice = (String) payload.getOrDefault("originalPrice", "0.0"); 
-            String currentRegion = (String) payload.getOrDefault("countryIso", "ZA"); // Storefront context ("ZA" or "NG")
-            
+            String currentRegion = (String) payload.getOrDefault("countryIso", "ZA"); 
             String productName = (String) payload.getOrDefault("productName", "Hello Buddy Voucher");
             String currencyCode = (String) payload.getOrDefault("currency", "zar");
             
@@ -47,40 +43,44 @@ public class MockPaymentApiController {
                 return ResponseEntity.badRequest().body(response);
             }
             
+            // Clean up Country ISO fallback based on incoming currency parameters
+            String resolvedCountryIso = currentRegion;
+            if (currencyCode.equalsIgnoreCase("ngn")) {
+                resolvedCountryIso = "NG";
+            } else if (currencyCode.equalsIgnoreCase("zar")) {
+                resolvedCountryIso = "ZA";
+            }
+
             Map<String, String> metadata = new HashMap<>();
             metadata.put("productId", (String) payload.getOrDefault("productId", ""));
-            metadata.put("productName", (String) payload.getOrDefault("productName", ""));
-            metadata.put("checkoutPriceUsd", productPriceUsd); // Kept for bookkeeping/receipts
+            metadata.put("productName", productName);
+            metadata.put("checkoutPriceUsd", productPriceUsd); 
             metadata.put("originalPrice", originalLocalPrice);
-            //metadata.put("price", priceObj != null ? priceObj.toString() : "0.0");
             metadata.put("category", (String) payload.getOrDefault("category", ""));
             metadata.put("senderPhone", (String) payload.getOrDefault("senderPhone", ""));
             metadata.put("recipientPhone", (String) payload.getOrDefault("recipientPhone", ""));
             metadata.put("recipientEmail", (String) payload.getOrDefault("recipientEmail", ""));
-            metadata.put("countryIso", currentRegion);
-            // Derive country code based on the storefront region
-            metadata.put("countryIso", currencyCode.equalsIgnoreCase("ngn") ? "NG" : "ZA");
+            metadata.put("countryIso", resolvedCountryIso); // FIXED: No longer blindly overwrites to "ZA"
 
-            // Build checkout session parameters
             long stripeAmount = Math.round(orderAmount * 100);
             SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl(helloBuddyUrl+"/success?session_id={CHECKOUT_SESSION_ID}")
-                .setCancelUrl(helloBuddyUrl+"/")
+                .setSuccessUrl(helloBuddyUrl + "/success?session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl(helloBuddyUrl + "/")
                 .putAllMetadata(metadata)
                 .addLineItem(
                     SessionCreateParams.LineItem.builder()
                         .setQuantity(1L)
                         .setPriceData(
                             SessionCreateParams.LineItem.PriceData.builder()
-                                .setCurrency(currencyCode.toLowerCase())
+                                .setCurrency(currencyCode.toLowerCase()) // Dynamically processes ngn, zar, usd, etc.
                                 .setUnitAmount(stripeAmount)
                                 .setProductData(
                                     SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                         .setName(productName)
                                         .build()
-                             )
-                             .build()
+                                )
+                                .build()
                         )
                         .build()
                 )
