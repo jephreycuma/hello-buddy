@@ -12,6 +12,8 @@ public class ProductItemDTO {
 	private String description;
 	private String logoUrl;
     private Double usdPrice;
+    private double minLimit;
+    private double maxLimit; 
 
 	public ProductItemDTO() {
 	}
@@ -101,5 +103,21 @@ public class ProductItemDTO {
 
 	public void setUsdPrice(Double usdPrice) {
 		this.usdPrice = usdPrice;
+	}
+
+	public double getMinLimit() {
+		return minLimit;
+	}
+
+	public void setMinLimit(double minLimit) {
+		this.minLimit = minLimit;
+	}
+
+	public double getMaxLimit() {
+		return maxLimit;
+	}
+
+	public void setMaxLimit(double maxLimit) {
+		this.maxLimit = maxLimit;
 	}
 }

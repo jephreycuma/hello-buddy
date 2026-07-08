@@ -479,18 +479,25 @@
             if (category === 'TopUps' && networkName !== 'All') {
                 const realOperatorId = filteredItems.length > 0 ? filteredItems[0].id : 0;
                 if (typeof appendAnyAmountCard === 'function') {
-                    appendAnyAmountCard(grid, networkName, realOperatorId);
+                	appendAnyAmountCard(grid, networkName, filteredItems[0]);
                 }
             }
         }
 
-        function appendAnyAmountCard(grid, networkName, operatorId) {
+        function appendAnyAmountCard(grid, networkName, productItem) {
             const card = document.createElement('div');
             card.className = "bg-gradient-to-b from-white to-gray-50 rounded-2xl p-5 shadow-sm border-2 border-dashed border-red-200 flex flex-col justify-between hover:border-red-300 transition duration-200";
             
-            const currencySymbol = currentCountryIso === 'NG' ? '₦' : 'R';
-            const minLimit = currentCountryIso === 'NG' ? '100.00' : '2.00';
-            const maxLimit = currentCountryIso === 'NG' ? '50000.00' : '1000.00';
+            // Extract properties directly from your backend ProductItemDTO structure
+            const operatorId = productItem.id;
+            
+            // Fallback logic using the display price or standard regex extraction
+            const currencySymbol = productItem.displayPrice ? productItem.displayPrice.replace(/[\d.,\s]/g, '') : 'R';
+            
+            // Access your dynamic properties (assumed mapped from your Java DTO backend setup)
+            // Adjust variable names here if your ProductItemDTO uses names like minAmount / maxAmount
+            const minLimit = productItem.minLimit || '2.00'; 
+            const maxLimit = productItem.maxLimit || '1000.00';
 
             card.innerHTML = `
                 <div>
@@ -577,14 +584,8 @@
             const labelHelp = document.getElementById('phoneLabelHelp');
             document.getElementById('recipientForm').reset();
             
-            if(currentCountryIso === 'NG') {
-                labelHelp.textContent = "Recipient Nigerian Mobile Number (NG)";
-                document.getElementById('recipientPhoneInput').placeholder = "Required";
-            } else {
-                labelHelp.textContent = "Recipient South African Mobile Number (ZA)";
-                document.getElementById('recipientPhoneInput').placeholder = "Required";
-            }
-            
+            labelHelp.textContent = "Recipient Mobile Number";
+            document.getElementById('recipientPhoneInput').placeholder = "Required";
             document.getElementById('phoneModal').classList.remove('hidden');
         }
 
@@ -863,21 +864,18 @@
                 // --- AFRICA ---
                 ["DZ", "Algeria"], ["AO", "Angola"], ["BJ", "Benin"], ["BW", "Botswana"], 
                 ["BF", "Burkina Faso"], ["BI", "Burundi"], ["CV", "Cabo Verde"], ["CM", "Cameroon"], 
-                ["CF", "Central African Republic"], ["TD", "Chad"], ["KM", "Comoros"], 
+                ["CF", "Central African Republic"], ["KM", "Comoros"], 
                 ["CG", "Congo (Congo-Brazzaville)"], ["CD", "Democratic Republic of the Congo"], 
-                ["DJ", "Djibouti"], ["EG", "Egypt"], ["GQ", "Equatorial Guinea"], ["ER", "Eritrea"], 
-                ["SZ", "Eswatini"], ["ET", "Ethiopia"], ["GA", "Gabon"], ["GM", "Gambia"], 
-                ["GH", "Ghana"], ["GN", "Guinea"], ["GW", "Guinea-Bissau"], ["CI", "Côte d'Ivoire"], 
-                ["KE", "Kenya"], ["LS", "Lesotho"], ["LR", "Liberia"], ["LY", "Libya"], 
-                ["MG", "Madagascar"], ["MW", "Malawi"], ["ML", "Mali"], ["MR", "Mauritania"], 
-                ["MU", "Mauritius"], ["MA", "Morocco"], ["MZ", "Mozambique"], ["NA", "Namibia"], 
-                ["NE", "Niger"], ["NG", "Nigeria"], ["RW", "Rwanda"], ["ST", "Sao Tome and Principe"], 
-                ["SN", "Senegal"], ["SC", "Seychelles"], ["SL", "Sierra Leone"], ["SO", "Somalia"], 
-                ["ZA", "South Africa"], ["SS", "South Sudan"], ["SD", "Sudan"], ["TZ", "Tanzania"], 
-                ["TG", "Togo"], ["TN", "Tunisia"], ["UG", "Uganda"], ["ZM", "Zambia"], ["ZW", "Zimbabwe"],
+                ["EG", "Egypt"], ["SZ", "Eswatini"], ["ET", "Ethiopia"], ["GA", "Gabon"], ["GM", "Gambia"], 
+                ["GH", "Ghana"], ["GN", "Guinea-Conakry"], ["GW", "Guinea-Bissau"], ["CI", "Côte d'Ivoire"], 
+                ["KE", "Kenya"], ["LR", "Liberia"],["MG", "Madagascar"], ["MW", "Malawi"], ["ML", "Mali"],
+                ["MR", "Mauritania"], ["MA", "Morocco"], ["MZ", "Mozambique"], ["NA", "Namibia"], 
+                ["NE", "Niger"], ["NG", "Nigeria"], ["RW", "Rwanda"],["SN", "Senegal"], ["SC", "Seychelles"],
+                ["SL", "Sierra Leone"], ["SO", "Somalia"],["ZA", "South Africa"],["TZ", "Tanzania"],["TG", "Togo"],
+                ["TN", "Tunisia"], ["UG", "Uganda"],["ZM", "Zambia"], ["ZW", "Zimbabwe"],["IN", "India"]
 
                 // --- ASIA & MIDDLE EAST ---
-                ["AF", "Afghanistan"], ["AM", "Armenia"], ["AZ", "Azerbaijan"], ["BH", "Bahrain"], 
+                /*["AF", "Afghanistan"], ["AM", "Armenia"], ["AZ", "Azerbaijan"], ["BH", "Bahrain"], 
                 ["BD", "Bangladesh"], ["BT", "Bhutan"], ["BN", "Brunei"], ["KH", "Cambodia"], 
                 ["CN", "China"], ["CY", "Cyprus"], ["GE", "Georgia"], ["IN", "India"], 
                 ["ID", "Indonesia"], ["IR", "Iran"], ["IQ", "Iraq"], ["IL", "Israel"], 
@@ -904,7 +902,7 @@
                 // --- SOUTH AMERICA ---
                 ["AR", "Argentina"], ["BO", "Bolivia"], ["BR", "Brazil"], ["CL", "Chile"], 
                 ["CO", "Colombia"], ["EC", "Ecuador"], ["GY", "Deep Guyana"], ["PY", "Paraguay"], 
-                ["PE", "Peru"], ["SR", "Suriname"], ["UY", "Uruguay"], ["VE", "Venezuela"]
+                ["PE", "Peru"], ["SR", "Suriname"], ["UY", "Uruguay"], ["VE", "Venezuela"]*/
             ];
 
             const selector = document.getElementById("countrySelector");

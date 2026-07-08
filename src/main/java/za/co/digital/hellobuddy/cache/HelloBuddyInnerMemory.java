@@ -2,11 +2,13 @@ package za.co.digital.hellobuddy.cache;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.springframework.beans.factory.annotation.Value;
+import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.client.RestClient;
 
@@ -40,84 +42,94 @@ public class HelloBuddyInnerMemory {
 	}
 	
 	private void loadReloadlyProducts(RestClient restClient, String countryIso, double platformMarkup) {
-		Map<String, List<ProductItemDTO>> catalogMap = new HashMap<>();
-		 // Initialize the targeted container array contexts
-        List<ProductItemDTO> airtimeList = new ArrayList<>();
-        List<ProductItemDTO> topupList = new ArrayList<>();
-        List<ProductItemDTO> dataList = new ArrayList<>();
-        List<ProductItemDTO> giftCardsList = new ArrayList<>();
-        
-        System.out.println("Platform markup: " +platformMarkup);
-        
-        try {
-            // 1. Fetch the products from the remote routing-service API endpoint
-        	List<Product> remoteProducts = restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/api/v1/telecom/products")
-                            .queryParam("country", countryIso) // Sends ?country=ZA or ?country=NG to your backend service
-                            .build())
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<List<Product>>() {});
+	    Map<String, List<ProductItemDTO>> catalogMap = new HashMap<>();
+	    List<ProductItemDTO> airtimeList = new ArrayList<>();
+	    List<ProductItemDTO> topupList = new ArrayList<>();
+	    List<ProductItemDTO> dataList = new ArrayList<>();
+	    List<ProductItemDTO> giftCardsList = new ArrayList<>();
+	    
+	    System.out.println("Platform markup: " + platformMarkup);
+	    
+	    try {
+	        List<Product> remoteProducts = restClient.get()
+	                .uri(uriBuilder -> uriBuilder
+	                        .path("/api/v1/telecom/products")
+	                        .queryParam("country", countryIso)
+	                        .build())
+	                .retrieve()
+	                .body(new ParameterizedTypeReference<List<Product>>() {});
 
-            if (remoteProducts != null) {
-                for (Product prod : remoteProducts) {
-                	
-                    BigDecimal price = BigDecimal.valueOf(prod.getPrice());
-                    String displayPrice = prod.getCurrencySymbol() + String.format("%.2f", prod.getPrice());
-                    
-                    String cleanedNetwork = getNetworkName(prod.getNetwork());
-                    
-                    String detailedName = cleanedNetwork + " " + displayPrice;
-                    
-                    String type = prod.getType();                   
-                    
-                    String description = (prod.getDescription() != null && !prod.getDescription().trim().isEmpty()) 
-                                         ? prod.getDescription() 
-                                         : "Premium high-speed standard topup package delivery.";
+	        if (remoteProducts != null) {
+	            for (Product prod : remoteProducts) {
+	                // MOVE DECLARATION INSIDE THE LOOP: Guarantees no variable leakage across loops
+	                ProductItemDTO dto = null;
+	                
+	                BigDecimal price = BigDecimal.valueOf(prod.getPrice());
+	                String displayPrice = prod.getCurrencySymbol() + String.format(java.util.Locale.US, "%.2f", prod.getPrice());
+	                
+	                String cleanedNetwork = getNetworkName(prod.getNetwork());
+	                String detailedName = cleanedNetwork + " " + displayPrice;
+	                String type = prod.getType();                   
+	                
+	                String description = (prod.getDescription() != null && !prod.getDescription().trim().isEmpty()) 
+	                                     ? prod.getDescription() 
+	                                     : "Premium high-speed standard topup package delivery.";
+	                
+	                double purchasePrice = prod.getUsdPrice() + platformMarkup;
 
-                    // Build the updated product DTO
-                    ProductItemDTO dto = new ProductItemDTO(
-                            Integer.parseInt(prod.getId().replaceAll("\\D", "")),
-                            description, 
-                            cleanedNetwork, 
-                            price,
-                            displayPrice,
-                            type,
-                            detailedName,
-                            prod.getLogoUrl(),
-                            prod.getUsdPrice()+platformMarkup
-                    );
+	                // Build DTO only if it meets your pricing baseline threshold rule
+	                if (purchasePrice > 0.5) {
+	                    dto = new ProductItemDTO(
+	                            Integer.parseInt(prod.getId().replaceAll("\\D", "")),
+	                            description, 
+	                            cleanedNetwork, 
+	                            price,
+	                            displayPrice,
+	                            type,
+	                            detailedName,
+	                            prod.getLogoUrl(),
+	                            purchasePrice
+	                    );
+	                }
 
-                    if ("DATA BUNDLES".equalsIgnoreCase(prod.getType())) {
-                        dataList.add(dto);
-                    } else if ("AIRTIME VOUCHER".equalsIgnoreCase(prod.getType())) {
-                        airtimeList.add(dto);
-                    } else if ("AIRTIME TOPUP".equalsIgnoreCase(prod.getType())) {
-                    	generateLocalDenominations(cleanedNetwork, prod,topupList,platformMarkup);
-                        //topupList.add(dto);                        
-                    } else {
-                        giftCardsList.add(dto);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Fallback strategy: log failure and render empty lists gracefully or load system default objects
-            System.err.println("Failed to fetch upstream catalog properties: " + e.getMessage());
-        }
+	                // Handle routing strictly for the current product context loop pass
+	                if ("AIRTIME TOPUP".equalsIgnoreCase(prod.getType())) {
+	                    // Call your local selector layout generator safely
+	                    generateLocalDenominations(cleanedNetwork, prod, topupList, platformMarkup);
+	                } else if (dto != null) {
+	                    // Items that require a valid dto object instance to be captured safely
+	                    if ("DATA BUNDLES".equalsIgnoreCase(prod.getType())) {
+	                        dataList.add(dto);
+	                    } else if ("AIRTIME VOUCHER".equalsIgnoreCase(prod.getType())) {
+	                        airtimeList.add(dto);
+	                    } else {
+	                        giftCardsList.add(dto);
+	                    }
+	                }
+	            }
+	        }
+	    } catch (Exception e) {
+	        System.err.println("Failed to fetch upstream catalog properties: " + e.getMessage());
+	        e.printStackTrace(); // Keep stack traces visible for easier troubleshooting
+	    }
 
-        // 4. Wrap elements back into the structure your script layer expects
-        catalogMap.put("Airtime", airtimeList);
-        catalogMap.put("TopUps", topupList); 
-        catalogMap.put("Data", dataList);
-        catalogMap.put("GiftCards", giftCardsList);
-        
-        catalogMaps.put(countryIso,catalogMap);	
-        southAfricaLastLoadTime = System.currentTimeMillis();
+	    catalogMap.put("Airtime", airtimeList);
+	    catalogMap.put("TopUps", topupList); 
+	    catalogMap.put("Data", dataList);
+	    catalogMap.put("GiftCards", giftCardsList);
+	    
+	    catalogMaps.put(countryIso, catalogMap); 
+	    southAfricaLastLoadTime = System.currentTimeMillis();
 	}
 	
-private void generateLocalDenominations(String cleanedNetwork, Product prod,List<ProductItemDTO> topupList,double platformMarkup) {
-    	
-    	String []denominations = denominations(prod);
+	private void generateLocalDenominations(String cleanedNetwork, Product prod,List<ProductItemDTO> topupList,double platformMarkup) {
+		
+		
+	    double amounts[] = getMinAndMaxAmounts(prod.getDescription());
+	    double minAmount = amounts[0];
+	    double maxAmount = amounts[1];
+	    
+    	String []denominations = denominations(prod.getDescription(), prod, platformMarkup);
     	for(String denomination : denominations) {
     		//prod.getDescription(), detailedName
     		String displayPrice = prod.getCurrencySymbol() + String.format("%.2f", Double.parseDouble(denomination));
@@ -134,20 +146,9 @@ private void generateLocalDenominations(String cleanedNetwork, Product prod,List
                  prod.getLogoUrl(),
                  prod.getUsdPrice()+platformMarkup
          );
+    	 dto.setMinLimit(minAmount);
+    	 dto.setMaxLimit(maxAmount);
     	 topupList.add(dto); 
-    	}
-    }
-    
-    private String[] denominations(Product prod) {
-    	String []denominations = {"10.00", "20.00", "25.00", "50.00", "100.00", "150.00", "200.00", "250.00", "500.00", "1000.00"};
-    	
-    	switch(prod.getDestinationCurrencyCode()) {
-    		case "ZAR":
-				return denominations;
-			case "NGN":
-				return new String[] {"100.00", "200.00", "500.00", "1000.00", "1500.00", "2000.00", "2500.00", "5000.00", "10000.00"};
-			default:
-				return denominations; // Default to ZAR denominations if currency is unrecognized
     	}
     }
     
@@ -157,19 +158,133 @@ private void generateLocalDenominations(String cleanedNetwork, Product prod,List
         }
 
         String[] countries = Countries.getCountries();
-
-        // Standardize to lowercase for comparison safety
         String lowerNetwork = network.toLowerCase();
         
         for (String countryName : countries) {
             int index = lowerNetwork.indexOf(countryName.toLowerCase());
             if (index != -1) {
-                // Cut from index 0 up to where the country name begins, then trim trailing spaces
                 return network.substring(0, index).trim();
             }
         }
-        
-        // SAFE FALLBACK: If no country matched, return the original network name instead of null
         return network.trim();
+    }
+    
+    private double[] getMinAndMaxAmounts(String text) {
+    	double[] minAndMax = new double[2]; 
+        
+        if (text == null || text.trim().isEmpty()) {
+            return minAndMax; // Returns [0.0, 0.0] safely
+        }
+    	
+    	if (text != null && !text.contains("from") && !text.contains("to")) {
+            text = text.replace(",", ".");
+        }
+    	Pattern pattern = Pattern.compile("\\d+[,.]\\d+");
+        Matcher matcher = pattern.matcher(text);
+
+        double firstAmount = 0.0;
+        double secondAmount = 0.0;
+
+        if (matcher.find()) {
+            // Replace comma with dot so Double.parseDouble can read it safely
+            String cleanNum = matcher.group().replace(",", ".");
+            firstAmount = Double.parseDouble(cleanNum);
+            minAndMax[0]=firstAmount;
+        }
+        if (matcher.find()) {
+            String cleanNum = matcher.group().replace(",", ".");
+            secondAmount = Double.parseDouble(cleanNum);
+            minAndMax[1] = secondAmount;
+        }
+        return minAndMax;
+    }
+    
+    private String[] denominations(String text, Product prod, double platformMarkup) {
+    	
+    	double[] minAndMax = getMinAndMaxAmounts(text);
+    	double firstAmount = minAndMax[0];
+        double secondAmount = minAndMax[1];
+    	/*Pattern pattern = Pattern.compile("\\d+[,.]\\d+");
+        Matcher matcher = pattern.matcher(text);
+
+        double firstAmount = 0.0;
+        double secondAmount = 0.0;
+
+        if (matcher.find()) {
+            // Replace comma with dot so Double.parseDouble can read it safely
+            String cleanNum = matcher.group().replace(",", ".");
+            firstAmount = Double.parseDouble(cleanNum);
+        }
+        if (matcher.find()) {
+            String cleanNum = matcher.group().replace(",", ".");
+            secondAmount = Double.parseDouble(cleanNum);
+        }*/
+
+        double fxRate = (prod.getFxRate() != null && prod.getFxRate() > 0) ? prod.getFxRate() : 1.0;        
+        double minAmount = firstAmount / fxRate;
+        double targetFirstAmount = firstAmount;
+        
+        if (minAmount + platformMarkup <= 0.5) {
+
+            double requiredMinAmountLocal = 0.51 - platformMarkup;
+            targetFirstAmount = requiredMinAmountLocal * fxRate;
+
+            if (targetFirstAmount > secondAmount) {
+                targetFirstAmount = secondAmount;
+            }
+        }
+
+        String[] denominationsArray = generate5RandomDenominations(targetFirstAmount, secondAmount).toArray(new String[0]);
+        return  denominationsArray;
+    }
+    
+
+    private List<String> generate5RandomDenominations(double startAmount, double endAmount) {
+        List<Double> numericDenominations = new ArrayList<>();
+        Random random = new Random();
+
+        startAmount = Math.round(startAmount * 100.0) / 100.0;
+        endAmount = Math.round(endAmount * 100.0) / 100.0;
+
+        boolean useMultiplesOf10 = (endAmount >= 10) || (endAmount % 10 == 0);
+
+        if (startAmount != endAmount) {
+            numericDenominations.add(endAmount);
+        }
+
+        int maxAttempts = 500; 
+        int attempts = 0;
+
+        while (numericDenominations.size() < 4 && attempts < maxAttempts) {
+            attempts++;
+            double randomValue;
+
+            if (useMultiplesOf10) {
+                int minBound = (int) Math.ceil(startAmount / 10.0);
+                int maxBound = (int) Math.floor(endAmount / 10.0);
+
+                if (maxBound >= minBound) {
+                    int randomMultiplier = random.nextInt((maxBound - minBound) + 1) + minBound;
+                    randomValue = randomMultiplier * 10.0;
+                } else {
+                    randomValue = startAmount + (endAmount - startAmount) * random.nextDouble();
+                }
+            } else {
+                randomValue = startAmount + (endAmount - startAmount) * random.nextDouble();
+            }
+
+            randomValue = Math.round(randomValue * 100.0) / 100.0;
+
+            if (randomValue >= startAmount && randomValue <= endAmount && !numericDenominations.contains(randomValue)) {
+                numericDenominations.add(randomValue);
+            }
+        }
+        Collections.sort(numericDenominations);
+        List<String> finalDenominations = new ArrayList<>();
+        for (double val : numericDenominations) {
+        	finalDenominations.add(String.format(java.util.Locale.US, "%.2f", val));
+        }
+
+        return finalDenominations;
     }
 }
