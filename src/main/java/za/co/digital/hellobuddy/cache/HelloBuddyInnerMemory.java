@@ -131,24 +131,30 @@ public class HelloBuddyInnerMemory {
 	    
     	String []denominations = denominations(prod.getDescription(), prod, platformMarkup);
     	for(String denomination : denominations) {
-    		//prod.getDescription(), detailedName
     		String displayPrice = prod.getCurrencySymbol() + String.format("%.2f", Double.parseDouble(denomination));
     		BigDecimal price = BigDecimal.valueOf(Double.parseDouble(denomination));
     		String detailedName = cleanedNetwork + " Fixed " + displayPrice;
-    	 ProductItemDTO dto = new ProductItemDTO(
-                 Integer.parseInt(prod.getId().replaceAll("\\D", "")),
-                 detailedName, 
-                 cleanedNetwork, 
-                 price,
-                 displayPrice,
-                 prod.getType(),
-                 "",
-                 prod.getLogoUrl(),
-                 prod.getUsdPrice()+platformMarkup
-         );
-    	 dto.setMinLimit(minAmount);
-    	 dto.setMaxLimit(maxAmount);
-    	 topupList.add(dto); 
+    		
+    		double fxRate = (prod.getFxRate() != null && prod.getFxRate() > 0) ? prod.getFxRate() : 1.0;        
+    		double purchasePrice = (Double.parseDouble(denomination) / fxRate) + platformMarkup;
+    		if(purchasePrice < 0.5) {
+    			purchasePrice =purchasePrice+0.50;
+    		}
+	    	 ProductItemDTO dto = new ProductItemDTO(
+	                 Integer.parseInt(prod.getId().replaceAll("\\D", "")),
+	                 detailedName, 
+	                 cleanedNetwork, 
+	                 price,
+	                 displayPrice,
+	                 prod.getType(),
+	                 "",
+	                 prod.getLogoUrl(),
+	                 purchasePrice
+	         );
+	    	 dto.setMinLimit(minAmount);
+	    	 dto.setMaxLimit(maxAmount);
+	    	 topupList.add(dto); 
+	    	//}
     	}
     }
     
@@ -200,42 +206,30 @@ public class HelloBuddyInnerMemory {
     }
     
     private String[] denominations(String text, Product prod, double platformMarkup) {
-    	
-    	double[] minAndMax = getMinAndMaxAmounts(text);
-    	double firstAmount = minAndMax[0];
+        
+        double[] minAndMax = getMinAndMaxAmounts(text);
+        double firstAmount = minAndMax[0];
         double secondAmount = minAndMax[1];
-    	/*Pattern pattern = Pattern.compile("\\d+[,.]\\d+");
-        Matcher matcher = pattern.matcher(text);
-
-        double firstAmount = 0.0;
-        double secondAmount = 0.0;
-
-        if (matcher.find()) {
-            // Replace comma with dot so Double.parseDouble can read it safely
-            String cleanNum = matcher.group().replace(",", ".");
-            firstAmount = Double.parseDouble(cleanNum);
-        }
-        if (matcher.find()) {
-            String cleanNum = matcher.group().replace(",", ".");
-            secondAmount = Double.parseDouble(cleanNum);
-        }*/
 
         double fxRate = (prod.getFxRate() != null && prod.getFxRate() > 0) ? prod.getFxRate() : 1.0;        
         double minAmount = firstAmount / fxRate;
         double targetFirstAmount = firstAmount;
         
         if (minAmount + platformMarkup <= 0.5) {
-
             double requiredMinAmountLocal = 0.51 - platformMarkup;
             targetFirstAmount = requiredMinAmountLocal * fxRate;
 
-            if (targetFirstAmount > secondAmount) {
+            // FIX: Only cap at secondAmount if secondAmount is provided/greater than 0
+            if (secondAmount > 0 && targetFirstAmount > secondAmount) {
                 targetFirstAmount = secondAmount;
             }
         }
 
-        String[] denominationsArray = generate5RandomDenominations(targetFirstAmount, secondAmount).toArray(new String[0]);
-        return  denominationsArray;
+        // If there is no range (secondAmount is 0), pass targetFirstAmount for both boundaries
+        double endAmount = (secondAmount > 0) ? secondAmount : targetFirstAmount;
+
+        String[] denominationsArray = generate5RandomDenominations(targetFirstAmount, endAmount).toArray(new String[0]);
+        return denominationsArray;
     }
     
 
