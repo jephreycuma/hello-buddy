@@ -17,10 +17,9 @@ import za.co.digital.hellobuddy.dto.ProductItemDTO;
 public class HelloBuddyInnerMemory {
 	
 	private static HelloBuddyInnerMemory instance;
-	Map<String, List<ProductItemDTO>> catalogMap = new HashMap<>();
+	//private static Map<String, List<ProductItemDTO>> catalogMap = new HashMap<>();
 	private static Map<String,Map<String, List<ProductItemDTO>>> catalogMaps = new HashMap<>();
 	private static long southAfricaLastLoadTime = 0;//86400000 millisecs = 24 hours
-	private static long nigeriaLastLoadTime = 0;
 	private static long TIME_OUT_IN_MINUTES = 240000;
 	
 	private HelloBuddyInnerMemory(RestClient restClient, String countryIso, double platformMarkup) {
@@ -30,12 +29,8 @@ public class HelloBuddyInnerMemory {
 	public static HelloBuddyInnerMemory getInstance(RestClient restClient, String countryIso, double platformMarkup) {
 		if(instance == null) {
 			instance = new HelloBuddyInnerMemory(restClient, countryIso, platformMarkup);
-		}else if(catalogMaps.get(countryIso) == null ||
-				(countryIso.equals("ZA") && southAfricaLastLoadTime < (System.currentTimeMillis() - TIME_OUT_IN_MINUTES))) {
+		}else if(catalogMaps.get(countryIso) == null ||southAfricaLastLoadTime < (System.currentTimeMillis() - TIME_OUT_IN_MINUTES)) {
 			instance = new HelloBuddyInnerMemory(restClient, countryIso, platformMarkup);	
-		}else if(catalogMaps.get(countryIso) == null ||
-				(countryIso.equals("NG") && nigeriaLastLoadTime < (System.currentTimeMillis() - TIME_OUT_IN_MINUTES))) {
-			instance = new HelloBuddyInnerMemory(restClient, countryIso, platformMarkup);
 		}
 		return instance;
 	}
@@ -45,7 +40,7 @@ public class HelloBuddyInnerMemory {
 	}
 	
 	private void loadReloadlyProducts(RestClient restClient, String countryIso, double platformMarkup) {
-		
+		Map<String, List<ProductItemDTO>> catalogMap = new HashMap<>();
 		 // Initialize the targeted container array contexts
         List<ProductItemDTO> airtimeList = new ArrayList<>();
         List<ProductItemDTO> topupList = new ArrayList<>();
@@ -117,20 +112,7 @@ public class HelloBuddyInnerMemory {
         catalogMap.put("GiftCards", giftCardsList);
         
         catalogMaps.put(countryIso,catalogMap);	
-        updateLoadTime(countryIso);
-	}
-	
-	private void updateLoadTime(String countryIso) {
-		switch(countryIso) {
-		case "ZA":
-			southAfricaLastLoadTime = System.currentTimeMillis();
-			break;
-		case "NG":
-			nigeriaLastLoadTime = System.currentTimeMillis();
-		break;
-		default:
-			
-		}
+        southAfricaLastLoadTime = System.currentTimeMillis();
 	}
 	
 private void generateLocalDenominations(String cleanedNetwork, Product prod,List<ProductItemDTO> topupList,double platformMarkup) {
@@ -170,42 +152,24 @@ private void generateLocalDenominations(String cleanedNetwork, Product prod,List
     }
     
     private String getNetworkName(String network) {
-    	if(network != null) {
-			if(network.contains("Telkom Mobile South Africa")) {
-				return "Telkom";
-			}
-    	}
-		switch(network) {
-		case "Vodacom South Africa":
-		case "Vodacom South Africa Data":
-			return "Vodacom";
-		case "MTN South Africa":
-		case "MTN South Africa Data":
-			return "MTN";
-		case "Cell C South Africa":
-		case "Cell C South Africa Data":
-			return "Cell C";
-		case "ONE kuphela Universal South Africa PIN":
-			return "ONE";
-		case "Airtel Nigeria Bundle":
-		case "Airtel Nigeria Data":
-		case "Airtel Nigeria Special Bundle":
-		case "Airtel Nigeria":
-			return "Airtel";
-		case "Glo Nigeria":
-		case "Glo Nigeria Bundle":
-		case "Glo Nigeria Data":
-		case "Glo Nigeria Special Bundle":
-			return "Glo";
-		case "MTN Nigeria":
-		case "MTN Nigeria Bundles":
-		case "MTN Nigeria Data":
-			return "MTN Nigeria";
-		case "T2 Mobile Nigeria":
-		case "T2 Mobile Nigeria Data":
-			return "T2 Mobile";
-		default:
-			return network;
-		}
-	}
+        if (network == null || network.trim().isEmpty()) {
+            return "Unknown Operator";
+        }
+
+        String[] countries = Countries.getCountries();
+
+        // Standardize to lowercase for comparison safety
+        String lowerNetwork = network.toLowerCase();
+        
+        for (String countryName : countries) {
+            int index = lowerNetwork.indexOf(countryName.toLowerCase());
+            if (index != -1) {
+                // Cut from index 0 up to where the country name begins, then trim trailing spaces
+                return network.substring(0, index).trim();
+            }
+        }
+        
+        // SAFE FALLBACK: If no country matched, return the original network name instead of null
+        return network.trim();
+    }
 }

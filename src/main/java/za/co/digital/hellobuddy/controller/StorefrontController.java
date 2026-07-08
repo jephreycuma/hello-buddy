@@ -33,7 +33,7 @@ public class StorefrontController {
     	    Model model) {
         Map<String, List<ProductItemDTO>> catalogMap = HelloBuddyInnerMemory.getInstance(restClient, countryIso,platformMarkup).getReloadlyProducts(countryIso);
         
-        model.addAttribute("javaCatalogData", catalogMap);
+        model.addAttribute("catalogProducts", catalogMap);
 
         return "index";
     }

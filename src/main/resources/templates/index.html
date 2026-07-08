@@ -31,23 +31,20 @@
 	</header>
 
     <!-- Country Selector Dropdown Region -->
-	   <div class="w-full bg-gray-100 border-b border-gray-200 py-3">
-	    <!-- Changed 'justify-between' to 'justify-start' and added 'space-x-3' to tighten the gap -->
-	    <div class="max-w-xl mx-auto px-4 flex items-center justify-start space-x-3">
-	        <label for="countrySelector" class="text-xs font-bold text-gray-600 uppercase tracking-wider shrink-0">
-	            Select Country:
-	        </label>
-	        <div class="relative min-w-[180px]">
-	            <select id="countrySelector" onchange="handleCountryChange(this.value)" class="w-full bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-700 shadow-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 appearance-none cursor-pointer">
-	                <option value="ZA">South Africa (ZA)</option>
-	                <option value="NG">Nigeria (NG)</option>
-	            </select>
-	            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-	                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-	            </div>
-	        </div>
-	    </div>
-	</div>
+		<div class="w-full bg-gray-100 border-b border-gray-200 py-3">
+		    <div class="max-w-xl mx-auto px-4 flex items-center justify-start space-x-3">
+		        <label for="countrySelector" class="text-xs font-bold text-gray-600 uppercase tracking-wider shrink-0">
+		            Select Country:
+		        </label>
+		        <div class="relative min-w-[180px]">
+		            <select id="countrySelector" onchange="handleCountryChange(this.value)" class="w-full bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-700 shadow-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 appearance-none cursor-pointer">
+		                </select>
+		            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+		                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+		            </div>
+		        </div>
+		    </div>
+		</div>
 
     <!-- Navigation Tabs Section -->
     <nav class="w-full bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
@@ -56,46 +53,46 @@
                 
                 <!-- Tab: TopUps -->
                 <div class="relative group py-1">
-                    <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
-                        Airtime TopUps
-                    </button>
-                    <div class="dropdown-menu hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left">
-                        <div data-country="ZA">
-                            <a href="#" onclick="filterProducts('TopUps', 'Vodacom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Vodacom</a>
-                            <a href="#" onclick="filterProducts('TopUps', 'MTN')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN</a>
-                            <a href="#" onclick="filterProducts('TopUps', 'Telkom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Telkom</a>
-                            <a href="#" onclick="filterProducts('TopUps', 'Cell C')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Cell C</a>
-                        </div>
-                        <div data-country="NG" class="hidden">
-                            <a href="#" onclick="filterProducts('TopUps', 'MTN Nigeria')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN Nigeria</a>
-                            <a href="#" onclick="filterProducts('TopUps', 'Airtel')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Airtel Nigeria</a>
-                            <a href="#" onclick="filterProducts('TopUps', 'Glo')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Glo (Globacom)</a>
-                            <a href="#" onclick="filterProducts('TopUps', 'T2 Mobile')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">T2 Mobile (9mobile)</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab: Data Bundles -->
-                <div class="relative group py-1">
-                    <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
-                        Data Bundles
-                    </button>
-                    <div class="dropdown-menu hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left">
-                        <div data-country="ZA">
-                            <a href="#" onclick="filterProducts('Data', 'Vodacom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Vodacom</a>
-                            <a href="#" onclick="filterProducts('Data', 'MTN')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN</a>
-                            <a href="#" onclick="filterProducts('Data', 'Telkom')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Telkom</a>
-                            <a href="#" onclick="filterProducts('Data', 'Cell C')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Cell C</a>
-                        </div>
-                        <div data-country="NG" class="hidden">
-                            <a href="#" onclick="filterProducts('Data', 'MTN Nigeria')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">MTN Nigeria</a>
-                            <a href="#" onclick="filterProducts('Data', 'Airtel')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Airtel Nigeria</a>
-                            <a href="#" onclick="filterProducts('Data', 'Glo')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">Glo (Globacom)</a>
-                            <a href="#" onclick="filterProducts('Data', 'T2 Mobile')" class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">T2 Mobile (9mobile)</a>
-                        </div>
-                    </div>
-                </div>
-
+			    <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
+			        Airtime TopUps
+			    </button>
+			    <div class="dropdown-menu hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left z-50">
+			        <th:block th:if="${catalogProducts != null and catalogProducts.get('TopUps') != null}">
+			            <div th:with="uniqueAirtimeNetworks=${#sets.toSet(catalogProducts.get('TopUps').![network])}">
+			                <a th:each="network : ${uniqueAirtimeNetworks}" 
+			                   href="#" 
+			                   data-category="TopUps"
+			                   th:data-network="${network}"
+			                   onclick="filterProducts(this.getAttribute('data-category'), this.getAttribute('data-network'))" 
+			                   th:text="${network}"
+			                   class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">
+			                    Dynamic Operator
+			                </a>
+			            </div>
+			        </th:block>
+			    </div>
+			</div>
+			
+			<div class="relative group py-1">
+			    <button class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
+			        Data Bundles
+			    </button>
+			    <div class="dropdown-menu hidden group-hover:block absolute left-0 top-full w-48 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-100 py-2 text-left z-50">
+			        <th:block th:if="${catalogProducts != null and catalogProducts.get('Data') != null}">
+			            <div th:with="uniqueDataNetworks=${#sets.toSet(catalogProducts.get('Data').![network])}">
+			                <a th:each="network : ${uniqueDataNetworks}" 
+			                   href="#" 
+			                   data-category="Data"
+			                   th:data-network="${network}"
+			                   onclick="filterProducts(this.getAttribute('data-category'), this.getAttribute('data-network'))" 
+			                   th:text="${network}"
+			                   class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">
+			                    Dynamic Operator
+			                </a>
+			            </div>
+			        </th:block>
+			    </div>
+			</div>
                 <!-- Tab: Gift Cards -->
                 <div class="relative py-1">
                     <button onclick="filterProducts('GiftCards', 'All')" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-gray-100 transition">
@@ -388,125 +385,87 @@
     });
     
     //Below is original
-        const backendCatalog = /*[[${javaCatalogData}]]*/ {};
+        const backendCatalog = /*[[${catalogProducts}]]*/ {};
+        
         let selectedProductContext = null;
         let verifiedPhoneNumber = "";
         let currentCountryIso = 'ZA';
-
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            currentCountryIso = urlParams.get('country') || 'ZA';
-            document.getElementById('countrySelector').value = currentCountryIso;
-            renderCountryTabs(currentCountryIso);
-        });
         
         function handleCountryChange(isoName) {
             window.location.href = "/?country=" + encodeURIComponent(isoName);
         }
 
-        function renderCountryTabs(isoCode) {
-            document.querySelectorAll('[data-country]').forEach(el => {
-                if (el.getAttribute('data-country') === isoCode) {
-                    el.classList.remove('hidden');
-                } else {
-                    el.classList.add('hidden');
-                }
-            });
-        }
-
         function filterProducts(category, networkName) {
-        	document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                // Temporarily force override display style
-                menu.style.display = 'none';
+            // 1. Add an explicit safety check to intercept unhydrated states safely
+            if (!backendCatalog || Object.keys(backendCatalog).length === 0) {
+                console.warn("Catalog data is currently empty or has not finished loading.");
                 
-                // Restore default template styling immediately afterwards 
-                // so standard desktop mouse hover animations continue to work normally later
-                setTimeout(() => {
-                    menu.style.display = '';
-                }, 100);
-            });
-        	
-            const grid = document.getElementById('productGrid');
-            const viewHeader = document.getElementById('viewHeader');
-            const catTitle = document.getElementById('activeCategoryTitle');
-            const netSubtitle = document.getElementById('activeNetworkSubtitle');
-            
-            grid.innerHTML = '';
-            const targetCollection = backendCatalog[category] || [];
-            
+                // Try a direct fallback extraction from the DOM element container inline
+                const rawDataElement = document.getElementById("rawCatalogData");
+                if (rawDataElement && rawDataElement.value) {
+                    try {
+                        backendCatalog = JSON.parse(rawDataElement.value);
+                    } catch (e) {
+                        console.error("Delayed fallback parsing failed:", e);
+                    }
+                }
+            }
+
+            // 2. Dynamic case-insensitive key collection match check
+            const catalogKey = Object.keys(backendCatalog || {}).find(
+                k => k.toLowerCase() === category.toLowerCase()
+            );
+            const targetCollection = catalogKey ? backendCatalog[catalogKey] : [];
+
+            const grid = document.getElementById("productGrid");
+            if (!grid) return;
+            grid.innerHTML = ""; 
+
+            // 3. Comprehensive deep-string match filtering
             const filteredItems = targetCollection.filter(item => {
                 if (networkName === 'All') return true;
-                if (!item.network) return false;
-                return item.network.toLowerCase().trim() === networkName.toLowerCase().trim();
+                
+                const searchPool = Object.values(item)
+                    .filter(val => typeof val === 'string')
+                    .join(' ')
+                    .toLowerCase();
+                    
+                return searchPool.includes(networkName.toLowerCase().trim());
             });
 
-            if (filteredItems.length === 0 && category !== 'TopUps') {
+            // 4. Fallback empty block view
+            if (filteredItems.length === 0) {
                 grid.innerHTML = `
-                    <div class="col-span-full text-center py-12 text-gray-400">
-                        <span class="text-4xl block mb-2">💨</span>
-                        No dynamic listings found for ${category} (${networkName}) right now.
+                    <div class="col-span-full text-center py-8 text-gray-500 font-medium">
+                        No packages available for ${networkName} ${category}.
                     </div>`;
                 return;
             }
 
-            viewHeader.classList.remove('hidden');
-         // Force vertical stacking: category on top, subtitle below
-           // viewHeader.classList.add('flex', 'flex-col', 'items-start');
-            
-            viewHeader.className = "w-full flex flex-row justify-between items-center mb-6"; 
-
-            // Wrap the titles in a vertical stack on the left side
-            viewHeader.innerHTML = `
-                <div class="flex flex-col">
-                    <h2 id="activeCategoryTitle" class="text-2xl font-black text-gray-900 tracking-tight">
-                        ${category === 'Airtime' ? 'Airtime Vouchers' : category}
-                    </h2>
-                    <div id="activeNetworkSubtitle" class="text-sm text-gray-500 mt-1">
-                        ${networkName === 'All' ? 'Available Offers' : `Showing offers for ${networkName}`}
-                    </div>
-                </div>
-            `;
-            //catTitle.textContent = category === 'Airtime' ? 'Airtime Vouchers' : category;
-
-            if (networkName !== 'All') {
-	        const networkLogo = (filteredItems.length > 0 && filteredItems[0].logoUrl) ? filteredItems[0].logoUrl : '';
-	
-	        if (networkLogo) {
-	            // Create a dedicated container for the enlarged logo image
-	            const logoContainer = document.createElement('div');
-	            logoContainer.className = "flex items-center justify-end pl-4";
-	            
-	            // Increased size to h-12 or h-14 (adjust as needed for your design)
-	            logoContainer.innerHTML = `
-	                <img src="${networkLogo}" alt="${networkName} logo" class="h-12 md:h-14 w-auto object-contain rounded-xl shadow-sm border border-gray-100 bg-white p-1" />
-	            `;
-	            
-	            // Append it to the right side of the viewHeader row
-	            viewHeader.appendChild(logoContainer);
-	        	}
-	    	}
-
-            filteredItems.forEach(product => {
-                const card = document.createElement('div');
-                card.className = "bg-white rounded-2xl p-5 shadow-sm border border-gray-200 flex flex-col justify-between hover:shadow-md hover:border-gray-300 transition duration-200";
+            // 5. Render product cards block layout loop
+            filteredItems.forEach(item => {
+                const card = document.createElement("div");
+                card.className = "bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-gray-200 transition duration-200";
                 
-                product.itemCategory = category;
-                const productArg = JSON.stringify(product).replace(/"/g, '&quot;');
+                // Prepare argument payload for click handler strings safely
+                item.itemCategory = category;
+                const productArg = JSON.stringify(item).replace(/"/g, '&quot;');
 
                 card.innerHTML = `
                     <div>
                         <div class="flex items-center justify-between mb-3">
                             <span class="px-2.5 py-1 text-xs font-bold tracking-wide rounded-full bg-red-50 text-red-600 uppercase">
-                                ${product.type || category}
+                                ${item.type || category}
                             </span>
+                            <img src="${item.logoUrl || '/img/fallback-logo.png'}" class="w-8 h-8 object-contain rounded-lg" alt="">
                         </div>
-                        <h3 class="font-bold text-gray-900 text-base mb-1">${product.name}</h3>
-                        <p class="text-xs text-gray-500 line-clamp-2 mb-4">${product.description}</p>
+                        <h3 class="font-bold text-gray-900 text-base mb-1">${item.name || item.detailedName || item.network}</h3>
+                        <p class="text-xs text-gray-500 line-clamp-2 mb-4">${item.description || ''}</p>
                     </div>
                     <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
                         <div>
                             <span class="text-xs text-gray-400 block uppercase font-semibold tracking-wider">Price</span>
-                            <span class="text-xl font-black text-gray-900">${product.displayPrice}</span>
+                            <span class="text-xl font-black text-gray-900">${item.displayPrice}</span>
                         </div>
                         <button onclick="initiatePurchaseProcess('${productArg}')" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm">
                             Purchase
@@ -516,9 +475,12 @@
                 grid.appendChild(card);
             });
 
+            // 6. Handle any-amount dynamic cards fallback append for TopUps
             if (category === 'TopUps' && networkName !== 'All') {
                 const realOperatorId = filteredItems.length > 0 ? filteredItems[0].id : 0;
-                appendAnyAmountCard(grid, networkName, realOperatorId);
+                if (typeof appendAnyAmountCard === 'function') {
+                    appendAnyAmountCard(grid, networkName, realOperatorId);
+                }
             }
         }
 
@@ -596,14 +558,8 @@
             ? parseFloat(product.usdPrice) 
             : (parseFloat(product.price) * 0.055);
 
-            // 3. Apply your Retail Strategy (Wholesale Cost + Your Markup Buffer)
             let retailUsdPrice = baseUsdCost; // Adding a $0.99 platform markup
-            
-           /* if (retailUsdPrice < 0.50) {
-                retailUsdPrice = 0.50;
-            }*/
 
-            // FIX: Explicitly populate the hidden native inputs right now
             document.getElementById('hiddenProductId').value = product.id || "";
             document.getElementById('hiddenProductName').value = product.name || "";
             document.getElementById('hiddenProductPrice').value = retailUsdPrice.toFixed(2);
@@ -664,9 +620,7 @@
             let expectedFormatHelp = "";
 
             if (currentCountryIso === 'ZA') {
-                // South Africa: 
-                // Local: Starts with '0' -> Length must be exactly 10 digits (e.g., 0821234567)
-                // International: Starts with '27' -> Length must be exactly 11 digits (e.g., 27821234567)
+
                 if (cleanPhone.startsWith('0')) {
                     isValid = (cleanPhone.length === 10);
                     expectedFormatHelp = "10 digits starting with 0";
@@ -747,10 +701,6 @@
             document.getElementById('paymentModal').classList.add('hidden');
         }
 
-        /**
-         * Enhanced footer click routing logic engine
-         * @param {string} type - Context descriptor type target
-         */
         function showFooterInfo(type) {
             if (type === 'contact') {
                 openSupportModal();
@@ -811,16 +761,7 @@
         function closeInfoModal() {
             document.getElementById('infoModal').classList.add('hidden');
         }
-
-        document.getElementById('cardNumberInput').addEventListener('input', function (e) {
-            let targetValue = e.target.value.replace(/\W/gi, '').replace(/(.{4})/g, '$1 ').trim();
-            e.target.value = targetValue;
-        });
         
-        /**
-         * Hooks into the Hello Buddy UI system to process payments securely via Stripe Checkout
-         * instead of utilizing the local, non-PCI compliant mock credit card form.
-         */
         async function handleCheckout() {
             // Retrieve dynamic product properties cached inside the hidden native form engine
             const productId = document.getElementById('hiddenProductId').value;
@@ -896,10 +837,6 @@
             }
         }
 
-        /**
-         * CONNECT TO CURRENT SITE WORKFLOW:
-         * Intercept your existing 'paymentModal' form submission to fire Stripe instead.
-         */
         const localPaymentForm = document.getElementById('paymentForm');
         if (localPaymentForm) {
             localPaymentForm.onsubmit = function(event) {
@@ -907,6 +844,91 @@
                 handleCheckout();       // Execute secure cloud billing handoff
             };
         }
+        
+     // 1. Define the function first so it is globally available
+        function renderCountryTabs(isoCode) {
+            document.querySelectorAll('[data-country]').forEach(el => {
+                if (el.getAttribute('data-country') === isoCode) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+        }
+
+        // 2. Initialize DOM Content Loaded setup
+        document.addEventListener("DOMContentLoaded", () => {
+            // 2D Array Matrix pairing Country ISO codes with Country Names
+            const countriesMatrix = [
+                // --- AFRICA ---
+                ["DZ", "Algeria"], ["AO", "Angola"], ["BJ", "Benin"], ["BW", "Botswana"], 
+                ["BF", "Burkina Faso"], ["BI", "Burundi"], ["CV", "Cabo Verde"], ["CM", "Cameroon"], 
+                ["CF", "Central African Republic"], ["TD", "Chad"], ["KM", "Comoros"], 
+                ["CG", "Congo (Congo-Brazzaville)"], ["CD", "Democratic Republic of the Congo"], 
+                ["DJ", "Djibouti"], ["EG", "Egypt"], ["GQ", "Equatorial Guinea"], ["ER", "Eritrea"], 
+                ["SZ", "Eswatini"], ["ET", "Ethiopia"], ["GA", "Gabon"], ["GM", "Gambia"], 
+                ["GH", "Ghana"], ["GN", "Guinea"], ["GW", "Guinea-Bissau"], ["CI", "Côte d'Ivoire"], 
+                ["KE", "Kenya"], ["LS", "Lesotho"], ["LR", "Liberia"], ["LY", "Libya"], 
+                ["MG", "Madagascar"], ["MW", "Malawi"], ["ML", "Mali"], ["MR", "Mauritania"], 
+                ["MU", "Mauritius"], ["MA", "Morocco"], ["MZ", "Mozambique"], ["NA", "Namibia"], 
+                ["NE", "Niger"], ["NG", "Nigeria"], ["RW", "Rwanda"], ["ST", "Sao Tome and Principe"], 
+                ["SN", "Senegal"], ["SC", "Seychelles"], ["SL", "Sierra Leone"], ["SO", "Somalia"], 
+                ["ZA", "South Africa"], ["SS", "South Sudan"], ["SD", "Sudan"], ["TZ", "Tanzania"], 
+                ["TG", "Togo"], ["TN", "Tunisia"], ["UG", "Uganda"], ["ZM", "Zambia"], ["ZW", "Zimbabwe"],
+
+                // --- ASIA & MIDDLE EAST ---
+                ["AF", "Afghanistan"], ["AM", "Armenia"], ["AZ", "Azerbaijan"], ["BH", "Bahrain"], 
+                ["BD", "Bangladesh"], ["BT", "Bhutan"], ["BN", "Brunei"], ["KH", "Cambodia"], 
+                ["CN", "China"], ["CY", "Cyprus"], ["GE", "Georgia"], ["IN", "India"], 
+                ["ID", "Indonesia"], ["IR", "Iran"], ["IQ", "Iraq"], ["IL", "Israel"], 
+                ["JP", "Japan"], ["JO", "Jordan"], ["KZ", "Kazakhstan"], ["KW", "Kuwait"], 
+                ["KG", "Kyrgyzstan"], ["LA", "Laos"], ["LB", "Lebanon"], ["MY", "Malaysia"], 
+                ["MV", "Maldives"], ["MN", "Mongolia"], ["MM", "Myanmar (Burma)"], ["NP", "Nepal"], 
+                ["KP", "North Korea"], ["OM", "Oman"], ["PK", "Pakistan"], ["PS", "Palestine"], 
+                ["PH", "Philippines"], ["QA", "Qatar"], ["SA", "Saudi Arabia"], ["SG", "Singapore"], 
+                ["KR", "South Korea"], ["LK", "Sri Lanka"], ["SY", "Syria"], ["TW", "Taiwan"], 
+                ["TJ", "Tajikistan"], ["TH", "Thailand"], ["TL", "Timor-Leste"], ["TR", "Turkey (Türkiye)"], 
+                ["TM", "Turkmenistan"], ["AE", "United Arab Emirates"], ["UZ", "Uzbekistan"], 
+                ["VN", "Vietnam"], ["YE", "Yemen"],
+
+                // --- NORTH AMERICA & CARIBBEAN ---
+                ["AG", "Antigua and Barbuda"], ["BS", "Bahamas"], ["BB", "Barbados"], 
+                ["BZ", "Belize"], ["CA", "Canada"], ["CR", "Costa Rica"], ["CU", "Cuba"], 
+                ["DM", "Dominica"], ["DO", "Dominican Republic"], ["SV", "El Salvador"], 
+                ["GD", "Grenada"], ["GT", "Guatemala"], ["HT", "Haiti"], ["HN", "Honduras"], 
+                ["JM", "Jamaica"], ["MX", "Mexico"], ["NI", "Nicaragua"], ["PA", "Panama"], 
+                ["KN", "Saint Kitts and Nevis"], ["LC", "Saint Lucia"], 
+                ["VC", "Saint Vincent and the Grenadines"], ["TT", "Trinidad and Tobago"], 
+                ["US", "United States of America"],
+
+                // --- SOUTH AMERICA ---
+                ["AR", "Argentina"], ["BO", "Bolivia"], ["BR", "Brazil"], ["CL", "Chile"], 
+                ["CO", "Colombia"], ["EC", "Ecuador"], ["GY", "Deep Guyana"], ["PY", "Paraguay"], 
+                ["PE", "Peru"], ["SR", "Suriname"], ["UY", "Uruguay"], ["VE", "Venezuela"]
+            ];
+
+            const selector = document.getElementById("countrySelector");
+            if (!selector) return;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            currentCountryIso = urlParams.get('country') || 'ZA';
+
+            selector.innerHTML = '';
+            countriesMatrix.forEach(([isoCode, countryName]) => {
+                const option = document.createElement("option");
+                option.value = isoCode;
+                option.textContent = `${countryName} (${isoCode})`;
+                
+                if (isoCode === currentCountryIso) {
+                    option.selected = true;
+                }
+                
+                selector.appendChild(option);
+            });
+
+            // Trigger the tab updates safely now that the function is defined above
+            renderCountryTabs(currentCountryIso);
+        });
         
     </script>
 </body>

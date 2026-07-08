@@ -1,5 +1,6 @@
 package za.co.digital.hellobuddy.controller;
 
+import java.util.HashMap;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -10,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestClient;
 import com.stripe.Stripe;
 import com.stripe.model.checkout.Session;
+import com.stripe.model.Refund;
+import com.stripe.param.RefundCreateParams;
 import za.co.digital.hellobuddy.dto.ReloadlyTopupResult;
 import za.co.digital.hellobuddy.dto.TopupResponse;
 
@@ -25,9 +28,14 @@ public class HelloBuddyWebViewController {
 
     @GetMapping("/success")
     public String paymentSuccess(@RequestParam("session_id") String sessionId, Model model) {
+        // Keep track of the payment intent id for possible reversal tracking
+        String paymentIntentId = null;
+        
         try {
             Stripe.apiKey = this.stripeApiKey;
             Session session = Session.retrieve(sessionId);
+            paymentIntentId = session.getPaymentIntent(); // Capture the core transaction reference
+            
             Map<String, String> metadata = session.getMetadata();
 
             // 1. Unpack identification records
@@ -39,7 +47,7 @@ public class HelloBuddyWebViewController {
             String recipientEmail = metadata.getOrDefault("recipientEmail", "");
             String countryIso = metadata.getOrDefault("countryIso", "ZA");
 
-            // 2. Fetch prices
+            // 2. Fetch Prices
             Double originalPrice = Double.parseDouble(metadata.getOrDefault("originalPrice", "0.0"));
             Double checkoutPriceUsd = Double.parseDouble(metadata.getOrDefault("checkoutPriceUsd", "0.0"));
 
@@ -51,52 +59,94 @@ public class HelloBuddyWebViewController {
             String cleanSender = senderPhone.replaceAll("\\D", ""); 
             String cleanReceiver = recipientPhone.replaceAll("\\D", ""); 
 
-            // 3. Request Reloadly to deliver
-            ReloadlyTopupResult results = restClient.post()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/api/v1/telecom/topups")
-                            .queryParam("amount", originalPrice)
-                            .queryParam("senderPhoone", Long.parseLong(cleanSender))
-                            .queryParam("receiverPhone", Long.parseLong(cleanReceiver))
-                            .queryParam("countryISO", countryIso)
-                            .queryParam("operatorId", id)
-                            .queryParam("senderEmail", recipientEmail)
-                            .queryParam("useLocalAmount", true)
-                            .build())
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<ReloadlyTopupResult>() {});
-
-            // 4. Resolve Currency Symbol cleanly
-            // Fallback checking sequence: session currency string -> country ISO string
+            // 3. Bind basic details to UI template upfront
             String currencySymbol = getCurrencySymbol(session.getCurrency(), countryIso);
-
-            // 5. Bind information to receipt view template
             model.addAttribute("productId", id);
             model.addAttribute("productName", name);
             model.addAttribute("productPrice", originalPrice);     
-            model.addAttribute("currencySymbol", currencySymbol); // <-- NEW ATTR PASSED TO VIEW
+            model.addAttribute("currencySymbol", currencySymbol);
             model.addAttribute("chargedUsd", checkoutPriceUsd);
             model.addAttribute("phoneNumber", recipientPhone);
             model.addAttribute("sessionId", sessionId);
 
+            // 4. Request Reloadly Delivery API
+            ReloadlyTopupResult results = null;
+            try {
+                results = restClient.post()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/api/v1/telecom/topups")
+                                .queryParam("amount", originalPrice)
+                                .queryParam("senderPhoone", Long.parseLong(cleanSender))
+                                .queryParam("receiverPhone", Long.parseLong(cleanReceiver))
+                                .queryParam("countryISO", countryIso)
+                                .queryParam("operatorId", id)
+                                .queryParam("senderEmail", recipientEmail)
+                                .queryParam("useLocalAmount", true)
+                                .build())
+                        .retrieve()
+                        .body(new ParameterizedTypeReference<ReloadlyTopupResult>() {});
+            } catch (Exception e) {
+                System.err.println("Network exception calling Reloadly: " + e.getMessage());
+                // Fallthrough logic allows it to hit the refund validation layer below
+            }
+
+            // 5. Evaluate response & Trigger Stripe Reversal if order fails
             if (results != null && results.isSuccessful()) {
                 TopupResponse successData = results.getTopupResponse();
                 model.addAttribute("referenceId", successData.getTransactionId());
             } else {
-                // Error mapping logic...
+                // Scenario A: Reloadly responded explicitly with an API failure error payload
+                System.err.println("Reloadly API indicated fulfillment failure. Initiating automated Stripe refund workflow...");
+                
+                String refundReason = "Reloadly distribution failure.";
+                triggerStripeRefund(paymentIntentId, refundReason);
+                
+                model.addAttribute("errorMessage", "Delivery failed. We couldn't fulfill your voucher order, so your payment has been automatically reversed.");
             }
 
         } catch (Exception e) {
-            System.err.println("Execution failure handling backend fulfillment: " + e.getMessage());
-            model.addAttribute("errorMessage", "Processing Error: " + e.getMessage());
+            // Scenario B: System-wide processing script crash
+            System.err.println("Critical controller runtime exception execution breakdown: " + e.getMessage());
+            
+            if (paymentIntentId != null) {
+                triggerStripeRefund(paymentIntentId, "System runtime crash recovery refund.");
+            }
+            
+            model.addAttribute("errorMessage", "Processing Error: " + e.getMessage() + ". Your payment has been queue-reversed.");
         }
 
         return "receipt";
     }
 
     /**
-     * Determines the appropriate local currency symbol using Stripe currency or Country ISO fallbacks.
+     * Executes an asynchronous full refund back to the customer's bank card via Stripe.
      */
+    private void triggerStripeRefund(String paymentIntentId, String reason) {
+        if (paymentIntentId == null || paymentIntentId.isEmpty()) {
+            System.err.println("Refund execution skipped: Missing Payment Intent ID token link reference.");
+            return;
+        }
+
+        try {
+            Stripe.apiKey = this.stripeApiKey;
+            
+            Map<String, String> refundMetadata = new HashMap<>();
+            refundMetadata.put("reason", reason);
+            refundMetadata.put("automated", "true");
+
+            RefundCreateParams params = RefundCreateParams.builder()
+                    .setPaymentIntent(paymentIntentId)
+                    .putAllMetadata(refundMetadata)
+                    .build();
+
+            Refund refund = Refund.create(params);
+            System.out.println("Stripe Reversal Complete! Refund processed successfully: ID = " + refund.getId() + " | Status = " + refund.getStatus());
+            
+        } catch (com.stripe.exception.StripeException se) {
+            System.err.println("CRITICAL: Failed to reverse user funds via Stripe API API: " + se.getMessage());
+        }
+    }
+
     private String getCurrencySymbol(String stripeCurrency, String countryIso) {
         /*if (stripeCurrency != null && !stripeCurrency.isEmpty()) {
             switch (stripeCurrency.toLowerCase()) {
@@ -109,8 +159,6 @@ public class HelloBuddyWebViewController {
                 case "ghs": return "GH₵";
             }
         }*/
-        
-        // Fallback safety layer checking via Metadata Country code if currency isn't captured
         if (countryIso != null) {
             switch (countryIso.toUpperCase()) {
                 case "ZA": return "R";
@@ -119,7 +167,7 @@ public class HelloBuddyWebViewController {
                 case "GH": return "GH₵";
             }
         }
-        return "R"; // Final global default
+        return "R";
     }
 
     private String validatePhoneNumber(String recipientPhone, String countryIso) {
