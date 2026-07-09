@@ -2,7 +2,10 @@ package za.co.digital.hellobuddy.controller;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.stripe.Stripe;
@@ -13,11 +16,16 @@ import com.stripe.param.checkout.SessionCreateParams;
 @RestController
 @RequestMapping("/api/stripe")
 public class MockPaymentApiController {
+	
+	@Autowired
+	private StringRedisTemplate redisTemplate;
 
     @Value("${stripe.api.key}")
     private String stripeApiKey;
     @Value("${hello.buddy.url}")
     private String helloBuddyUrl;
+    @Value("${platform.markup}")
+	private double platformMarkup;
 
     @PostMapping("/create-session")
     public ResponseEntity<Map<String, Object>> processStripeSession(@RequestBody Map<String, Object> payload) {
@@ -33,23 +41,23 @@ public class MockPaymentApiController {
             String productName = (String) payload.getOrDefault("productName", "Hello Buddy Voucher");
             String currencyCode = (String) payload.getOrDefault("currency", "zar");
             
-            double orderAmount = 0.0;
-            Object priceObj = payload.get("price");
-            if (priceObj != null && !priceObj.toString().trim().isEmpty()) {
-                orderAmount = Double.parseDouble(priceObj.toString());
-            } else {
-                response.put("success", false);
-                response.put("message", "Validation Failed: Product price property is missing.");
-                return ResponseEntity.badRequest().body(response);
-            }
+
             
             // Clean up Country ISO fallback based on incoming currency parameters
-            String resolvedCountryIso = currentRegion;
-            if (currencyCode.equalsIgnoreCase("ngn")) {
-                resolvedCountryIso = "NG";
-            } else if (currencyCode.equalsIgnoreCase("zar")) {
-                resolvedCountryIso = "ZA";
-            }
+            String resolvedCountryIso = currentRegion;          
+            
+            String currencySymbol = redisTemplate.opsForValue().get(resolvedCountryIso);
+            String redisKey = "fx:" + resolvedCountryIso.toUpperCase() + "_" + currencySymbol.toUpperCase();
+            String cachedFx = redisTemplate.opsForValue().get(redisKey);
+            System.out.println("Retrieved FX rate from Redis for key " + redisKey + ": " + cachedFx);
+            double fxRate = Double.parseDouble(cachedFx != null ? cachedFx : "1.0"); // Default to 1.0 if not found
+            
+            productPriceUsd = originalLocalPrice != null && !originalLocalPrice.isEmpty() ? (String.valueOf(Double.parseDouble(originalLocalPrice) / fxRate)) : "0.0";
+            productPriceUsd = String.valueOf(Double.parseDouble(productPriceUsd) + Double.valueOf(platformMarkup)); // Apply platform markup
+            
+            System.out.println("Resolved product price in USD after FX and markup: " + productPriceUsd);
+            
+            double orderAmount =Double.parseDouble(productPriceUsd);
 
             Map<String, String> metadata = new HashMap<>();
             metadata.put("productId", (String) payload.getOrDefault("productId", ""));
@@ -73,7 +81,7 @@ public class MockPaymentApiController {
                         .setQuantity(1L)
                         .setPriceData(
                             SessionCreateParams.LineItem.PriceData.builder()
-                                .setCurrency(currencyCode.toLowerCase()) // Dynamically processes ngn, zar, usd, etc.
+                                .setCurrency("usd") // Dynamically processes ngn, zar, usd, etc.
                                 .setUnitAmount(stripeAmount)
                                 .setProductData(
                                     SessionCreateParams.LineItem.PriceData.ProductData.builder()

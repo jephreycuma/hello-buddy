@@ -7,13 +7,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.client.RestClient;
 
 import za.co.digital.hellobuddy.dto.Product;
 import za.co.digital.hellobuddy.dto.ProductItemDTO;
+import za.co.digital.hellobuddy.util.SpringContextUtil;
 
 
 public class HelloBuddyInnerMemory {
@@ -41,6 +44,7 @@ public class HelloBuddyInnerMemory {
 		return catalogMaps.get(countryIso);
 	}
 	
+
 	private void loadReloadlyProducts(RestClient restClient, String countryIso, double platformMarkup) {
 	    Map<String, List<ProductItemDTO>> catalogMap = new HashMap<>();
 	    List<ProductItemDTO> airtimeList = new ArrayList<>();
@@ -49,6 +53,12 @@ public class HelloBuddyInnerMemory {
 	    List<ProductItemDTO> giftCardsList = new ArrayList<>();
 	    
 	    System.out.println("Platform markup: " + platformMarkup);
+	    StringRedisTemplate redisTemplate = null;
+	    try {
+	        redisTemplate = SpringContextUtil.getBean(StringRedisTemplate.class);
+	    } catch (Exception ex) {
+	        System.err.println("Redis Template could not be fetched from Spring context: " + ex.getMessage());
+	    }
 	    
 	    try {
 	        List<Product> remoteProducts = restClient.get()
@@ -77,7 +87,16 @@ public class HelloBuddyInnerMemory {
 	                
 	                double purchasePrice = prod.getUsdPrice() + platformMarkup;
 
-	                // Build DTO only if it meets your pricing baseline threshold rule
+	                if (redisTemplate != null && prod.getFxRate() != null && prod.getCurrencySymbol() != null) {
+	                    
+	                    String redisKey = "fx:" + countryIso.toUpperCase() + "_" + prod.getDestinationCurrencyCode().toUpperCase();
+	                    String fxValueString = String.valueOf(prod.getFxRate());
+	                    
+	                    // Save to Redis with a TTL of 1 hour (or customize as needed)
+	                    redisTemplate.opsForValue().set(redisKey, fxValueString, 1, TimeUnit.HOURS);
+	                    redisTemplate.opsForValue().set(countryIso, prod.getDestinationCurrencyCode().toUpperCase(), 1, TimeUnit.HOURS);
+	                }
+	                // --- REDIS CACHING BLOCK END ---
 	                if (purchasePrice > 0.5) {
 	                    dto = new ProductItemDTO(
 	                            Integer.parseInt(prod.getId().replaceAll("\\D", "")),
