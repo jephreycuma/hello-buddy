@@ -1,5 +1,7 @@
 package za.co.digital.hellobuddy.controller;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,7 +18,7 @@ import com.stripe.param.checkout.SessionCreateParams;
 @RestController
 @RequestMapping("/api/stripe")
 public class MockPaymentApiController {
-	
+    	
 	@Autowired
 	private StringRedisTemplate redisTemplate;
 
@@ -24,8 +26,10 @@ public class MockPaymentApiController {
     private String stripeApiKey;
     @Value("${hello.buddy.url}")
     private String helloBuddyUrl;
-    @Value("${platform.markup}")
-	private double platformMarkup;
+    @Value("${stripe.fixed.fee}")
+    private String stripeFixedFee;
+    @Value("${stripe.percentage.fee}")
+	private String stripePercentageFee;
 
     @PostMapping("/create-session")
     public ResponseEntity<Map<String, Object>> processStripeSession(@RequestBody Map<String, Object> payload) {
@@ -49,15 +53,22 @@ public class MockPaymentApiController {
             String currencySymbol = redisTemplate.opsForValue().get(resolvedCountryIso);
             String redisKey = "fx:" + resolvedCountryIso.toUpperCase() + "_" + currencySymbol.toUpperCase();
             String cachedFx = redisTemplate.opsForValue().get(redisKey);
+            String discount = redisTemplate.opsForValue().get(resolvedCountryIso+":" + payload.getOrDefault("productId", "")); // "16.9634";
+            
             System.out.println("Retrieved FX rate from Redis for key " + redisKey + ": " + cachedFx);
-            double fxRate = Double.parseDouble(cachedFx != null ? cachedFx : "1.0"); // Default to 1.0 if not found
+            System.out.println("Retrieved discount from Redis for key " + resolvedCountryIso + ":" + payload.getOrDefault("productId", "") + ": " + discount);
             
-            productPriceUsd = originalLocalPrice != null && !originalLocalPrice.isEmpty() ? (String.valueOf(Double.parseDouble(originalLocalPrice) / fxRate)) : "0.0";
-            productPriceUsd = String.valueOf(Double.parseDouble(productPriceUsd) + Double.valueOf(platformMarkup)); // Apply platform markup
+            BigDecimal fxRate = (cachedFx != null) ? new BigDecimal(cachedFx) : BigDecimal.ONE;
+            BigDecimal discountPct = (discount != null) ? new BigDecimal(discount) : BigDecimal.ZERO;
+            BigDecimal localPrice = (originalLocalPrice != null) ? new BigDecimal(originalLocalPrice) : BigDecimal.ZERO;
             
-            System.out.println("Resolved product price in USD after FX and markup: " + productPriceUsd);
+            BigDecimal stripeChargeAmount = calculateStripeCharge(localPrice, fxRate, discountPct);
+
+            productPriceUsd = String.valueOf(stripeChargeAmount.setScale(2, RoundingMode.HALF_UP).doubleValue());
             
-            double orderAmount =Double.parseDouble(productPriceUsd);
+            System.out.println("Resolved product price in USD after FX: " + productPriceUsd);
+            
+            double orderAmount = Double.parseDouble(productPriceUsd);
 
             Map<String, String> metadata = new HashMap<>();
             metadata.put("productId", (String) payload.getOrDefault("productId", ""));
@@ -68,7 +79,7 @@ public class MockPaymentApiController {
             metadata.put("senderPhone", (String) payload.getOrDefault("senderPhone", ""));
             metadata.put("recipientPhone", (String) payload.getOrDefault("recipientPhone", ""));
             metadata.put("recipientEmail", (String) payload.getOrDefault("recipientEmail", ""));
-            metadata.put("countryIso", resolvedCountryIso); // FIXED: No longer blindly overwrites to "ZA"
+            metadata.put("countryIso", resolvedCountryIso);
 
             long stripeAmount = Math.round(orderAmount * 100);
             SessionCreateParams params = SessionCreateParams.builder()
@@ -111,4 +122,25 @@ public class MockPaymentApiController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
+
+    private BigDecimal calculateStripeCharge(BigDecimal originalLocalPrice, BigDecimal fxRate, BigDecimal reloadlyDiscount) {
+
+    	BigDecimal STRIPE_FIXED = new BigDecimal(stripeFixedFee);
+    	BigDecimal STRIPE_INVERSE_PERCENT = BigDecimal.ONE.subtract(new BigDecimal(stripePercentageFee));
+        if (reloadlyDiscount == null) {
+            reloadlyDiscount = BigDecimal.ZERO;
+        }
+
+        if (reloadlyDiscount.compareTo(BigDecimal.ONE) > 0) {
+            reloadlyDiscount = reloadlyDiscount.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
+        }
+
+        BigDecimal baseCostUsd = originalLocalPrice
+                .divide(fxRate, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.ONE.subtract(reloadlyDiscount));
+
+        return baseCostUsd.add(STRIPE_FIXED)
+                .divide(STRIPE_INVERSE_PERCENT, 2, RoundingMode.HALF_UP);
+    }
+    
 }

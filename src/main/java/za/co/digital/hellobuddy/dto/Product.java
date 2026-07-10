@@ -1,16 +1,19 @@
 package za.co.digital.hellobuddy.dto;
 
+import java.math.BigDecimal;
+
 public class Product {
 	private String id;
-	private String network; // VODACOM, MTN, CELL_C, TELKOM
-	private String type; // AIRTIME, DATA
-	private String pinType; // PIN, PINLESS
-	private double price; // Face value (e.g., 16.00 ZAR)
+	private String network;
+	private String type; 
+	private String pinType; 
+	private double price; 
 	private String description;
 	private boolean generateLocalDenominations;
-	private String currencySymbol; // New field for currency symbol
-	private String destinationCurrencyCode; // New field for destination currency code
+	private String currencySymbol; 
+	private String destinationCurrencyCode; 
 	private String logoUrl;
+	private BigDecimal commission;
 	
 	// FX Data Translation Fields
 	private Double fxRate;      // Exchange rate from Reloadly (e.g., 18.15)
@@ -19,7 +22,7 @@ public class Product {
 	// Updated Constructor
 	public Product(String id, String network, String type, String pinType, double price, String description,
 			boolean generateLocalDenominations, String currencySymbol, String destinationCurrencyCode, String logoUrl,
-			Double fxRate) {
+			Double fxRate, BigDecimal commission) {
 		this.id = id;
 		this.network = network;
 		this.type = type;
@@ -30,6 +33,7 @@ public class Product {
 		this.currencySymbol = currencySymbol; 
 		this.destinationCurrencyCode = destinationCurrencyCode; 
 		this.logoUrl = logoUrl;
+		this.commission = commission;
 		
 		// Map the FX context details dynamically
 		this.fxRate = fxRate;
@@ -115,5 +119,13 @@ public class Product {
 
 	public void setUsdPrice(Double usdPrice) {
 		this.usdPrice = usdPrice;
+	}
+
+	public BigDecimal getCommission() {
+		return commission;
+	}
+
+	public void setCommission(BigDecimal commission) {
+		this.commission = commission;
 	}
 }

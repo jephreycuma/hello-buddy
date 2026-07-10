@@ -95,6 +95,8 @@ public class HelloBuddyInnerMemory {
 	                    // Save to Redis with a TTL of 1 hour (or customize as needed)
 	                    redisTemplate.opsForValue().set(redisKey, fxValueString, 1, TimeUnit.HOURS);
 	                    redisTemplate.opsForValue().set(countryIso, prod.getDestinationCurrencyCode().toUpperCase(), 1, TimeUnit.HOURS);
+	                    String commisionValueString = (prod.getCommission() != null) ? prod.getCommission().toString() : "0.0";
+	                    redisTemplate.opsForValue().set(countryIso+":"+prod.getId(), commisionValueString, 1, TimeUnit.HOURS);
 	                }
 	                // --- REDIS CACHING BLOCK END ---
 	                if (purchasePrice > 0.5) {
