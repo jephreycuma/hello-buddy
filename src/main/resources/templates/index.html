@@ -192,7 +192,7 @@
 	            </div>
 	            <div class="text-right">
 	                <span class="text-xs text-gray-400 block font-semibold uppercase tracking-wider">Total Due</span>
-	                <span id="modalItemPrice" class="font-black text-xl text-red-600">R0.00</span>
+	                <span id="modalItemPrice" class="font-black text-xl text-red-600">0.00</span>
 	            </div>
 	        </div>
 	
@@ -532,7 +532,21 @@
         function handleAnyAmountPurchase(networkName, operatorId) {
             const inputField = document.getElementById('anyAmountInput');
             const numericValue = parseFloat(inputField.value);
-            const currencySymbol = currentCountryIso === 'NG' ? '₦' : 'R';
+            
+            const countryCurrencyMap = {
+                    "DZ": "DZD", "AO": "AOA", "BJ": "XOF", "BW": "BWP", "BF": "XOF", 
+                    "BI": "BIF", "CV": "CVE", "CM": "XAF", "CF": "XAF", "KM": "KMF", 
+                    "CG": "XAF", "CD": "CDF", "EG": "EGP", "SZ": "SZL", "ET": "ETB", 
+                    "GA": "XAF", "GM": "GMD", "GH": "GHS", "GN": "GNF", "GW": "XOF", 
+                    "CI": "XOF", "KE": "KES", "LR": "LRD", "MG": "MGA", "MW": "MWK", 
+                    "ML": "XOF", "MR": "MRU", "MA": "MAD", "MZ": "MZN", "NA": "NAD", 
+                    "NE": "XOF", "NG": "NGN", "RW": "RWF", "SN": "XOF", "SC": "SCR", 
+                    "SL": "SLL", "SO": "SOS", "ZA": "R",   "TZ": "TZS", "TG": "XOF", 
+                    "TN": "TND", "UG": "UGX", "ZM": "ZMW", "ZW": "ZWL", "IN": "INR"
+                };
+            
+            const currencySymbol = countryCurrencyMap[currentCountryIso] || "R";//currentCountryIso === 'NG' ? '₦' : 'R';
+            //const currencySymbol = productItem.displayPrice ? productItem.displayPrice.replace(/[\d.,\s]/g, '') : 'R';
             const minAmt = currentCountryIso === 'NG' ? 100.00 : 2.00;
             const maxAmt = currentCountryIso === 'NG' ? 50000.00 : 1000.00;
 
@@ -606,6 +620,19 @@
             const recipientPhoneInput = document.getElementById('recipientPhoneInput').value.replace(/\s+/g, '');
             const receiverEmailInput = document.getElementById('receiverEmailInput').value.trim();
             
+            // ISO Country to Currency Code mapping
+            const countryCurrencyMap = {
+                "DZ": "DZD", "AO": "AOA", "BJ": "XOF", "BW": "BWP", "BF": "XOF", 
+                "BI": "BIF", "CV": "CVE", "CM": "XAF", "CF": "XAF", "KM": "KMF", 
+                "CG": "XAF", "CD": "CDF", "EG": "EGP", "SZ": "SZL", "ET": "ETB", 
+                "GA": "XAF", "GM": "GMD", "GH": "GHS", "GN": "GNF", "GW": "XOF", 
+                "CI": "XOF", "KE": "KES", "LR": "LRD", "MG": "MGA", "MW": "MWK", 
+                "ML": "XOF", "MR": "MRU", "MA": "MAD", "MZ": "MZN", "NA": "NAD", 
+                "NE": "XOF", "NG": "NGN", "RW": "RWF", "SN": "XOF", "SC": "SCR", 
+                "SL": "SLL", "SO": "SOS", "ZA": "R",   "TZ": "TZS", "TG": "XOF", 
+                "TN": "TND", "UG": "UGX", "ZM": "ZMW", "ZW": "ZWL", "IN": "INR"
+            };
+
             // 2. Country-Specific Validation Logic
             
             // Clean string for checking length (remove "+" if user included it)
@@ -621,7 +648,6 @@
             let expectedFormatHelp = "";
 
             if (currentCountryIso === 'ZA') {
-
                 if (cleanPhone.startsWith('0')) {
                     isValid = (cleanPhone.length === 10);
                     expectedFormatHelp = "10 digits starting with 0";
@@ -670,8 +696,11 @@
 
             // Update Step 2 checkout UI Summary components
             if (selectedProductContext) {
+                // Determine the dynamic currency string (defaults to 'R' if country isn't matched)
+                const currencySymbol = countryCurrencyMap[currentCountryIso] || "R";
+                
                 document.getElementById('modalItemName').innerText = selectedProductContext.name;
-                document.getElementById('modalItemPrice').innerText = selectedProductContext.displayPrice || "R" + selectedProductContext.price;
+                document.getElementById('modalItemPrice').innerText = selectedProductContext.displayPrice || (currencySymbol + " " + selectedProductContext.price);
             }
             document.getElementById('modalItemRecipient').innerText = "Target: " + recipientPhoneInput;
             
