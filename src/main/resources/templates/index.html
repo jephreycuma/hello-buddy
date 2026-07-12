@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello Buddy</title>
-    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}" href="favicon.ico">
+    <link rel="icon" type="image/x-icon" th:href="@{/images.png}" href="images.png">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
@@ -545,8 +545,7 @@
                     "TN": "TND", "UG": "UGX", "ZM": "ZMW", "ZW": "ZWL", "IN": "INR"
                 };
             
-            const currencySymbol = countryCurrencyMap[currentCountryIso] || "R";//currentCountryIso === 'NG' ? '₦' : 'R';
-            //const currencySymbol = productItem.displayPrice ? productItem.displayPrice.replace(/[\d.,\s]/g, '') : 'R';
+            const currencySymbol = countryCurrencyMap[currentCountryIso] || "R";
             const minAmt = currentCountryIso === 'NG' ? 100.00 : 2.00;
             const maxAmt = currentCountryIso === 'NG' ? 50000.00 : 1000.00;
 
@@ -659,9 +658,6 @@
                     expectedFormatHelp = "a local code starting with 0 or international starting with 27";
                 }
             } else if (currentCountryIso === 'NG') {
-                // Nigeria: 
-                // Local: Starts with '0' -> Length must be exactly 11 digits (e.g., 08031234567)
-                // International: Starts with '234' -> Length must be exactly 13 digits (e.g., 2348031234567)
                 if (cleanPhone.startsWith('0')) {
                     isValid = (cleanPhone.length === 11);
                     expectedFormatHelp = "11 digits starting with 0";

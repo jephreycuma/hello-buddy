@@ -22,9 +22,7 @@ import za.co.digital.hellobuddy.util.SpringContextUtil;
 public class HelloBuddyInnerMemory {
 	
 	private static HelloBuddyInnerMemory instance;
-	//private static Map<String, List<ProductItemDTO>> catalogMap = new HashMap<>();
 	private static Map<String,Map<String, List<ProductItemDTO>>> catalogMaps = new HashMap<>();
-	private static long southAfricaLastLoadTime = 0;//86400000 millisecs = 24 hours
 	private static long TIME_OUT_IN_MINUTES = 240000;
 	
 	private HelloBuddyInnerMemory(RestClient restClient, String countryIso, double platformMarkup) {
@@ -32,9 +30,12 @@ public class HelloBuddyInnerMemory {
 	}
 
 	public static HelloBuddyInnerMemory getInstance(RestClient restClient, String countryIso, double platformMarkup) {
+		StringRedisTemplate redisTemplate = getRedisTemplate();
+		 String lastLoadTime = redisTemplate.opsForValue().get("loadTime:"+countryIso);
+		 long lastLoadTimeMillis = (lastLoadTime != null) ? Long.parseLong(lastLoadTime) : 0;
 		if(instance == null) {
 			instance = new HelloBuddyInnerMemory(restClient, countryIso, platformMarkup);
-		}else if(catalogMaps.get(countryIso) == null ||southAfricaLastLoadTime < (System.currentTimeMillis() - TIME_OUT_IN_MINUTES)) {
+		}else if(catalogMaps.get(countryIso) == null ||lastLoadTimeMillis < (System.currentTimeMillis() - TIME_OUT_IN_MINUTES)) {
 			instance = new HelloBuddyInnerMemory(restClient, countryIso, platformMarkup);	
 		}
 		return instance;
@@ -44,6 +45,15 @@ public class HelloBuddyInnerMemory {
 		return catalogMaps.get(countryIso);
 	}
 	
+	private static StringRedisTemplate getRedisTemplate() {
+		 StringRedisTemplate redisTemplate = null;
+	    try {
+	        redisTemplate = SpringContextUtil.getBean(StringRedisTemplate.class);
+	    } catch (Exception ex) {
+	        System.err.println("Redis Template could not be fetched from Spring context: " + ex.getMessage());
+	    }
+	    return redisTemplate;
+	}
 
 	private void loadReloadlyProducts(RestClient restClient, String countryIso, double platformMarkup) {
 	    Map<String, List<ProductItemDTO>> catalogMap = new HashMap<>();
@@ -53,12 +63,7 @@ public class HelloBuddyInnerMemory {
 	    List<ProductItemDTO> giftCardsList = new ArrayList<>();
 	    
 	    System.out.println("Platform markup: " + platformMarkup);
-	    StringRedisTemplate redisTemplate = null;
-	    try {
-	        redisTemplate = SpringContextUtil.getBean(StringRedisTemplate.class);
-	    } catch (Exception ex) {
-	        System.err.println("Redis Template could not be fetched from Spring context: " + ex.getMessage());
-	    }
+	    StringRedisTemplate redisTemplate = getRedisTemplate();
 	    
 	    try {
 	        List<Product> remoteProducts = restClient.get()
@@ -140,7 +145,7 @@ public class HelloBuddyInnerMemory {
 	    catalogMap.put("GiftCards", giftCardsList);
 	    
 	    catalogMaps.put(countryIso, catalogMap); 
-	    southAfricaLastLoadTime = System.currentTimeMillis();
+	    redisTemplate.opsForValue().set("loadTime:"+countryIso, Long.toString(System.currentTimeMillis()), 1, TimeUnit.HOURS);
 	}
 	
 	private void generateLocalDenominations(String cleanedNetwork, Product prod,List<ProductItemDTO> topupList,double platformMarkup) {
