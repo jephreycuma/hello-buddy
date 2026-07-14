@@ -157,8 +157,16 @@
             document.getElementById('activeChatHeaderStatus').innerText = "Assigned Routing ID: " + threadId;
             document.getElementById('agentReplyForm').classList.remove('hidden');
 
-            renderThreadSidebar();
-            renderMessages(threadId);
+            // Fetch message history from the database
+            fetch('/api/chat/history/' + threadId)
+                .then(response => response.json())
+                .then(history => {
+                    // Overwrite memory map with verified database state
+                    thread.messages = history;
+                    renderThreadSidebar();
+                    renderMessages(threadId);
+                })
+                .catch(err => console.error("Error loading chat history:", err));
         }
 
         function renderMessages(threadId) {

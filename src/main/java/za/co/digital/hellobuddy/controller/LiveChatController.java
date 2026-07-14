@@ -1,42 +1,57 @@
 package za.co.digital.hellobuddy.controller;
 
 import jakarta.servlet.http.HttpSession;
-import za.co.digital.hellobuddy.dto.ChatMessage;
 import za.co.digital.hellobuddy.model.Agent;
+import za.co.digital.hellobuddy.model.ChatMessage;
 import za.co.digital.hellobuddy.repository.AgentRepository;
+import za.co.digital.hellobuddy.repository.ChatMessageRepository;
 
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.List;
 import java.util.Optional;
 
 @Controller
 public class LiveChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatMessageRepository messageRepository;
     private final AgentRepository agentRepository;
 
-    public LiveChatController(SimpMessagingTemplate messagingTemplate, AgentRepository agentRepository) {
+    public LiveChatController(SimpMessagingTemplate messagingTemplate, 
+                              ChatMessageRepository messageRepository, 
+                              AgentRepository agentRepository) {
         this.messagingTemplate = messagingTemplate;
+        this.messageRepository = messageRepository;
         this.agentRepository = agentRepository;
     }
 
-    // 1. Render Login Screen
+    // ==========================================
+    // 1. AGENT ROUTING & AUTHENTICATION
+    // ==========================================
+
     @GetMapping("/agent/login")
     public String showLoginPage() {
-        return "agent-login"; 
+        return "agent-login"; // Renders templates/agent-login.html
     }
 
-    // 2. Process Login Credentials
     @PostMapping("/agent/login")
-    public String processLogin(@RequestParam String username, @RequestParam String password, HttpSession session, Model model) {
+    public String processLogin(@RequestParam String username, 
+                               @RequestParam String password, 
+                               HttpSession session, 
+                               Model model) {
         Optional<Agent> agentOpt = agentRepository.findByUsername(username);
         
-        if (agentOpt.isPresent() && agentOpt.get().getPassword().equals(password)) { // Plain text validation for simplicity
+        if (agentOpt.isPresent() && agentOpt.get().getPassword().equals(password)) {
             session.setAttribute("loggedInAgent", agentOpt.get());
             return "redirect:/agent/workspace";
         }
@@ -45,33 +60,45 @@ public class LiveChatController {
         return "agent-login";
     }
 
-    // 3. Render Dashboard Protected Route
     @GetMapping("/agent/workspace")
     public String showWorkspace(HttpSession session, Model model) {
         Agent agent = (Agent) session.getAttribute("loggedInAgent");
         if (agent == null) {
-            return "redirect:/agent/login"; // Kick back to login if unauthenticated
+            return "redirect:/agent/login"; // Redirect to login if not authenticated
         }
         model.addAttribute("agent", agent);
-        return "agent-workspace";
+        return "agent-workspace"; // Renders templates/agent-workspace.html
     }
 
-    // 4. Handle incoming payload distributions
+    // ==========================================
+    // 2. WEBSOCKET & CHAT PERSISTENCE
+    // ==========================================
+
     @MessageMapping("/chat.send")
     public void processMessage(@Payload ChatMessage message) {
         if (message.getTimestamp() == 0) {
             message.setTimestamp(System.currentTimeMillis());
         }
 
-        // Send to the private customer loop
+        // 1. Save every single message to the DB instantly
+        messageRepository.save(message);
+
+        // 2. Broadcast to customer thread
         messagingTemplate.convertAndSend("/topic/thread/" + message.getThreadId(), message);
 
-        // Routing logic: route to target channel
-        if ("user".equals(message.getSender())) {
-            // Mock dynamic assignment logic: If a specific agent handles a thread, route it to them
-            // In a live system, look up thread assignments from your DB here
-            String assignedAgentId = "1"; // e.g., assuming thread is linked to Agent ID 1
-            messagingTemplate.convertAndSend("/topic/agent-" + assignedAgentId, message);
-        }
+        // 3. Forward to the agent's live dashboard stream
+        // For simplicity, routing to agent ID "1". You can dynamic-link this later.
+        String assignedAgentId = "1"; 
+        messagingTemplate.convertAndSend("/topic/agent-" + assignedAgentId, message);
+    }
+
+    // ==========================================
+    // 3. HISTORICAL CHAT REST ENDPOINT
+    // ==========================================
+
+    @GetMapping("/api/chat/history/{threadId}")
+    @ResponseBody
+    public List<ChatMessage> getChatHistory(@PathVariable String threadId) {
+        return messageRepository.findByThreadIdOrderByTimestampAsc(threadId);
     }
 }

@@ -417,6 +417,7 @@
 
         stompClient.connect({}, function (frame) {
             // Subscribe to our custom private dynamic thread
+            loadCustomerChatHistory(currentThreadId);
             stompClient.subscribe('/topic/thread/' + currentThreadId, function (response) {
                 const msg = JSON.parse(response.body);
                 // Render the incoming message on screen (skip duplicating our own renders)
@@ -427,6 +428,21 @@
         }, function (error) {
             console.error("WebSocket Connection Error: ", error);
         });
+    }
+    
+ // Add this logic right inside 'connectToWebSocket' or right after setting currentThreadId:
+    function loadCustomerChatHistory(threadId) {
+        fetch('/api/chat/history/' + threadId)
+            .then(response => response.json())
+            .then(history => {
+                const stream = document.getElementById('chatMessagesStream');
+                stream.innerHTML = ''; // Clear setup text
+                
+                history.forEach(msg => {
+                    appendMessage(msg.sender, msg.senderName, msg.message);
+                });
+            })
+            .catch(err => console.error("Error loading client history:", err));
     }
 
     function initiateChatThread(event) {
