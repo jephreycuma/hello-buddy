@@ -6,6 +6,9 @@
     <title>Hello Buddy</title>
     <link rel="icon" type="image/x-icon" th:href="@{/images.png}" href="images.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Include STOMP and SockJS libraries in the head tag of your HTML file -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
@@ -263,9 +266,79 @@
             <div class="flex space-x-8">
                 <a href="javascript:void(0);" onclick="openContactModal()" class="hover:text-red-500 font-medium transition">Contact Us</a>
                 <a href="javascript:void(0);" onclick="openAddressModal()" class="hover:text-red-500 font-medium transition">Our Address</a>
+                <a href="javascript:void(0);" onclick="toggleLiveChat()" class="text-red-400 hover:text-red-500 font-bold transition flex items-center space-x-1">
+                    <span class="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse"></span>
+                    <span>Live Support Chat</span>
+                </a>
             </div>
         </div>
     </footer>
+    
+    <button onclick="toggleLiveChat()" class="fixed bottom-6 right-6 bg-red-600 hover:bg-red-700 text-white p-4 rounded-full shadow-2xl z-[150] transition hover:scale-110 focus:outline-none flex items-center justify-center">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+        </svg>
+    </button>
+
+    <div id="liveChatWidget" class="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden hidden z-[150] transition-all duration-300">
+        
+        <div class="bg-gray-900 text-white p-4 border-b-2 border-red-600 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <span class="relative flex h-3.5 w-3.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-green-500"></span>
+                </span>
+                <div>
+                    <h4 class="font-extrabold text-sm tracking-wide">Hello Buddy Support</h4>
+                    <p class="text-[10px] text-gray-400">Usually responds in minutes</p>
+                </div>
+            </div>
+            <button onclick="toggleLiveChat()" class="text-gray-400 hover:text-white font-bold text-xl transition">&times;</button>
+        </div>
+
+        <div class="flex-grow flex flex-col bg-gray-50 overflow-hidden">
+            
+            <div id="chatSetupView" class="p-6 flex flex-col justify-between h-full overflow-y-auto space-y-4">
+                <div class="text-center space-y-2">
+                    <span class="text-4xl">👋</span>
+                    <h5 class="font-bold text-gray-800 text-base">Start a Live Conversation</h5>
+                    <p class="text-xs text-gray-500 px-4">Fill out your details to connect to our support desks around the world.</p>
+                </div>
+                
+                <form onsubmit="initiateChatThread(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Your Full Name</label>
+                        <input type="text" id="chatUserName" required class="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500" placeholder="e.g., John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Email Address</label>
+                        <input type="email" id="chatUserEmail" required class="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500" placeholder="e.g., john@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">How can we help?</label>
+                        <textarea id="chatUserMessage" required rows="2" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500 resize-none" placeholder="Explain your query..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-md shadow-red-100 uppercase tracking-wider">
+                        Start Chat
+                    </button>
+                </form>
+            </div>
+
+            <div id="chatActiveView" class="hidden flex flex-col h-full overflow-hidden">
+                <div id="chatMessagesStream" class="flex-grow p-4 overflow-y-auto space-y-3 text-xs leading-relaxed flex flex-col">
+                    </div>
+
+                <form onsubmit="sendChatMessage(event)" class="p-3 bg-white border-t border-gray-100 flex items-center space-x-2">
+                    <input type="text" id="chatTextInput" required class="flex-grow p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-red-500 focus:bg-white transition" placeholder="Type your message here...">
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-xl transition flex items-center justify-center shadow-md shadow-red-100">
+                        <svg class="w-4 h-4 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <div id="contactInfoModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden items-center justify-center z-50 p-4 overflow-y-auto">
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-100 my-8">
@@ -321,10 +394,118 @@
             </div>
         </div>
     </div>
-
-    
-
     <script th:inline="javascript">
+    
+    let stompClient = null;
+    let currentThreadId = null;
+    let customerName = "Guest";
+
+    // Generate a unique thread ID for the user's session
+    function generateUUID() {
+        return 'thread-' + Math.random().toString(36).substring(2, 9) + '-' + Date.now();
+    }
+
+    function toggleLiveChat() {
+        const chatWidget = document.getElementById('liveChatWidget');
+        chatWidget.classList.toggle('hidden');
+    }
+
+    function connectToWebSocket() {
+        const socket = new SockJS('/ws-chat');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null; // Suppress debug logs in console
+
+        stompClient.connect({}, function (frame) {
+            // Subscribe to our custom private dynamic thread
+            stompClient.subscribe('/topic/thread/' + currentThreadId, function (response) {
+                const msg = JSON.parse(response.body);
+                // Render the incoming message on screen (skip duplicating our own renders)
+                if (msg.sender !== 'user') {
+                    appendMessage('agent', msg.senderName, msg.message);
+                }
+            });
+        }, function (error) {
+            console.error("WebSocket Connection Error: ", error);
+        });
+    }
+
+    function initiateChatThread(event) {
+        event.preventDefault();
+        customerName = document.getElementById('chatUserName').value;
+        const email = document.getElementById('chatUserEmail').value;
+        const initialQuery = document.getElementById('chatUserMessage').value;
+
+        currentThreadId = generateUUID();
+
+        // Show Chat Stream view
+        document.getElementById('chatSetupView').classList.add('hidden');
+        document.getElementById('chatActiveView').classList.remove('hidden');
+
+        // Establish persistent, real-time pipe
+        connectToWebSocket();
+
+        // Render immediately locally
+        appendMessage('user', customerName, initialQuery);
+
+        // Give Connection a microsecond to ready, then send the initial message payload
+        setTimeout(() => {
+            if (stompClient && stompClient.connected) {
+                stompClient.send("/app/chat.send", {}, JSON.stringify({
+                    threadId: currentThreadId,
+                    sender: 'user',
+                    senderName: customerName,
+                    message: initialQuery
+                }));
+            }
+        }, 500);
+    }
+
+    function sendChatMessage(event) {
+        event.preventDefault();
+        const textInput = document.getElementById('chatTextInput');
+        const userMsg = textInput.value.trim();
+        if (!userMsg) return;
+
+        // Render locally immediately
+        appendMessage('user', 'You', userMsg);
+        textInput.value = '';
+
+        // Send payload to backend
+        if (stompClient && stompClient.connected) {
+            stompClient.send("/app/chat.send", {}, JSON.stringify({
+                threadId: currentThreadId,
+                sender: 'user',
+                senderName: customerName,
+                message: userMsg
+            }));
+        }
+    }
+
+    function appendMessage(sender, displayName, text) {
+        const stream = document.getElementById('chatMessagesStream');
+        const isUser = sender === 'user';
+        
+        const messageWrapper = document.createElement('div');
+        messageWrapper.className = `flex flex-col ${isUser ? 'items-end' : 'items-start'}`;
+
+        const label = document.createElement('span');
+        label.className = 'text-[9px] text-gray-400 font-bold mb-0.5 px-1';
+        label.innerText = displayName;
+
+        const bubble = document.createElement('div');
+        bubble.className = `max-w-[80%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
+            isUser 
+            ? 'bg-red-600 text-white rounded-tr-none' 
+            : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
+        }`;
+        bubble.innerText = text;
+
+        messageWrapper.appendChild(label);
+        messageWrapper.appendChild(bubble);
+        stream.appendChild(messageWrapper);
+        
+        stream.scrollTop = stream.scrollHeight;
+    }
     
     /**
      * Clears visibility variables across information views 

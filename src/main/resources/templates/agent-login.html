@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello Buddy - Agent Portal</title>
+    <link rel="icon" type="image/x-icon" th:href="@{/images.png}" href="images.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4 font-sans">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div class="bg-gray-950 text-white p-6 border-b-2 border-red-600 text-center">
+            <h2 class="text-xl font-extrabold tracking-wide">Agent Desk Authentication</h2>
+            <p class="text-xs text-gray-400 mt-1">Hello Buddy Support Dashboard Login</p>
+        </div>
+        
+        <form th:action="@{/agent/login}" method="POST" class="p-6 space-y-4">
+            <div th:if="${error}" class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600 font-medium">
+                <span th:text="${error}">Error Text</span>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Username Identifier</label>
+                <input type="text" name="username" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500" placeholder="Enter username...">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Security Password</label>
+                <input type="password" name="password" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500" placeholder="••••••••">
+            </div>
+            
+            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md shadow-red-100 uppercase tracking-wider mt-2">
+                Log In Securely
+            </button>
+        </form>
+    </div>
+</body>
+</html>
