@@ -298,45 +298,52 @@
 
         <div class="flex-grow flex flex-col bg-gray-50 overflow-hidden">
             
-            <div id="chatSetupView" class="p-6 flex flex-col justify-between h-full overflow-y-auto space-y-4">
-                <div class="text-center space-y-2">
-                    <span class="text-4xl">👋</span>
-                    <h5 class="font-bold text-gray-800 text-base">Start a Live Conversation</h5>
-                    <p class="text-xs text-gray-500 px-4">Fill out your details to connect to our support desks around the world.</p>
-                </div>
-                
-                <form onsubmit="initiateChatThread(event)" class="space-y-3">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Your Full Name</label>
-                        <input type="text" id="chatUserName" required class="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500" placeholder="e.g., John Doe">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Email Address</label>
-                        <input type="email" id="chatUserEmail" required class="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500" placeholder="e.g., john@example.com">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">How can we help?</label>
-                        <textarea id="chatUserMessage" required rows="2" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500 resize-none" placeholder="Explain your query..."></textarea>
-                    </div>
-                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-md shadow-red-100 uppercase tracking-wider">
-                        Start Chat
-                    </button>
-                </form>
-            </div>
-
-            <div id="chatActiveView" class="hidden flex flex-col h-full overflow-hidden">
-                <div id="chatMessagesStream" class="flex-grow p-4 overflow-y-auto space-y-3 text-xs leading-relaxed flex flex-col">
-                    </div>
-
-                <form onsubmit="sendChatMessage(event)" class="p-3 bg-white border-t border-gray-100 flex items-center space-x-2">
-                    <input type="text" id="chatTextInput" required class="flex-grow p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-red-500 focus:bg-white transition" placeholder="Type your message here...">
-                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-xl transition flex items-center justify-center shadow-md shadow-red-100">
-                        <svg class="w-4 h-4 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                        </svg>
-                    </button>
-                </form>
-            </div>
+            <div id="chatSetupView" class="p-6 space-y-4">
+			    <h2 class="text-sm font-bold text-gray-700">Start a Conversation</h2>
+			    <div>
+			        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Your Name</label>
+			        <input type="text" id="chatUserName" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-red-600" placeholder="">
+			    </div>
+			    <div>
+			        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">How can we help?</label>
+			        
+			        <div class="flex items-center space-x-2 mb-2">
+			            <button type="button" onclick="insertInitialEmoji('👋')" class="hover:scale-125 transition text-base">👋</button>
+			            <button type="button" onclick="insertInitialEmoji('👏')" class="hover:scale-125 transition text-base">👏</button>
+			            <button type="button" onclick="insertInitialEmoji('😢')" class="hover:scale-125 transition text-base">😢</button>
+			            <button type="button" onclick="insertInitialEmoji('😡')" class="hover:scale-125 transition text-base">😡</button>
+			            <button type="button" onclick="insertInitialEmoji('😞')" class="hover:scale-125 transition text-base">😞</button>
+			        </div>
+			        
+			        <input type="text" id="chatUserMessage" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-red-600" placeholder="Type your first message...">
+			    </div>
+			    <button onclick="initiateChatThread(event)" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs transition uppercase tracking-wider">
+			        Connect to Support
+			    </button>
+			</div>
+			
+			<div id="chatActiveView" class="hidden flex flex-col h-[400px] bg-white">
+			    <div id="chatMessagesStream" class="flex-grow p-4 overflow-y-auto space-y-3 text-xs"></div>
+			
+			    <form id="customerChatForm" onsubmit="sendChatMessage(event)" class="p-3 bg-white border-t border-gray-100 flex flex-col space-y-2">
+			        <div class="flex items-center space-x-2.5 pb-1">
+			            <button type="button" onclick="insertCustomerEmoji('😊')" class="hover:scale-125 transition text-base">😊</button>
+			            <button type="button" onclick="insertCustomerEmoji('😂')" class="hover:scale-125 transition text-base">😂</button>
+			            <button type="button" onclick="insertCustomerEmoji('👏')" class="hover:scale-125 transition text-base">👏</button>
+			            <button type="button" onclick="insertCustomerEmoji('😢')" class="hover:scale-125 transition text-base">😢</button>
+			            <button type="button" onclick="insertCustomerEmoji('😡')" class="hover:scale-125 transition text-base">😡</button>
+			            <button type="button" onclick="insertCustomerEmoji('😞')" class="hover:scale-125 transition text-base">😞</button>
+			            <button type="button" onclick="insertCustomerEmoji('👍')" class="hover:scale-125 transition text-base">👍</button>
+			        </div>
+			
+			        <div class="flex items-center space-x-2">
+			            <input type="text" id="chatTextInput" required autocomplete="off" class="flex-grow p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-red-600 focus:bg-white transition" placeholder="Type your message here...">
+			            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition">
+			                Send
+			            </button>
+			        </div>
+			    </form>
+			</div>
         </div>
     </div>
 
@@ -398,7 +405,7 @@
     
     let stompClient = null;
     let currentThreadId = null;
-    let customerName = "Guest";
+    let customerName = "";
 
     // Generate a unique thread ID for the user's session
     function generateUUID() {
@@ -410,33 +417,59 @@
         chatWidget.classList.toggle('hidden');
     }
 
-    function connectToWebSocket(initialMessage = null) {
+    function connectToWebSocket(initialMessage = null, tempId = null) {
         const socket = new SockJS('/ws-chat');
         stompClient = Stomp.over(socket);
         stompClient.debug = null;
 
         stompClient.connect({}, function (frame) {
             
-            // 👉 FIX: Only hit the DB history endpoint if this is NOT a brand-new session
             if (!initialMessage) {
                 loadCustomerChatHistory(currentThreadId);
             }
 
-            // SAFE TRANSMISSION: Send the initial message payload now that the channel is open
             if (initialMessage) {
                 stompClient.send("/app/chat.send", {}, JSON.stringify({
+                    id: null,
                     threadId: currentThreadId,
                     sender: 'user',
                     senderName: customerName,
-                    message: initialMessage
+                    message: initialMessage,
+                    timestamp: Date.now()
                 }));
             }
 
             stompClient.subscribe('/topic/thread/' + currentThreadId, function (response) {
                 const msg = JSON.parse(response.body);
-                // Render incoming agent replies
-                if (msg.sender !== 'user') {
-                    appendMessage('agent', msg.senderName, msg.message);
+                
+                const existingMsgDom = document.getElementById(`msg-${msg.id}`);
+                if (existingMsgDom) {
+                    const bodyText = existingMsgDom.querySelector('.msg-body');
+                    if (bodyText) {
+                        bodyText.innerText = msg.message;
+                        
+                        if (!existingMsgDom.querySelector('.edited-tag')) {
+                            const tag = document.createElement('span');
+                            tag.className = 'edited-tag text-[8px] text-gray-400 italic ml-1';
+                            tag.innerText = '(edited)';
+                            existingMsgDom.querySelector('.msg-label').appendChild(tag);
+                        }
+                    }
+                    return;
+                }
+
+                if (msg.sender === 'user') {
+                    const tempBubble = document.querySelector('[id^="msg-temp-"]');
+                    if (tempBubble) {
+                        tempBubble.id = `msg-${msg.id}`;
+                        
+                        const editBtn = tempBubble.querySelector('button');
+                        if (editBtn) {
+                            editBtn.onclick = () => triggerClientMessageEdit(msg.id, msg.message);
+                        }
+                    }
+                } else {
+                    appendMessage(msg.id, 'agent', msg.senderName, msg.message);
                 }
             });
         }, function (error) {
@@ -444,13 +477,12 @@
         });
     }
     
- // Add this logic right inside 'connectToWebSocket' or right after setting currentThreadId:
     function loadCustomerChatHistory(threadId) {
         fetch('/api/chat/history/' + threadId)
             .then(response => response.json())
             .then(history => {
                 const stream = document.getElementById('chatMessagesStream');
-                stream.innerHTML = ''; // Clear setup text
+                stream.innerHTML = ''; 
                 
                 history.forEach(msg => {
                     appendMessage(msg.sender, msg.senderName, msg.message);
@@ -461,81 +493,132 @@
 
     function initiateChatThread(event) {
         event.preventDefault();
-        customerName = document.getElementById('chatUserName').value;
-        const email = document.getElementById('chatUserEmail').value;
-        const initialQuery = document.getElementById('chatUserMessage').value;
+        customerName = document.getElementById('chatUserName').value.trim();
+        const initialQuery = document.getElementById('chatUserMessage').value.trim();
 
-        currentThreadId = generateUUID();
+        if (!customerName || !initialQuery) {
+            alert("Please enter both your name and a message.");
+            return;
+        }
 
-        // Show Chat Stream view
+        currentThreadId = 'thread-' + Math.random().toString(36).substring(2, 9) + '-' + Date.now();
+
         document.getElementById('chatSetupView').classList.add('hidden');
         document.getElementById('chatActiveView').classList.remove('hidden');
 
-        appendMessage('user', customerName, initialQuery);
-        // Establish persistent, real-time pipe
-        connectToWebSocket(initialQuery);
+        const tempId = 'temp-' + Date.now();
+        appendMessage(tempId, 'user', customerName, initialQuery);
 
-        // Render immediately locally
-        //appendMessage('user', customerName, initialQuery);
-
-        // Give Connection a microsecond to ready, then send the initial message payload
-        setTimeout(() => {
-            if (stompClient && stompClient.connected) {
-                stompClient.send("/app/chat.send", {}, JSON.stringify({
-                    threadId: currentThreadId,
-                    sender: 'user',
-                    senderName: customerName,
-                    message: initialQuery
-                }));
-            }
-        }, 500);
+        connectToWebSocket(initialQuery, tempId);
     }
 
     function sendChatMessage(event) {
         event.preventDefault();
-        const textInput = document.getElementById('chatTextInput');
-        const userMsg = textInput.value.trim();
-        if (!userMsg) return;
+        const input = document.getElementById('chatTextInput');
+        const messageText = input.value.trim();
 
-        // Render locally immediately
-        appendMessage('user', 'You', userMsg);
-        textInput.value = '';
+        if (!messageText || !currentThreadId) return;
 
-        // Send payload to backend
+        const tempId = 'temp-' + Date.now();
+
+        appendMessage(tempId, 'user', customerName, messageText);
+
+        const payload = {
+            id: null,
+            threadId: currentThreadId,
+            sender: 'user',
+            senderName: customerName,
+            message: messageText,
+            timestamp: Date.now()
+        };
+
         if (stompClient && stompClient.connected) {
-            stompClient.send("/app/chat.send", {}, JSON.stringify({
+            stompClient.send("/app/chat.send", {}, JSON.stringify(payload));
+        }
+
+        input.value = '';
+    }
+
+    function insertInitialEmoji(emoji) {
+        const input = document.getElementById('chatUserMessage');
+        input.value += emoji;
+        input.focus();
+    }
+
+    function insertCustomerEmoji(emoji) {
+        const input = document.getElementById('chatTextInput');
+        input.value += emoji;
+        input.focus();
+    }
+    
+    function appendMessage(id, sender, senderName, messageText) {
+        const stream = document.getElementById('chatMessagesStream');
+        
+        const existingMsgDom = document.getElementById(`msg-${id}`);
+        if (existingMsgDom) {
+            const bodyText = existingMsgDom.querySelector('.msg-body');
+            if (bodyText) {
+                bodyText.innerText = messageText;
+
+                if (!existingMsgDom.querySelector('.edited-tag')) {
+                    const tag = document.createElement('span');
+                    tag.className = 'edited-tag text-[8px] text-gray-400 italic ml-1';
+                    tag.innerText = '(edited)';
+                    existingMsgDom.querySelector('.msg-label').appendChild(tag);
+                }
+            }
+            return;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.id = `msg-${id}`;
+        wrapper.className = `flex flex-col ${sender === 'user' ? 'items-end' : 'items-start'}`;
+
+        const label = document.createElement('span');
+        label.className = 'msg-label text-[9px] text-gray-400 font-bold mb-0.5 px-1';
+        label.innerText = senderName;
+
+        const bubbleContainer = document.createElement('div');
+        bubbleContainer.className = 'flex items-center space-x-2 max-w-[80%] group';
+
+        const bubble = document.createElement('div');
+        bubble.className = `rounded-2xl px-3 py-2 ${
+            sender === 'user' ? 'bg-red-600 text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'
+        }`;
+        
+        const body = document.createElement('span');
+        body.className = 'msg-body';
+        body.innerText = messageText;
+        bubble.appendChild(body);
+        bubbleContainer.appendChild(bubble);
+
+        if (sender === 'user') {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition';
+            editBtn.innerText = '✍️';
+            editBtn.onclick = () => triggerClientMessageEdit(id, messageText);
+            bubbleContainer.appendChild(editBtn);
+        }
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(bubbleContainer);
+        stream.appendChild(wrapper);
+        stream.scrollTop = stream.scrollHeight;
+    }
+    
+    function triggerClientMessageEdit(messageId, oldText) {
+        const newText = prompt("Edit your message:", oldText);
+        if (newText !== null && newText.trim() !== "" && newText !== oldText) {
+            const editPayload = {
+                id: messageId,
                 threadId: currentThreadId,
                 sender: 'user',
                 senderName: customerName,
-                message: userMsg
-            }));
+                message: newText.trim(),
+                timestamp: Date.now()
+            };
+            stompClient.send("/app/chat.edit", {}, JSON.stringify(editPayload));
         }
-    }
-
-    function appendMessage(sender, displayName, text) {
-        const stream = document.getElementById('chatMessagesStream');
-        const isUser = sender === 'user';
-        
-        const messageWrapper = document.createElement('div');
-        messageWrapper.className = `flex flex-col ${isUser ? 'items-end' : 'items-start'}`;
-
-        const label = document.createElement('span');
-        label.className = 'text-[9px] text-gray-400 font-bold mb-0.5 px-1';
-        label.innerText = displayName;
-
-        const bubble = document.createElement('div');
-        bubble.className = `max-w-[80%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
-            isUser 
-            ? 'bg-red-600 text-white rounded-tr-none' 
-            : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-        }`;
-        bubble.innerText = text;
-
-        messageWrapper.appendChild(label);
-        messageWrapper.appendChild(bubble);
-        stream.appendChild(messageWrapper);
-        
-        stream.scrollTop = stream.scrollHeight;
     }
     
     /**
@@ -553,10 +636,8 @@
     function openContactModal() {
         resetContactInfoViews();
         
-        // Show contact subview content
         document.getElementById('contactUsView').classList.remove('hidden');
         
-        // Open the primary outer container frame
         const modal = document.getElementById('contactInfoModal');
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -568,10 +649,8 @@
     function openAddressModal() {
         resetContactInfoViews();
         
-        // Show address subview content
         document.getElementById('addressView').classList.remove('hidden');
         
-        // Open the primary outer container frame
         const modal = document.getElementById('contactInfoModal');
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -588,7 +667,6 @@
         resetContactInfoViews();
     }
 
-    // Backdrop fallback listener: dismisses the modal if the user clicks the outer dim background area
     window.addEventListener('click', function(e) {
         const modal = document.getElementById('contactInfoModal');
         if (e.target === modal) {
@@ -596,7 +674,6 @@
         }
     });
     
-    //Below is original
         const backendCatalog = /*[[${catalogProducts}]]*/ {};
         
         let selectedProductContext = null;
@@ -608,11 +685,9 @@
         }
 
         function filterProducts(category, networkName) {
-            // 1. Add an explicit safety check to intercept unhydrated states safely
             if (!backendCatalog || Object.keys(backendCatalog).length === 0) {
                 console.warn("Catalog data is currently empty or has not finished loading.");
                 
-                // Try a direct fallback extraction from the DOM element container inline
                 const rawDataElement = document.getElementById("rawCatalogData");
                 if (rawDataElement && rawDataElement.value) {
                     try {
@@ -623,7 +698,6 @@
                 }
             }
 
-            // 2. Dynamic case-insensitive key collection match check
             const catalogKey = Object.keys(backendCatalog || {}).find(
                 k => k.toLowerCase() === category.toLowerCase()
             );
@@ -633,7 +707,6 @@
             if (!grid) return;
             grid.innerHTML = ""; 
 
-            // 3. Comprehensive deep-string match filtering
             const filteredItems = targetCollection.filter(item => {
                 if (networkName === 'All') return true;
                 
@@ -645,7 +718,6 @@
                 return searchPool.includes(networkName.toLowerCase().trim());
             });
 
-            // 4. Fallback empty block view
             if (filteredItems.length === 0) {
                 grid.innerHTML = `
                     <div class="col-span-full text-center py-8 text-gray-500 font-medium">
@@ -654,12 +726,10 @@
                 return;
             }
 
-            // 5. Render product cards block layout loop
             filteredItems.forEach(item => {
                 const card = document.createElement("div");
                 card.className = "bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-gray-200 transition duration-200";
                 
-                // Prepare argument payload for click handler strings safely
                 item.itemCategory = category;
                 const productArg = JSON.stringify(item).replace(/"/g, '&quot;');
 
@@ -687,7 +757,6 @@
                 grid.appendChild(card);
             });
 
-            // 6. Handle any-amount dynamic cards fallback append for TopUps
             if (category === 'TopUps' && networkName !== 'All') {
                 const realOperatorId = filteredItems.length > 0 ? filteredItems[0].id : 0;
                 if (typeof appendAnyAmountCard === 'function') {
@@ -700,14 +769,10 @@
             const card = document.createElement('div');
             card.className = "bg-gradient-to-b from-white to-gray-50 rounded-2xl p-5 shadow-sm border-2 border-dashed border-red-200 flex flex-col justify-between hover:border-red-300 transition duration-200";
             
-            // Extract properties directly from your backend ProductItemDTO structure
             const operatorId = productItem.id;
             
-            // Fallback logic using the display price or standard regex extraction
             const currencySymbol = productItem.displayPrice ? productItem.displayPrice.replace(/[\d.,\s]/g, '') : 'R';
             
-            // Access your dynamic properties (assumed mapped from your Java DTO backend setup)
-            // Adjust variable names here if your ProductItemDTO uses names like minAmount / maxAmount
             const minLimit = productItem.minLimit || '2.00'; 
             const maxLimit = productItem.maxLimit || '1000.00';
 
@@ -818,7 +883,6 @@
             document.getElementById('phoneModal').classList.add('hidden');
         }
 
-     // Global variables to hold the verified details
         let verifiedSenderPhone = "";
         let verifiedRecipientPhone = "";
         let verifiedReceiverEmail = "";
@@ -826,12 +890,10 @@
         function handlePhoneVerification(event) {
             event.preventDefault();
             
-            // 1. Extract values and strip empty spaces from phone numbers
             const senderPhoneInput = document.getElementById('senderPhoneInput').value.replace(/\s+/g, '');
             const recipientPhoneInput = document.getElementById('recipientPhoneInput').value.replace(/\s+/g, '');
             const receiverEmailInput = document.getElementById('receiverEmailInput').value.trim();
             
-            // ISO Country to Currency Code mapping
             const countryCurrencyMap = {
                 "DZ": "DZD", "AO": "AOA", "BJ": "XOF", "BW": "BWP", "BF": "XOF", 
                 "BI": "BIF", "CV": "CVE", "CM": "XAF", "CF": "XAF", "KM": "KMF", 
@@ -844,12 +906,8 @@
                 "TN": "TND", "UG": "UGX", "ZM": "ZMW", "ZW": "ZWL", "IN": "INR"
             };
 
-            // 2. Country-Specific Validation Logic
-            
-            // Clean string for checking length (remove "+" if user included it)
             const cleanPhone = recipientPhoneInput.replace('+', '');
             
-            // Check if it's purely digits
             if (!/^\d+$/.test(cleanPhone)) {
                 alert("Please enter a numeric phone number containing digits only.");
                 return;
@@ -881,30 +939,25 @@
                     expectedFormatHelp = "a local code starting with 0 or international starting with 234";
                 }
             } else {
-                // Fallback catch-all default rule for unexpected configurations
                 isValid = cleanPhone.length >= 7;
                 expectedFormatHelp = "at least 7 digits";
             }
 
-            // Trigger error alert if structural conditions fail
             if (!isValid) {
                 alert(`Invalid recipient mobile number structure for the selected country.\nExpected format: ${expectedFormatHelp}.`);
                 document.getElementById('recipientPhoneInput').focus();
                 return;
             }
             
-            // 3. Assign data to global state/variables
             verifiedSenderPhone = senderPhoneInput;
-            verifiedRecipientPhone = recipientPhoneInput; // Preserves any user-written '+' character
+            verifiedRecipientPhone = recipientPhoneInput;
             verifiedReceiverEmail = receiverEmailInput;
             
             document.getElementById('hiddenRecipientPhone').value = recipientPhoneInput;
             document.getElementById('hiddenRecipientEmail').value = receiverEmailInput;
-            document.getElementById('hiddenPhoneNumber').value = senderPhoneInput; // Maps to sender phone
+            document.getElementById('hiddenPhoneNumber').value = senderPhoneInput;
 
-            // Update Step 2 checkout UI Summary components
             if (selectedProductContext) {
-                // Determine the dynamic currency string (defaults to 'R' if country isn't matched)
                 const currencySymbol = countryCurrencyMap[currentCountryIso] || "R";
                 
                 document.getElementById('modalItemName').innerText = selectedProductContext.name;
@@ -1161,7 +1214,6 @@
                 selector.appendChild(option);
             });
 
-            // Trigger the tab updates safely now that the function is defined above
             renderCountryTabs(currentCountryIso);
         });
         

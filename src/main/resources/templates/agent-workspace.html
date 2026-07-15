@@ -54,12 +54,25 @@
                 </div>
             </div>
 
-            <form id="agentReplyForm" onsubmit="sendAgentReply(event)" class="p-4 bg-white border-t border-gray-200 flex items-center space-x-3 hidden">
-                <input type="text" id="agentReplyInput" required autocomplete="off" class="flex-grow p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-red-500 focus:bg-white transition" placeholder="Type your formal agent response here...">
-                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl text-xs font-bold transition shadow-md shadow-red-100">
-                    Send Reply
-                </button>
-            </form>
+			<form id="agentReplyForm" onsubmit="sendAgentReply(event)" class="p-4 bg-white border-t border-gray-200 flex flex-col space-y-2 hidden">
+			    <div class="flex items-center space-x-2.5 pb-1 border-b border-gray-50">
+			        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mr-2">Quick Emojis:</span>
+			        <button type="button" onclick="insertAgentEmoji('😊')" class="hover:scale-125 transition text-base">😊</button>
+			        <button type="button" onclick="insertAgentEmoji('😂')" class="hover:scale-125 transition text-base">😂</button>
+			        <button type="button" onclick="insertAgentEmoji('👏')" class="hover:scale-125 transition text-base">👏</button>
+			        <button type="button" onclick="insertAgentEmoji('😢')" class="hover:scale-125 transition text-base">😢</button>
+			        <button type="button" onclick="insertAgentEmoji('😡')" class="hover:scale-125 transition text-base">😡</button>
+			        <button type="button" onclick="insertAgentEmoji('😞')" class="hover:scale-125 transition text-base">😞</button>
+			        <button type="button" onclick="insertAgentEmoji('👍')" class="hover:scale-125 transition text-base">👍</button>
+			    </div>
+			
+			    <div class="flex items-center space-x-3">
+			        <input type="text" id="agentReplyInput" required autocomplete="off" class="flex-grow p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-red-500 focus:bg-white transition" placeholder="Type your formal agent response here...">
+			        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl text-xs font-bold transition shadow-md shadow-red-100">
+			            Send Reply
+			        </button>
+			    </div>
+			</form>
         </main>
     </div>
 
@@ -72,40 +85,6 @@
     let stompClient = null;
     let activeThreadId = null;
     const threads = {};
-
-    // ==========================================
-    // 1. CENTRALIZED SAFE MESSAGE APPENDER (No Duplicates)
-    // ==========================================
-    function addMessageToThreadState(threadId, msg) {
-        if (!threads[threadId]) {
-            threads[threadId] = {
-                threadId: threadId,
-                customerName: msg.senderName,
-                messages: []
-            };
-        }
-
-        // Check if message already exists in our local memory state
-        const isDuplicate = threads[threadId].messages.some(m => 
-            // Match by database ID if available
-            (msg.id && m.id === msg.id) || 
-            // Match by exact text, sender and close timestamp
-            (m.message === msg.message && 
-             m.sender === msg.sender && 
-             Math.abs(Number(m.timestamp) - Number(msg.timestamp)) < 1500)
-        );
-
-        if (!isDuplicate) {
-            threads[threadId].messages.push(msg);
-            
-            // Sort messages chronologically to ensure no order mixups
-            threads[threadId].messages.sort((a, b) => Number(a.timestamp) - Number(b.timestamp));
-        }
-    }
-
-    // ==========================================
-    // 2. LIFECYCLE & WEB CONNECTIONS
-    // ==========================================
     window.onload = function() {
         connectAgentDashboard();
         loadOfflineActiveThreads();
@@ -118,10 +97,8 @@
                 latestMessages.forEach(msg => {
                     const id = msg.threadId;
                     
-                    // Add the initial message cleanly
                     addMessageToThreadState(id, msg);
                     
-                    // Keep live pipeline active
                     subscribeToIndividualThread(id);
                 });
                 
@@ -183,9 +160,6 @@
         }
     }
 
-    // ==========================================
-    // 3. UI VIEW SELECTION & RENDERING
-    // ==========================================
     function selectThread(threadId) {
         activeThreadId = threadId;
         const thread = threads[threadId];
@@ -194,11 +168,9 @@
         document.getElementById('activeChatHeaderStatus').innerText = "Assigned Routing ID: " + threadId;
         document.getElementById('agentReplyForm').classList.remove('hidden');
 
-        // Fetch complete database history safely
         fetch('/api/chat/history/' + threadId)
             .then(response => response.json())
             .then(history => {
-                // Process each history element using our clean deduplication pipeline
                 history.forEach(historyMsg => {
                     addMessageToThreadState(threadId, historyMsg);
                 });
@@ -235,39 +207,6 @@
         });
     }
 
-    function renderMessages(threadId) {
-        const container = document.getElementById('agentMessagesStream');
-        container.innerHTML = '';
-        
-        const thread = threads[threadId];
-        if (!thread) return;
-
-        thread.messages.forEach(msg => {
-            const isAgent = msg.sender === 'agent';
-            
-            const wrapper = document.createElement('div');
-            wrapper.className = `flex flex-col ${isAgent ? 'items-end' : 'items-start'}`;
-
-            const label = document.createElement('span');
-            label.className = 'text-[9px] text-gray-400 font-bold mb-0.5 px-1';
-            label.innerText = isAgent ? 'You (' + currentAgentName + ')' : msg.senderName;
-
-            const bubble = document.createElement('div');
-            bubble.className = `max-w-[75%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
-                isAgent 
-                ? 'bg-gray-900 text-white rounded-tr-none' 
-                : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
-            }`;
-            bubble.innerText = msg.message;
-
-            wrapper.appendChild(label);
-            wrapper.appendChild(bubble);
-            container.appendChild(wrapper);
-        });
-
-        container.scrollTop = container.scrollHeight;
-    }
-
     function sendAgentReply(event) {
         event.preventDefault();
         const replyInput = document.getElementById('agentReplyInput');
@@ -288,6 +227,110 @@
         }
 
         replyInput.value = '';
+    }
+    
+    function insertAgentEmoji(emoji) {
+        const input = document.getElementById('agentReplyInput');
+        input.value += emoji;
+        input.focus();
+    }
+
+    function addMessageToThreadState(threadId, msg) {
+        if (!threads[threadId]) {
+            threads[threadId] = {
+                threadId: threadId,
+                customerName: msg.senderName,
+                messages: []
+            };
+        }
+
+        // Check if the message is actually an edit update to an existing message
+        const existingIndex = threads[threadId].messages.findIndex(m => m.id === msg.id);
+        if (existingIndex !== -1) {
+            // Update the message in-place
+            threads[threadId].messages[existingIndex] = msg;
+            return;
+        }
+
+        // Normal Deduplication for brand-new incoming entries
+        const isDuplicate = threads[threadId].messages.some(m => 
+            (msg.id && m.id === msg.id) || 
+            (m.message === msg.message && m.sender === msg.sender && Math.abs(Number(m.timestamp) - Number(msg.timestamp)) < 1500)
+        );
+
+        if (!isDuplicate) {
+            threads[threadId].messages.push(msg);
+            threads[threadId].messages.sort((a, b) => Number(a.timestamp) - Number(b.timestamp));
+        }
+    }
+
+    function renderMessages(threadId) {
+        const container = document.getElementById('agentMessagesStream');
+        container.innerHTML = '';
+        
+        const thread = threads[threadId];
+        if (!thread) return;
+
+        thread.messages.forEach(msg => {
+            const isAgent = msg.sender === 'agent';
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex flex-col ${isAgent ? 'items-end' : 'items-start'}`;
+
+            const label = document.createElement('span');
+            label.className = 'text-[9px] text-gray-400 font-bold mb-0.5 px-1';
+            label.innerText = isAgent ? 'You (' + currentAgentName + ')' : msg.senderName;
+
+            const bubbleContainer = document.createElement('div');
+            bubbleContainer.className = 'flex items-center space-x-2 max-w-[75%] group';
+
+            const bubble = document.createElement('div');
+            bubble.className = `rounded-2xl px-3.5 py-2.5 shadow-sm ${
+                isAgent 
+                ? 'bg-gray-900 text-white rounded-tr-none' 
+                : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
+            }`;
+            
+            const messageTextSpan = document.createElement('span');
+            messageTextSpan.innerText = msg.message;
+            bubble.appendChild(messageTextSpan);
+            bubbleContainer.appendChild(bubble);
+
+            // Append edit button next to agent's own sent messages
+            if (isAgent) {
+                const editBtn = document.createElement('button');
+                editBtn.className = 'hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition';
+                editBtn.innerText = '✍️';
+                editBtn.onclick = () => triggerAgentMessageEdit(msg.id, msg.message);
+                
+                // Put the edit button before the bubble for right aligned layout
+                bubbleContainer.insertBefore(editBtn, bubble);
+            }
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(bubbleContainer);
+            container.appendChild(wrapper);
+        });
+
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function triggerAgentMessageEdit(messageId, oldText) {
+        const newText = prompt("Edit your agent message:", oldText);
+        if (newText !== null && newText.trim() !== "" && newText !== oldText) {
+            const editPayload = {
+                id: messageId,
+                threadId: activeThreadId,
+                sender: 'agent',
+                senderName: currentAgentName,
+                message: newText.trim(),
+                timestamp: Date.now()
+            };
+            
+            if (stompClient && stompClient.connected) {
+                stompClient.send("/app/chat.edit", {}, JSON.stringify(editPayload));
+            }
+        }
     }
     </script>
 </body>

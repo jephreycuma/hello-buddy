@@ -108,4 +108,24 @@ public class LiveChatController {
     public List<ChatMessage> getActiveThreads() {
         return messageRepository.findLatestMessagesPerThread();
     }
+    
+ // inside LiveChatController.java
+
+    @MessageMapping("/chat.edit")
+    public void processMessageEdit(@Payload ChatMessage message) {
+        // 1. Fetch the original message from DB and update its text
+        Optional<ChatMessage> existingOpt = messageRepository.findById(message.getId());
+        if (existingOpt.isPresent()) {
+            ChatMessage existing = existingOpt.get();
+            existing.setMessage(message.getMessage());
+            messageRepository.save(existing); // Update in database
+
+            // 2. Broadcast the edited message to the customer thread
+            messagingTemplate.convertAndSend("/topic/thread/" + message.getThreadId(), message);
+
+            // 3. Forward the edit payload to the active agent dashboard
+            String assignedAgentId = "1"; 
+            messagingTemplate.convertAndSend("/topic/agent-" + assignedAgentId, message);
+        }
+    }
 }
