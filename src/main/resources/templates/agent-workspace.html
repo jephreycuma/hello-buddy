@@ -64,167 +64,231 @@
     </div>
 
     <script th:inline="javascript">
-        /*<![CDATA[*/
-        const currentAgentId = /*[[${agent.id}]]*/ '1';
-        const currentAgentName = /*[[${agent.fullName}]]*/ 'Agent';
-        /*]]>*/
+    /*<![CDATA[*/
+    const currentAgentId = /*[[${agent.id}]]*/ '1';
+    const currentAgentName = /*[[${agent.fullName}]]*/ 'Agent';
+    /*]]>*/
 
-        let stompClient = null;
-        let activeThreadId = null;
-        const threads = {};
+    let stompClient = null;
+    let activeThreadId = null;
+    const threads = {};
 
-        function connectAgentDashboard() {
-            const socket = new SockJS('/ws-chat');
-            stompClient = Stomp.over(socket);
-            stompClient.debug = null;
-
-            stompClient.connect({}, function (frame) {
-                // EXCLUSIVE FILTER SUBSCRIPTION: Only listen to messages directed to this specific agent ID
-                stompClient.subscribe('/topic/agent-' + currentAgentId, function (response) {
-                    const msg = JSON.parse(response.body);
-                    handleIncomingDashboardMessage(msg);
-                });
-            });
-        }
-
-        function handleIncomingDashboardMessage(msg) {
-            const id = msg.threadId;
-
-            if (!threads[id]) {
-                threads[id] = {
-                    threadId: id,
-                    customerName: msg.senderName,
-                    messages: []
-                };
-                
-                const noThreads = document.getElementById('noThreadsMsg');
-                if (noThreads) noThreads.style.display = 'none';
-
-                stompClient.subscribe('/topic/thread/' + id, function(response) {
-                    const threadMessage = JSON.parse(response.body);
-                    const alreadyExists = threads[id].messages.some(m => m.timestamp === threadMessage.timestamp && m.message === threadMessage.message);
-                    if (!alreadyExists) {
-                        threads[id].messages.push(threadMessage);
-                        if (activeThreadId === id) {
-                            renderMessages(id);
-                        }
-                    }
-                });
-            }
-
-            const alreadyExists = threads[id].messages.some(m => m.timestamp === msg.timestamp && m.message === msg.message);
-            if (!alreadyExists) {
-                threads[id].messages.push(msg);
-            }
-
-            renderThreadSidebar();
-            if (activeThreadId === id) {
-                renderMessages(id);
-            }
-        }
-
-        function renderThreadSidebar() {
-            const list = document.getElementById('threadList');
-            list.innerHTML = '';
-
-            Object.values(threads).forEach(thread => {
-                const button = document.createElement('button');
-                button.onclick = () => selectThread(thread.threadId);
-                
-                const lastMsg = thread.messages[thread.messages.length - 1];
-                const snippet = lastMsg ? lastMsg.message : "No messages";
-
-                button.className = `w-full text-left p-4 transition flex flex-col space-y-1 ${
-                    activeThreadId === thread.threadId ? 'bg-red-50/70 border-l-4 border-red-600' : 'hover:bg-gray-50'
-                }`;
-
-                button.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <span class="font-extrabold text-xs text-gray-800">${thread.customerName}</span>
-                        <span class="text-[9px] text-gray-400">Assigned</span>
-                    </div>
-                    <p class="text-[11px] text-gray-500 truncate w-64">${snippet}</p>
-                `;
-                list.appendChild(button);
-            });
-        }
-
-        function selectThread(threadId) {
-            activeThreadId = threadId;
-            const thread = threads[threadId];
-
-            document.getElementById('activeChatHeaderName').innerText = thread.customerName;
-            document.getElementById('activeChatHeaderStatus').innerText = "Assigned Routing ID: " + threadId;
-            document.getElementById('agentReplyForm').classList.remove('hidden');
-
-            // Fetch message history from the database
-            fetch('/api/chat/history/' + threadId)
-                .then(response => response.json())
-                .then(history => {
-                    // Overwrite memory map with verified database state
-                    thread.messages = history;
-                    renderThreadSidebar();
-                    renderMessages(threadId);
-                })
-                .catch(err => console.error("Error loading chat history:", err));
-        }
-
-        function renderMessages(threadId) {
-            const container = document.getElementById('agentMessagesStream');
-            container.innerHTML = '';
-            
-            const thread = threads[threadId];
-            if (!thread) return;
-
-            thread.messages.forEach(msg => {
-                const isAgent = msg.sender === 'agent';
-                
-                const wrapper = document.createElement('div');
-                wrapper.className = `flex flex-col ${isAgent ? 'items-end' : 'items-start'}`;
-
-                const label = document.createElement('span');
-                label.className = 'text-[9px] text-gray-400 font-bold mb-0.5 px-1';
-                label.innerText = isAgent ? 'You (' + currentAgentName + ')' : msg.senderName;
-
-                const bubble = document.createElement('div');
-                bubble.className = `max-w-[75%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
-                    isAgent 
-                    ? 'bg-gray-900 text-white rounded-tr-none' 
-                    : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
-                }`;
-                bubble.innerText = msg.message;
-
-                wrapper.appendChild(label);
-                wrapper.appendChild(bubble);
-                container.appendChild(wrapper);
-            });
-
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function sendAgentReply(event) {
-            event.preventDefault();
-            const replyInput = document.getElementById('agentReplyInput');
-            const messageText = replyInput.value.trim();
-
-            if (!messageText || !activeThreadId) return;
-
-            const replyPayload = {
-                threadId: activeThreadId,
-                sender: 'agent',
-                senderName: currentAgentName,
-                message: messageText,
-                timestamp: Date.now()
+    // ==========================================
+    // 1. CENTRALIZED SAFE MESSAGE APPENDER (No Duplicates)
+    // ==========================================
+    function addMessageToThreadState(threadId, msg) {
+        if (!threads[threadId]) {
+            threads[threadId] = {
+                threadId: threadId,
+                customerName: msg.senderName,
+                messages: []
             };
-
-            if (stompClient && stompClient.connected) {
-                stompClient.send("/app/chat.send", {}, JSON.stringify(replyPayload));
-            }
-
-            replyInput.value = '';
         }
 
-        window.onload = connectAgentDashboard;
+        // Check if message already exists in our local memory state
+        const isDuplicate = threads[threadId].messages.some(m => 
+            // Match by database ID if available
+            (msg.id && m.id === msg.id) || 
+            // Match by exact text, sender and close timestamp
+            (m.message === msg.message && 
+             m.sender === msg.sender && 
+             Math.abs(Number(m.timestamp) - Number(msg.timestamp)) < 1500)
+        );
+
+        if (!isDuplicate) {
+            threads[threadId].messages.push(msg);
+            
+            // Sort messages chronologically to ensure no order mixups
+            threads[threadId].messages.sort((a, b) => Number(a.timestamp) - Number(b.timestamp));
+        }
+    }
+
+    // ==========================================
+    // 2. LIFECYCLE & WEB CONNECTIONS
+    // ==========================================
+    window.onload = function() {
+        connectAgentDashboard();
+        loadOfflineActiveThreads();
+    };
+
+    function loadOfflineActiveThreads() {
+        fetch('/api/chat/active-threads')
+            .then(response => response.json())
+            .then(latestMessages => {
+                latestMessages.forEach(msg => {
+                    const id = msg.threadId;
+                    
+                    // Add the initial message cleanly
+                    addMessageToThreadState(id, msg);
+                    
+                    // Keep live pipeline active
+                    subscribeToIndividualThread(id);
+                });
+                
+                if (latestMessages.length > 0) {
+                    const noThreads = document.getElementById('noThreadsMsg');
+                    if (noThreads) noThreads.style.display = 'none';
+                }
+                
+                renderThreadSidebar();
+            })
+            .catch(err => console.error("Error seeding initial offline threads:", err));
+    }
+
+    function connectAgentDashboard() {
+        const socket = new SockJS('/ws-chat');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+
+        stompClient.connect({}, function (frame) {
+            stompClient.subscribe('/topic/agent-' + currentAgentId, function (response) {
+                const msg = JSON.parse(response.body);
+                handleIncomingDashboardMessage(msg);
+            });
+        });
+    }
+
+    function subscribeToIndividualThread(id) {
+        if (stompClient && stompClient.connected) {
+            stompClient.subscribe('/topic/thread/' + id, function(response) {
+                const threadMessage = JSON.parse(response.body);
+                
+                // Route message safely through central appender
+                addMessageToThreadState(id, threadMessage);
+                
+                renderThreadSidebar();
+                if (activeThreadId === id) {
+                    renderMessages(id);
+                }
+            });
+        } else {
+            setTimeout(() => subscribeToIndividualThread(id), 500);
+        }
+    }
+
+    function handleIncomingDashboardMessage(msg) {
+        const id = msg.threadId;
+
+        if (!threads[id]) {
+            const noThreads = document.getElementById('noThreadsMsg');
+            if (noThreads) noThreads.style.display = 'none';
+            subscribeToIndividualThread(id);
+        }
+
+        addMessageToThreadState(id, msg);
+
+        renderThreadSidebar();
+        if (activeThreadId === id) {
+            renderMessages(id);
+        }
+    }
+
+    // ==========================================
+    // 3. UI VIEW SELECTION & RENDERING
+    // ==========================================
+    function selectThread(threadId) {
+        activeThreadId = threadId;
+        const thread = threads[threadId];
+
+        document.getElementById('activeChatHeaderName').innerText = thread.customerName;
+        document.getElementById('activeChatHeaderStatus').innerText = "Assigned Routing ID: " + threadId;
+        document.getElementById('agentReplyForm').classList.remove('hidden');
+
+        // Fetch complete database history safely
+        fetch('/api/chat/history/' + threadId)
+            .then(response => response.json())
+            .then(history => {
+                // Process each history element using our clean deduplication pipeline
+                history.forEach(historyMsg => {
+                    addMessageToThreadState(threadId, historyMsg);
+                });
+
+                renderThreadSidebar();
+                renderMessages(threadId);
+            })
+            .catch(err => console.error("Error loading chat history:", err));
+    }
+
+    function renderThreadSidebar() {
+        const list = document.getElementById('threadList');
+        list.innerHTML = '';
+
+        Object.values(threads).forEach(thread => {
+            const button = document.createElement('button');
+            button.onclick = () => selectThread(thread.threadId);
+            
+            const lastMsg = thread.messages[thread.messages.length - 1];
+            const snippet = lastMsg ? lastMsg.message : "No messages";
+
+            button.className = `w-full text-left p-4 transition flex flex-col space-y-1 ${
+                activeThreadId === thread.threadId ? 'bg-red-50/70 border-l-4 border-red-600' : 'hover:bg-gray-50'
+            }`;
+
+            button.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span class="font-extrabold text-xs text-gray-800">${thread.customerName}</span>
+                    <span class="text-[9px] text-gray-400">Assigned</span>
+                </div>
+                <p class="text-[11px] text-gray-500 truncate w-64">${snippet}</p>
+            `;
+            list.appendChild(button);
+        });
+    }
+
+    function renderMessages(threadId) {
+        const container = document.getElementById('agentMessagesStream');
+        container.innerHTML = '';
+        
+        const thread = threads[threadId];
+        if (!thread) return;
+
+        thread.messages.forEach(msg => {
+            const isAgent = msg.sender === 'agent';
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex flex-col ${isAgent ? 'items-end' : 'items-start'}`;
+
+            const label = document.createElement('span');
+            label.className = 'text-[9px] text-gray-400 font-bold mb-0.5 px-1';
+            label.innerText = isAgent ? 'You (' + currentAgentName + ')' : msg.senderName;
+
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-[75%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
+                isAgent 
+                ? 'bg-gray-900 text-white rounded-tr-none' 
+                : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
+            }`;
+            bubble.innerText = msg.message;
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(bubble);
+            container.appendChild(wrapper);
+        });
+
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function sendAgentReply(event) {
+        event.preventDefault();
+        const replyInput = document.getElementById('agentReplyInput');
+        const messageText = replyInput.value.trim();
+
+        if (!messageText || !activeThreadId) return;
+
+        const replyPayload = {
+            threadId: activeThreadId,
+            sender: 'agent',
+            senderName: currentAgentName,
+            message: messageText,
+            timestamp: Date.now()
+        };
+
+        if (stompClient && stompClient.connected) {
+            stompClient.send("/app/chat.send", {}, JSON.stringify(replyPayload));
+        }
+
+        replyInput.value = '';
+    }
     </script>
 </body>
 </html>

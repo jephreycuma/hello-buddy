@@ -410,17 +410,31 @@
         chatWidget.classList.toggle('hidden');
     }
 
-    function connectToWebSocket() {
+    function connectToWebSocket(initialMessage = null) {
         const socket = new SockJS('/ws-chat');
         stompClient = Stomp.over(socket);
-        stompClient.debug = null; // Suppress debug logs in console
+        stompClient.debug = null;
 
         stompClient.connect({}, function (frame) {
-            // Subscribe to our custom private dynamic thread
-            loadCustomerChatHistory(currentThreadId);
+            
+            // 👉 FIX: Only hit the DB history endpoint if this is NOT a brand-new session
+            if (!initialMessage) {
+                loadCustomerChatHistory(currentThreadId);
+            }
+
+            // SAFE TRANSMISSION: Send the initial message payload now that the channel is open
+            if (initialMessage) {
+                stompClient.send("/app/chat.send", {}, JSON.stringify({
+                    threadId: currentThreadId,
+                    sender: 'user',
+                    senderName: customerName,
+                    message: initialMessage
+                }));
+            }
+
             stompClient.subscribe('/topic/thread/' + currentThreadId, function (response) {
                 const msg = JSON.parse(response.body);
-                // Render the incoming message on screen (skip duplicating our own renders)
+                // Render incoming agent replies
                 if (msg.sender !== 'user') {
                     appendMessage('agent', msg.senderName, msg.message);
                 }
@@ -457,11 +471,12 @@
         document.getElementById('chatSetupView').classList.add('hidden');
         document.getElementById('chatActiveView').classList.remove('hidden');
 
+        appendMessage('user', customerName, initialQuery);
         // Establish persistent, real-time pipe
-        connectToWebSocket();
+        connectToWebSocket(initialQuery);
 
         // Render immediately locally
-        appendMessage('user', customerName, initialQuery);
+        //appendMessage('user', customerName, initialQuery);
 
         // Give Connection a microsecond to ready, then send the initial message payload
         setTimeout(() => {

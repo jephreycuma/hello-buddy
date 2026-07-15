@@ -101,4 +101,11 @@ public class LiveChatController {
     public List<ChatMessage> getChatHistory(@PathVariable String threadId) {
         return messageRepository.findByThreadIdOrderByTimestampAsc(threadId);
     }
+    
+ // Add this new endpoint inside your LiveChatController.java class
+    @GetMapping("/api/chat/active-threads")
+    @ResponseBody
+    public List<ChatMessage> getActiveThreads() {
+        return messageRepository.findLatestMessagesPerThread();
+    }
 }
