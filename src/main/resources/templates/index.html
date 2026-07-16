@@ -472,23 +472,21 @@
 
                 // 2. Is this a new message sent by the user? Match and swap the specific temp ID
                 if (msg.sender === 'user') {
-                    // Use the clientRefId sent back by the server to find the exact local temp bubble
-                    const targetTempId = msg.clientRefId || tempId;
-                    const tempBubble = document.getElementById(`msg-${targetTempId}`);
-                    if (tempBubble) {
-                        tempBubble.id = `msg-${msg.id}`; // Swap to real database ID safely
-                        
-                        const editBtn = tempBubble.querySelector('.edit-action-btn');
-                        if (editBtn) {
-                            editBtn.onclick = () => triggerClientMessageEdit(msg.id, msg.message);
-                        }
-                        const replyBtn = tempBubble.querySelector('.reply-action-btn');
-                        if (replyBtn) {
-                            replyBtn.onclick = () => triggerCustomerReply(msg.id, msg.message);
-                        }
-                    }
-                } else {
-                    // 3. 👉 FIX 1: Pass the 6th argument (msg.parentMessage) so agent replies show quotes!
+				    const targetTempId = msg.clientRefId || tempId;
+				    const tempBubble = document.getElementById(`msg-${targetTempId}`);
+				    if (tempBubble) {
+				        tempBubble.id = `msg-${msg.id}`; 
+				        
+				        const editBtn = tempBubble.querySelector('.edit-action-btn');
+				        if (editBtn) {
+				            editBtn.onclick = () => triggerClientMessageEdit(msg.id, msg.message);
+				        }
+				        const replyBtn = tempBubble.querySelector('.reply-action-btn');
+				        if (replyBtn) {
+				            replyBtn.onclick = () => triggerCustomerReply(msg.id, msg.message);
+				        }
+				    }
+				} else {
                     appendMessage(msg.id, 'agent', msg.senderName, msg.message, msg.timestamp, msg.parentMessage);
                 }
             });
@@ -704,10 +702,16 @@
     }*/
     
     function triggerClientMessageEdit(messageId, oldText) {
+        // 👉 SAFETY SHIELD: Do not attempt to send edits to the server for un-saved temp messages
+        if (typeof messageId === 'string' && messageId.startsWith('temp-')) {
+            console.warn("Cannot edit a message before it is confirmed by the server.");
+            return;
+        }
+
         const newText = prompt("Edit your message:", oldText);
         if (newText !== null && newText.trim() !== "" && newText !== oldText) {
             const editPayload = {
-                id: messageId,
+                id: Number(messageId), // 👉 Ensure it is parsed as a clean Number (Long)
                 threadId: currentThreadId,
                 sender: 'user',
                 senderName: customerName,
