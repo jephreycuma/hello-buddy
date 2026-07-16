@@ -189,8 +189,12 @@
             const button = document.createElement('button');
             button.onclick = () => selectThread(thread.threadId);
             
+            // Get the latest message to extract its timestamp and text
             const lastMsg = thread.messages[thread.messages.length - 1];
             const snippet = lastMsg ? lastMsg.message : "No messages";
+            
+            // 👉 Get the friendly date/time string using our helper
+            const timeDisplay = lastMsg ? formatChatDate(lastMsg.timestamp) : "Just now";
 
             button.className = `w-full text-left p-4 transition flex flex-col space-y-1 ${
                 activeThreadId === thread.threadId ? 'bg-red-50/70 border-l-4 border-red-600' : 'hover:bg-gray-50'
@@ -199,7 +203,7 @@
             button.innerHTML = `
                 <div class="flex items-center justify-between">
                     <span class="font-extrabold text-xs text-gray-800">${thread.customerName}</span>
-                    <span class="text-[9px] text-gray-400">Assigned</span>
+                    <span class="text-[9px] text-gray-400 font-semibold">${timeDisplay}</span>
                 </div>
                 <p class="text-[11px] text-gray-500 truncate w-64">${snippet}</p>
             `;
@@ -330,6 +334,38 @@
             if (stompClient && stompClient.connected) {
                 stompClient.send("/app/chat.edit", {}, JSON.stringify(editPayload));
             }
+        }
+    }
+    
+    function formatChatDate(timestamp) {
+        if (!timestamp) return "";
+        const date = new Date(Number(timestamp));
+        const now = new Date();
+        
+        // Check if the message was sent today
+        const isToday = date.getDate() === now.getDate() &&
+                        date.getMonth() === now.getMonth() &&
+                        date.getFullYear() === now.getFullYear();
+
+        // Check if the message was sent yesterday
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const isYesterday = date.getDate() === yesterday.getDate() &&
+                            date.getMonth() === yesterday.getMonth() &&
+                            date.getFullYear() === yesterday.getFullYear();
+
+        const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
+        const timeString = date.toLocaleTimeString([], timeOptions);
+
+        if (isToday) {
+            return timeString;
+        } else if (isYesterday) {
+            return "Yesterday, " + timeString;
+        } else {
+            // e.g., "16 Jul, 13:44"
+            const day = date.getDate();
+            const month = date.toLocaleString('default', { month: 'short' });
+            return `${day} ${month}, ${timeString}`;
         }
     }
     </script>

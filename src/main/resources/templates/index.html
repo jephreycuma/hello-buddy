@@ -469,7 +469,7 @@
                         }
                     }
                 } else {
-                    appendMessage(msg.id, 'agent', msg.senderName, msg.message);
+                	appendMessage(msg.id, 'agent', msg.senderName, msg.message, msg.timestamp);
                 }
             });
         }, function (error) {
@@ -485,7 +485,7 @@
                 stream.innerHTML = ''; 
                 
                 history.forEach(msg => {
-                    appendMessage(msg.sender, msg.senderName, msg.message);
+                    appendMessage(msg.id, msg.sender, msg.senderName, msg.message, msg.timestamp);
                 });
             })
             .catch(err => console.error("Error loading client history:", err));
@@ -507,7 +507,7 @@
         document.getElementById('chatActiveView').classList.remove('hidden');
 
         const tempId = 'temp-' + Date.now();
-        appendMessage(tempId, 'user', customerName, initialQuery);
+        appendMessage(tempId, 'user', customerName, initialQuery, Date.now());
 
         connectToWebSocket(initialQuery, tempId);
     }
@@ -520,8 +520,7 @@
         if (!messageText || !currentThreadId) return;
 
         const tempId = 'temp-' + Date.now();
-
-        appendMessage(tempId, 'user', customerName, messageText);
+        appendMessage(tempId, 'user', customerName, messageText, Date.now());
 
         const payload = {
             id: null,
@@ -551,7 +550,64 @@
         input.focus();
     }
     
-    function appendMessage(id, sender, senderName, messageText) {
+    function appendMessage(id, sender, senderName, messageText, timestamp) {
+        const stream = document.getElementById('chatMessagesStream');
+        
+        // If the message already exists on screen, update the text content and return
+        const existingMsgDom = document.getElementById(`msg-${id}`);
+        if (existingMsgDom) {
+            const bodyText = existingMsgDom.querySelector('.msg-body');
+            if (bodyText) {
+                bodyText.innerText = messageText;
+                if (!existingMsgDom.querySelector('.edited-tag')) {
+                    const tag = document.createElement('span');
+                    tag.className = 'edited-tag text-[8px] text-gray-400 italic ml-1';
+                    tag.innerText = '(edited)';
+                    existingMsgDom.querySelector('.msg-label').appendChild(tag);
+                }
+            }
+            return;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.id = `msg-${id}`;
+        wrapper.className = `flex flex-col ${sender === 'user' ? 'items-end' : 'items-start'}`;
+
+        // 👉 Format the time and append it elegantly next to the sender name
+        const timeStr = formatMessageTime(timestamp || Date.now());
+        const label = document.createElement('span');
+        label.className = 'msg-label text-[9px] text-gray-400 font-bold mb-0.5 px-1';
+        label.innerText = `${senderName} • ${timeStr}`;
+
+        const bubbleContainer = document.createElement('div');
+        bubbleContainer.className = 'flex items-center space-x-2 max-w-[80%] group';
+
+        const bubble = document.createElement('div');
+        bubble.className = `rounded-2xl px-3 py-2 ${
+            sender === 'user' ? 'bg-red-600 text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'
+        }`;
+        
+        const body = document.createElement('span');
+        body.className = 'msg-body';
+        body.innerText = messageText;
+        bubble.appendChild(body);
+        bubbleContainer.appendChild(bubble);
+
+        if (sender === 'user') {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition';
+            editBtn.innerText = '✍️';
+            editBtn.onclick = () => triggerClientMessageEdit(id, messageText);
+            bubbleContainer.appendChild(editBtn);
+        }
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(bubbleContainer);
+        stream.appendChild(wrapper);
+        stream.scrollTop = stream.scrollHeight;
+    }
+    
+    /*function appendMessage(id, sender, senderName, messageText) {
         const stream = document.getElementById('chatMessagesStream');
         
         const existingMsgDom = document.getElementById(`msg-${id}`);
@@ -604,7 +660,7 @@
         wrapper.appendChild(bubbleContainer);
         stream.appendChild(wrapper);
         stream.scrollTop = stream.scrollHeight;
-    }
+    }*/
     
     function triggerClientMessageEdit(messageId, oldText) {
         const newText = prompt("Edit your message:", oldText);
@@ -1216,6 +1272,12 @@
 
             renderCountryTabs(currentCountryIso);
         });
+        
+        function formatMessageTime(timestamp) {
+            if (!timestamp) return "";
+            const date = new Date(Number(timestamp));
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
         
     </script>
 </body>
