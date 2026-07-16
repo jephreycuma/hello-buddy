@@ -28,6 +28,7 @@ public class ChatMessage {
 	private long timestamp;
 	private Long parentId;
 	private String parentMessage;
+	private String clientRefId;
 
 	// Constructors
 	public ChatMessage() {
@@ -96,5 +97,13 @@ public class ChatMessage {
 
 	public void setParentMessage(String parentMessage) {
 		this.parentMessage = parentMessage;
+	}
+
+	public String getClientRefId() {
+		return clientRefId;
+	}
+
+	public void setClientRefId(String clientRefId) {
+		this.clientRefId = clientRefId;
 	}
 }

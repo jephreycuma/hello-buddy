@@ -445,19 +445,21 @@
                     sender: 'user',
                     senderName: customerName,
                     message: initialMessage,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    // Pass a clientRefId so we can safely map the database ID back on arrival
+                    clientRefId: tempId 
                 }));
             }
 
             stompClient.subscribe('/topic/thread/' + currentThreadId, function (response) {
                 const msg = JSON.parse(response.body);
                 
+                // 1. Is this an edit update to an existing message on screen?
                 const existingMsgDom = document.getElementById(`msg-${msg.id}`);
                 if (existingMsgDom) {
                     const bodyText = existingMsgDom.querySelector('.msg-body');
                     if (bodyText) {
                         bodyText.innerText = msg.message;
-                        
                         if (!existingMsgDom.querySelector('.edited-tag')) {
                             const tag = document.createElement('span');
                             tag.className = 'edited-tag text-[8px] text-gray-400 italic ml-1';
@@ -465,21 +467,29 @@
                             existingMsgDom.querySelector('.msg-label').appendChild(tag);
                         }
                     }
-                    return;
+                    return; 
                 }
 
+                // 2. Is this a new message sent by the user? Match and swap the specific temp ID
                 if (msg.sender === 'user') {
-                    const tempBubble = document.querySelector('[id^="msg-temp-"]');
+                    // Use the clientRefId sent back by the server to find the exact local temp bubble
+                    const targetTempId = msg.clientRefId || tempId;
+                    const tempBubble = document.getElementById(`msg-${targetTempId}`);
                     if (tempBubble) {
-                        tempBubble.id = `msg-${msg.id}`;
+                        tempBubble.id = `msg-${msg.id}`; // Swap to real database ID safely
                         
-                        const editBtn = tempBubble.querySelector('button');
+                        const editBtn = tempBubble.querySelector('.edit-action-btn');
                         if (editBtn) {
                             editBtn.onclick = () => triggerClientMessageEdit(msg.id, msg.message);
                         }
+                        const replyBtn = tempBubble.querySelector('.reply-action-btn');
+                        if (replyBtn) {
+                            replyBtn.onclick = () => triggerCustomerReply(msg.id, msg.message);
+                        }
                     }
                 } else {
-                	appendMessage(msg.id, 'agent', msg.senderName, msg.message, msg.timestamp);
+                    // 3. 👉 FIX 1: Pass the 6th argument (msg.parentMessage) so agent replies show quotes!
+                    appendMessage(msg.id, 'agent', msg.senderName, msg.message, msg.timestamp, msg.parentMessage);
                 }
             });
         }, function (error) {
@@ -516,9 +526,11 @@
         document.getElementById('chatSetupView').classList.add('hidden');
         document.getElementById('chatActiveView').classList.remove('hidden');
 
+        // Create a temporary ID
         const tempId = 'temp-' + Date.now();
-        appendMessage(tempId, 'user', customerName, initialQuery, Date.now());
+        appendMessage(tempId, 'user', customerName, initialQuery, Date.now(), activeReplyParentText);
 
+        // Pass the tempId through so the socket knows exactly which element to swap
         connectToWebSocket(initialQuery, tempId);
     }
 
@@ -531,7 +543,7 @@
 
         const tempId = 'temp-' + Date.now();
 
-        // Render locally immediately (with active quote preview if available)
+        // Render locally immediately
         appendMessage(tempId, 'user', customerName, messageText, Date.now(), activeReplyParentText);
 
         const payload = {
@@ -541,8 +553,9 @@
             senderName: customerName,
             message: messageText,
             timestamp: Date.now(),
-            parentId: activeReplyParentId,          // Send ID of reply parent
-            parentMessage: activeReplyParentText   // Send text of reply parent
+            parentId: activeReplyParentId,
+            parentMessage: activeReplyParentText,
+            clientRefId: tempId // Send this so the subscribe block knows which bubble to target
         };
 
         if (stompClient && stompClient.connected) {
@@ -550,7 +563,7 @@
         }
 
         input.value = '';
-        cancelCustomerReply(); // Wipe clean the preview bar
+        cancelCustomerReply();
     }
 
     function insertInitialEmoji(emoji) {
@@ -589,9 +602,9 @@
         const bubbleContainer = document.createElement('div');
         bubbleContainer.className = 'flex items-center space-x-2 max-w-[80%] group';
 
-        // If there is an action button, make sure it triggers reply
+        // Reply Button
         const replyBtn = document.createElement('button');
-        replyBtn.className = 'hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition order-last';
+        replyBtn.className = 'reply-action-btn hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition order-last';
         replyBtn.innerText = '↩️';
         replyBtn.type = "button";
         replyBtn.onclick = () => triggerCustomerReply(id, messageText);
@@ -601,6 +614,7 @@
             sender === 'user' ? 'bg-red-600 text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'
         }`;
         
+        // Render Quoted parent text if present
         if (parentMessageText) {
             const quoteDiv = document.createElement('div');
             quoteDiv.className = `text-[10px] italic border-l-2 mb-1.5 pl-1.5 py-0.5 max-w-full truncate ${
@@ -618,11 +632,12 @@
         bubbleContainer.appendChild(bubble);
         bubbleContainer.appendChild(replyBtn);
 
-        // Edit button for users
+        // Edit button (User messages only)
         if (sender === 'user') {
             const editBtn = document.createElement('button');
-            editBtn.className = 'hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition';
+            editBtn.className = 'edit-action-btn hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition';
             editBtn.innerText = '✍️';
+            editBtn.type = "button";
             editBtn.onclick = () => triggerClientMessageEdit(id, messageText);
             bubbleContainer.insertBefore(editBtn, bubble);
         }
