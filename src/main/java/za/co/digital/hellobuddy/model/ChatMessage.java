@@ -26,6 +26,8 @@ public class ChatMessage {
 	private String message;
 
 	private long timestamp;
+	private Long parentId;
+	private String parentMessage;
 
 	// Constructors
 	public ChatMessage() {
@@ -78,5 +80,21 @@ public class ChatMessage {
 
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
+	}
+
+	public Long getParentId() {
+		return parentId;
+	}
+
+	public void setParentId(Long parentId) {
+		this.parentId = parentId;
+	}
+
+	public String getParentMessage() {
+		return parentMessage;
+	}
+
+	public void setParentMessage(String parentMessage) {
+		this.parentMessage = parentMessage;
 	}
 }

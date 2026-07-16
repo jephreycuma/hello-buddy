@@ -335,7 +335,15 @@
 			            <button type="button" onclick="insertCustomerEmoji('😞')" class="hover:scale-125 transition text-base">😞</button>
 			            <button type="button" onclick="insertCustomerEmoji('👍')" class="hover:scale-125 transition text-base">👍</button>
 			        </div>
-			
+				
+			        <div id="customerReplyPreview" class="hidden flex items-center justify-between bg-gray-50 border-l-4 border-red-600 p-2 rounded text-[11px] text-gray-600">
+			            <div class="truncate">
+			                <span class="font-bold text-red-600 block text-[9px] uppercase">Replying to:</span>
+			                <span id="customerReplyPreviewText" class="italic"></span>
+			            </div>
+			            <button type="button" onclick="cancelCustomerReply()" class="text-gray-400 hover:text-gray-600 font-bold ml-2">✕</button>
+			        </div>
+				
 			        <div class="flex items-center space-x-2">
 			            <input type="text" id="chatTextInput" required autocomplete="off" class="flex-grow p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-red-600 focus:bg-white transition" placeholder="Type your message here...">
 			            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition">
@@ -406,6 +414,8 @@
     let stompClient = null;
     let currentThreadId = null;
     let customerName = "";
+    let activeReplyParentId = null;
+    let activeReplyParentText = "";
 
     // Generate a unique thread ID for the user's session
     function generateUUID() {
@@ -485,7 +495,7 @@
                 stream.innerHTML = ''; 
                 
                 history.forEach(msg => {
-                    appendMessage(msg.id, msg.sender, msg.senderName, msg.message, msg.timestamp);
+                    appendMessage(msg.id, msg.sender, msg.senderName, msg.message, msg.timestamp, msg.parentMessage);
                 });
             })
             .catch(err => console.error("Error loading client history:", err));
@@ -520,7 +530,9 @@
         if (!messageText || !currentThreadId) return;
 
         const tempId = 'temp-' + Date.now();
-        appendMessage(tempId, 'user', customerName, messageText, Date.now());
+
+        // Render locally immediately (with active quote preview if available)
+        appendMessage(tempId, 'user', customerName, messageText, Date.now(), activeReplyParentText);
 
         const payload = {
             id: null,
@@ -528,7 +540,9 @@
             sender: 'user',
             senderName: customerName,
             message: messageText,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            parentId: activeReplyParentId,          // Send ID of reply parent
+            parentMessage: activeReplyParentText   // Send text of reply parent
         };
 
         if (stompClient && stompClient.connected) {
@@ -536,6 +550,7 @@
         }
 
         input.value = '';
+        cancelCustomerReply(); // Wipe clean the preview bar
     }
 
     function insertInitialEmoji(emoji) {
@@ -550,21 +565,14 @@
         input.focus();
     }
     
-    function appendMessage(id, sender, senderName, messageText, timestamp) {
+    function appendMessage(id, sender, senderName, messageText, timestamp, parentMessageText = null) {
         const stream = document.getElementById('chatMessagesStream');
         
-        // If the message already exists on screen, update the text content and return
         const existingMsgDom = document.getElementById(`msg-${id}`);
         if (existingMsgDom) {
             const bodyText = existingMsgDom.querySelector('.msg-body');
             if (bodyText) {
                 bodyText.innerText = messageText;
-                if (!existingMsgDom.querySelector('.edited-tag')) {
-                    const tag = document.createElement('span');
-                    tag.className = 'edited-tag text-[8px] text-gray-400 italic ml-1';
-                    tag.innerText = '(edited)';
-                    existingMsgDom.querySelector('.msg-label').appendChild(tag);
-                }
             }
             return;
         }
@@ -573,7 +581,6 @@
         wrapper.id = `msg-${id}`;
         wrapper.className = `flex flex-col ${sender === 'user' ? 'items-end' : 'items-start'}`;
 
-        // 👉 Format the time and append it elegantly next to the sender name
         const timeStr = formatMessageTime(timestamp || Date.now());
         const label = document.createElement('span');
         label.className = 'msg-label text-[9px] text-gray-400 font-bold mb-0.5 px-1';
@@ -582,23 +589,42 @@
         const bubbleContainer = document.createElement('div');
         bubbleContainer.className = 'flex items-center space-x-2 max-w-[80%] group';
 
+        // If there is an action button, make sure it triggers reply
+        const replyBtn = document.createElement('button');
+        replyBtn.className = 'hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition order-last';
+        replyBtn.innerText = '↩️';
+        replyBtn.type = "button";
+        replyBtn.onclick = () => triggerCustomerReply(id, messageText);
+
         const bubble = document.createElement('div');
         bubble.className = `rounded-2xl px-3 py-2 ${
             sender === 'user' ? 'bg-red-600 text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'
         }`;
         
+        if (parentMessageText) {
+            const quoteDiv = document.createElement('div');
+            quoteDiv.className = `text-[10px] italic border-l-2 mb-1.5 pl-1.5 py-0.5 max-w-full truncate ${
+                sender === 'user' ? 'border-red-300 text-red-100' : 'border-gray-400 text-gray-500'
+            }`;
+            quoteDiv.innerText = parentMessageText;
+            bubble.appendChild(quoteDiv);
+        }
+
         const body = document.createElement('span');
         body.className = 'msg-body';
         body.innerText = messageText;
         bubble.appendChild(body);
-        bubbleContainer.appendChild(bubble);
 
+        bubbleContainer.appendChild(bubble);
+        bubbleContainer.appendChild(replyBtn);
+
+        // Edit button for users
         if (sender === 'user') {
             const editBtn = document.createElement('button');
             editBtn.className = 'hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition';
             editBtn.innerText = '✍️';
             editBtn.onclick = () => triggerClientMessageEdit(id, messageText);
-            bubbleContainer.appendChild(editBtn);
+            bubbleContainer.insertBefore(editBtn, bubble);
         }
 
         wrapper.appendChild(label);
@@ -1277,6 +1303,21 @@
             if (!timestamp) return "";
             const date = new Date(Number(timestamp));
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+        
+        function triggerCustomerReply(messageId, text) {
+            activeReplyParentId = messageId;
+            activeReplyParentText = text;
+            
+            document.getElementById('customerReplyPreviewText').innerText = text;
+            document.getElementById('customerReplyPreview').classList.remove('hidden');
+            document.getElementById('chatTextInput').focus();
+        }
+
+        function cancelCustomerReply() {
+            activeReplyParentId = null;
+            activeReplyParentText = "";
+            document.getElementById('customerReplyPreview').classList.add('hidden');
         }
         
     </script>

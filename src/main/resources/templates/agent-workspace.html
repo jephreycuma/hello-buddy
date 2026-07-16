@@ -65,6 +65,13 @@
 			        <button type="button" onclick="insertAgentEmoji('😞')" class="hover:scale-125 transition text-base">😞</button>
 			        <button type="button" onclick="insertAgentEmoji('👍')" class="hover:scale-125 transition text-base">👍</button>
 			    </div>
+			    <div id="agentReplyPreview" class="hidden flex items-center justify-between bg-gray-50 border-l-4 border-gray-900 p-2 rounded text-[11px] text-gray-600">
+			        <div class="truncate">
+			            <span class="font-bold text-gray-900 block text-[9px] uppercase">Replying to customer:</span>
+			            <span id="agentReplyPreviewText" class="italic"></span>
+			        </div>
+			        <button type="button" onclick="cancelAgentReply()" class="text-gray-400 hover:text-gray-600 font-bold ml-2">✕</button>
+			    </div>
 			
 			    <div class="flex items-center space-x-3">
 			        <input type="text" id="agentReplyInput" required autocomplete="off" class="flex-grow p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-red-500 focus:bg-white transition" placeholder="Type your formal agent response here...">
@@ -84,6 +91,9 @@
 
     let stompClient = null;
     let activeThreadId = null;
+    let activeAgentReplyParentId = null;
+    let activeAgentReplyParentText = "";
+    
     const threads = {};
     window.onload = function() {
         connectAgentDashboard();
@@ -223,7 +233,9 @@
             sender: 'agent',
             senderName: currentAgentName,
             message: messageText,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            parentId: activeAgentReplyParentId,          // Send ID of reply parent
+            parentMessage: activeAgentReplyParentText   // Send text of reply parent
         };
 
         if (stompClient && stompClient.connected) {
@@ -231,6 +243,7 @@
         }
 
         replyInput.value = '';
+        cancelAgentReply(); // Dismiss preview bar
     }
     
     function insertAgentEmoji(emoji) {
@@ -268,6 +281,12 @@
         }
     }
 
+    function formatMessageTime(timestamp) {
+        if (!timestamp) return "";
+        const date = new Date(Number(timestamp));
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
     function renderMessages(threadId) {
         const container = document.getElementById('agentMessagesStream');
         container.innerHTML = '';
@@ -281,9 +300,13 @@
             const wrapper = document.createElement('div');
             wrapper.className = `flex flex-col ${isAgent ? 'items-end' : 'items-start'}`;
 
+            // 👉 UPDATED: Format and append the message timestamp next to the sender's name
+            const timeStr = formatMessageTime(msg.timestamp);
             const label = document.createElement('span');
             label.className = 'text-[9px] text-gray-400 font-bold mb-0.5 px-1';
-            label.innerText = isAgent ? 'You (' + currentAgentName + ')' : msg.senderName;
+            label.innerText = isAgent 
+                ? `You (${currentAgentName}) • ${timeStr}` 
+                : `${msg.senderName} • ${timeStr}`;
 
             const bubbleContainer = document.createElement('div');
             bubbleContainer.className = 'flex items-center space-x-2 max-w-[75%] group';
@@ -295,20 +318,37 @@
                 : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
             }`;
             
+            // Render the quote block inside agent screen bubbles if a reply parent exists
+            if (msg.parentMessage) {
+                const quoteDiv = document.createElement('div');
+                quoteDiv.className = `text-[10px] italic border-l-2 mb-1.5 pl-1.5 py-0.5 max-w-full truncate ${
+                    isAgent ? 'border-gray-500 text-gray-300' : 'border-gray-400 text-gray-500'
+                }`;
+                quoteDiv.innerText = msg.parentMessage;
+                bubble.appendChild(quoteDiv);
+            }
+
             const messageTextSpan = document.createElement('span');
             messageTextSpan.innerText = msg.message;
             bubble.appendChild(messageTextSpan);
             bubbleContainer.appendChild(bubble);
 
-            // Append edit button next to agent's own sent messages
+            // Add reply action button to hover group
+            const replyBtn = document.createElement('button');
+            replyBtn.className = 'hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition';
+            replyBtn.innerText = '↩️';
+            replyBtn.onclick = () => triggerAgentReply(msg.id, msg.message);
+
             if (isAgent) {
                 const editBtn = document.createElement('button');
                 editBtn.className = 'hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition';
                 editBtn.innerText = '✍️';
                 editBtn.onclick = () => triggerAgentMessageEdit(msg.id, msg.message);
                 
-                // Put the edit button before the bubble for right aligned layout
                 bubbleContainer.insertBefore(editBtn, bubble);
+                bubbleContainer.insertBefore(replyBtn, editBtn); // Arrange controls
+            } else {
+                bubbleContainer.appendChild(replyBtn);
             }
 
             wrapper.appendChild(label);
@@ -367,6 +407,21 @@
             const month = date.toLocaleString('default', { month: 'short' });
             return `${day} ${month}, ${timeString}`;
         }
+    }
+    
+    function triggerAgentReply(messageId, text) {
+        activeAgentReplyParentId = messageId;
+        activeAgentReplyParentText = text;
+        
+        document.getElementById('agentReplyPreviewText').innerText = text;
+        document.getElementById('agentReplyPreview').classList.remove('hidden');
+        document.getElementById('agentReplyInput').focus();
+    }
+
+    function cancelAgentReply() {
+        activeAgentReplyParentId = null;
+        activeAgentReplyParentText = "";
+        document.getElementById('agentReplyPreview').classList.add('hidden');
     }
     </script>
 </body>
