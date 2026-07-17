@@ -92,7 +92,7 @@ public class MockPaymentApiController {
                         .setQuantity(1L)
                         .setPriceData(
                             SessionCreateParams.LineItem.PriceData.builder()
-                                .setCurrency("usd") // Dynamically processes ngn, zar, usd, etc.
+                                .setCurrency("usd")
                                 .setUnitAmount(stripeAmount)
                                 .setProductData(
                                     SessionCreateParams.LineItem.PriceData.ProductData.builder()

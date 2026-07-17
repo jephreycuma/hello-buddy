@@ -123,58 +123,68 @@
     </main>
 
     <!-- STEP 1: Recipient Phone Verification Modal -->
-	<div id="phoneModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4">
-	    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
-	        <div class="bg-gray-900 text-white p-5 border-b-2 border-red-600">
-	            <h3 class="text-lg font-extrabold tracking-wide">Delivery & Contact Details</h3>
-	            <p class="text-xs text-gray-400 mt-0.5">Specify delivery telephone and contact link</p>
-	        </div>
-	        <form id="recipientForm" onsubmit="handlePhoneVerification(event)" class="p-5 space-y-4">
-	            
-	            <div>
-	                <label id="senderPhoneLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-	                    Sender Mobile Number
-	                </label>
-	                <input type="tel" id="senderPhoneInput" 
-	                       class="w-full p-3 border border-gray-200 rounded-xl text-lg font-bold tracking-wider focus:outline-none focus:border-red-500 transition" 
-	                       placeholder="Optional">
-	            </div>
-	
-	            <div>
-	                <!-- UPDATED: Flex row setup splits label text to the left and red star to the right -->
-	                <div class="flex items-center justify-between mb-1">
-	                    <label id="phoneLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-	                        Recipient Mobile Number
-	                    </label>
-	                    <span class="text-red-600 text-sm font-black select-none" title="Required field">*</span>
-	                </div>
-	                
-	                <input type="tel" id="recipientPhoneInput" required 
-	                       class="w-full p-3 border border-gray-200 rounded-xl text-lg font-bold tracking-wider focus:outline-none focus:border-red-500 transition" 
-	                       placeholder="Required">
-	                <p class="text-[11px] text-gray-400 mt-1">Make sure this is correct. Pinless items are delivered instantly directly to the handset connection.</p>
-	            </div>
-	
-	            <div>
-	                <label id="receiverEmailLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-	                    Recipient Email Address
-	                </label>
-	                <input type="email" id="receiverEmailInput" 
-	                       class="w-full p-3 border border-gray-200 rounded-xl text-base font-medium focus:outline-none focus:border-red-500 transition" 
-	                       placeholder="Optional">
-	            </div>
-	
-	            <div class="grid grid-cols-2 gap-3 pt-2">
-	                <button type="button" onclick="closePhoneModal()" class="w-full border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold py-3 rounded-xl text-sm transition">
-	                    Cancel
-	                </button>
-	                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
-	                    Confirm Details
-	                </button>
-	            </div>
-	        </form>
-	    </div>
-	</div>
+		<div id="phoneModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4">
+		    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+		        <div class="bg-gray-900 text-white p-5 border-b-2 border-red-600">
+		            <h3 class="text-lg font-extrabold tracking-wide">Delivery & Contact Details</h3>
+		            <p class="text-xs text-gray-400 mt-0.5">Specify delivery telephone and contact link</p>
+		        </div>
+		        <form id="recipientForm" onsubmit="handlePhoneVerification(event)" class="p-5 space-y-4">
+		            
+		            <!-- Added: Required fields explanatory note -->
+		            <p class="text-xs text-gray-500 bg-gray-50 p-2.5 rounded-xl border border-gray-100">
+		                Fields marked with an <span class="text-red-600 font-bold">*</span> are required.
+		            </p>
+		            
+		            <div>
+		                <label id="senderPhoneLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+		                    Sender Mobile Number
+		                </label>
+		                <!-- Removed 'Optional' placeholder -->
+		                <input type="tel" id="senderPhoneInput" 
+		                       class="w-full p-3 border border-gray-200 rounded-xl text-lg font-bold tracking-wider focus:outline-none focus:border-red-500 transition" 
+		                       placeholder="">
+		            </div>
+		
+		            <div>
+		                <label id="phoneLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+		                    Recipient Mobile Number
+		                </label>
+		                
+		                <!-- Position relative container lets us cleanly anchor the asterisk on the far right of the field -->
+		                <div class="relative flex items-center">
+		                    <input type="tel" id="recipientPhoneInput" required 
+		                           class="w-full p-3 pr-8 border border-gray-200 rounded-xl text-lg font-bold tracking-wider focus:outline-none focus:border-red-500 transition" 
+		                           placeholder="">
+		                    
+		                    <!-- Asterisk positioned inside the right boundary of the text field -->
+		                    <span class="absolute right-3 text-red-600 text-sm font-black select-none pointer-events-none" title="Required field">*</span>
+		                </div>
+		                
+		                <p class="text-[11px] text-gray-400 mt-1">Make sure this is correct. Pinless items are delivered instantly directly to the handset connection.</p>
+		            </div>
+		
+		            <div>
+		                <label id="receiverEmailLabelHelp" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+		                    Recipient Email Address
+		                </label>
+		                <!-- Removed 'Optional' placeholder -->
+		                <input type="email" id="receiverEmailInput" 
+		                       class="w-full p-3 border border-gray-200 rounded-xl text-base font-medium focus:outline-none focus:border-red-500 transition" 
+		                       placeholder="">
+		            </div>
+		
+		            <div class="grid grid-cols-2 gap-3 pt-2">
+		                <button type="button" onclick="closePhoneModal()" class="w-full border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold py-3 rounded-xl text-sm transition">
+		                    Cancel
+		                </button>
+		                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
+		                    Confirm Details
+		                </button>
+		            </div>
+		        </form>
+		    </div>
+		</div>
 
 	<!-- STEP 2: Secure Checkout Gateway Modal (Streamlined for Stripe) -->
 	<div id="paymentModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
@@ -646,63 +656,7 @@
         stream.scrollTop = stream.scrollHeight;
     }
     
-    /*function appendMessage(id, sender, senderName, messageText) {
-        const stream = document.getElementById('chatMessagesStream');
-        
-        const existingMsgDom = document.getElementById(`msg-${id}`);
-        if (existingMsgDom) {
-            const bodyText = existingMsgDom.querySelector('.msg-body');
-            if (bodyText) {
-                bodyText.innerText = messageText;
-
-                if (!existingMsgDom.querySelector('.edited-tag')) {
-                    const tag = document.createElement('span');
-                    tag.className = 'edited-tag text-[8px] text-gray-400 italic ml-1';
-                    tag.innerText = '(edited)';
-                    existingMsgDom.querySelector('.msg-label').appendChild(tag);
-                }
-            }
-            return;
-        }
-
-        const wrapper = document.createElement('div');
-        wrapper.id = `msg-${id}`;
-        wrapper.className = `flex flex-col ${sender === 'user' ? 'items-end' : 'items-start'}`;
-
-        const label = document.createElement('span');
-        label.className = 'msg-label text-[9px] text-gray-400 font-bold mb-0.5 px-1';
-        label.innerText = senderName;
-
-        const bubbleContainer = document.createElement('div');
-        bubbleContainer.className = 'flex items-center space-x-2 max-w-[80%] group';
-
-        const bubble = document.createElement('div');
-        bubble.className = `rounded-2xl px-3 py-2 ${
-            sender === 'user' ? 'bg-red-600 text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'
-        }`;
-        
-        const body = document.createElement('span');
-        body.className = 'msg-body';
-        body.innerText = messageText;
-        bubble.appendChild(body);
-        bubbleContainer.appendChild(bubble);
-
-        if (sender === 'user') {
-            const editBtn = document.createElement('button');
-            editBtn.className = 'hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition';
-            editBtn.innerText = '✍️';
-            editBtn.onclick = () => triggerClientMessageEdit(id, messageText);
-            bubbleContainer.appendChild(editBtn);
-        }
-
-        wrapper.appendChild(label);
-        wrapper.appendChild(bubbleContainer);
-        stream.appendChild(wrapper);
-        stream.scrollTop = stream.scrollHeight;
-    }*/
-    
     function triggerClientMessageEdit(messageId, oldText) {
-        // 👉 SAFETY SHIELD: Do not attempt to send edits to the server for un-saved temp messages
         if (typeof messageId === 'string' && messageId.startsWith('temp-')) {
             console.warn("Cannot edit a message before it is confirmed by the server.");
             return;
@@ -711,7 +665,7 @@
         const newText = prompt("Edit your message:", oldText);
         if (newText !== null && newText.trim() !== "" && newText !== oldText) {
             const editPayload = {
-                id: Number(messageId), // 👉 Ensure it is parsed as a clean Number (Long)
+                id: Number(messageId),
                 threadId: currentThreadId,
                 sender: 'user',
                 senderName: customerName,
@@ -874,8 +828,10 @@
             
             const currencySymbol = productItem.displayPrice ? productItem.displayPrice.replace(/[\d.,\s]/g, '') : 'R';
             
-            const minLimit = productItem.minLimit || '2.00'; 
-            const maxLimit = productItem.maxLimit || '1000.00';
+            //const minLimit = productItem.minLimit || '2.00'; 
+            //const maxLimit = productItem.maxLimit || '1000.00';
+            const minLimit = productItem.minLimit !== undefined && productItem.minLimit !== null ? productItem.minLimit : 2.00; 
+   			const maxLimit = productItem.maxLimit !== undefined && productItem.maxLimit !== null ? productItem.maxLimit : 1000.00;
 
             card.innerHTML = `
                 <div>
@@ -889,7 +845,7 @@
                     
                     <div class="relative mt-2 rounded-xl shadow-sm">
                         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                            <span class="text-gray-400 font-bold text-sm">${currencySymbol}</span>
+                            <span class="text-gray-400 font-bold text-sm"></span>
                         </div>
                         <input type="number" id="anyAmountInput" min="${minLimit}" max="${maxLimit}" step="1" 
                             class="w-full p-3 pl-8 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition" 
@@ -898,7 +854,7 @@
                     <span class="text-[10px] text-gray-400 block mt-1 px-1">Limits: ${currencySymbol}${minLimit} to ${currencySymbol}${maxLimit}</span>
                 </div>
                 <div class="mt-4 pt-3 border-t border-gray-100">
-                    <button onclick="handleAnyAmountPurchase('${networkName}', ${operatorId})" 
+                    <button onclick="handleAnyAmountPurchase('${networkName}', ${operatorId}, ${minLimit}, ${maxLimit})" 
                         class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm">
                         Purchase Custom Amount
                     </button>
@@ -907,7 +863,7 @@
             grid.appendChild(card);
         }
 
-        function handleAnyAmountPurchase(networkName, operatorId) {
+        function handleAnyAmountPurchase(networkName, operatorId, minAmt, maxAmt) {
             const inputField = document.getElementById('anyAmountInput');
             const numericValue = parseFloat(inputField.value);
             
@@ -924,8 +880,8 @@
                 };
             
             const currencySymbol = countryCurrencyMap[currentCountryIso] || "R";
-            const minAmt = currentCountryIso === 'NG' ? 100.00 : 2.00;
-            const maxAmt = currentCountryIso === 'NG' ? 50000.00 : 1000.00;
+           // const minAmt = currentCountryIso === 'NG' ? 100.00 : 2.00;
+            //const maxAmt = currentCountryIso === 'NG' ? 50000.00 : 1000.00;
 
             if (isNaN(numericValue) || numericValue < minAmt || numericValue > maxAmt) {
                 alert(`Please type a valid amount between ${currencySymbol}${minAmt} and ${currencySymbol}${maxAmt}.`);
@@ -976,7 +932,7 @@
             document.getElementById('recipientForm').reset();
             
             labelHelp.textContent = "Recipient Mobile Number";
-            document.getElementById('recipientPhoneInput').placeholder = "Required";
+            document.getElementById('recipientPhoneInput').placeholder = "";
             document.getElementById('phoneModal').classList.remove('hidden');
         }
 
