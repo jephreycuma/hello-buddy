@@ -30,6 +30,8 @@ public class MockPaymentApiController {
     private String stripeFixedFee;
     @Value("${stripe.percentage.fee}")
 	private String stripePercentageFee;
+    @Value("${strip.minimum.amount}")
+    private String stripeMinimumAmount;
 
     @PostMapping("/create-session")
     public ResponseEntity<Map<String, Object>> processStripeSession(@RequestBody Map<String, Object> payload) {
@@ -139,8 +141,14 @@ public class MockPaymentApiController {
                 .divide(fxRate, 4, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.ONE.subtract(reloadlyDiscount));
 
-        return baseCostUsd.add(STRIPE_FIXED)
+        BigDecimal derivedAmount = baseCostUsd.add(STRIPE_FIXED)
                 .divide(STRIPE_INVERSE_PERCENT, 2, RoundingMode.HALF_UP);
+        
+        BigDecimal minimumAmount = new BigDecimal(stripeMinimumAmount);
+        if (derivedAmount.compareTo(minimumAmount) < 0) {
+			derivedAmount = minimumAmount;
+		}
+        return derivedAmount;
     }
     
 }
