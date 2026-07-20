@@ -1138,8 +1138,9 @@
             }
 
          // Inside your handleCheckout() function, update the fetch block:
+        	 //api/stripe
             try {
-            	const response = await fetch('/api/stripe/create-session', {
+            	const response = await fetch('/api/paystack/create-session', {
             	    method: 'POST',
             	    headers: {
             	        'Content-Type': 'application/json'

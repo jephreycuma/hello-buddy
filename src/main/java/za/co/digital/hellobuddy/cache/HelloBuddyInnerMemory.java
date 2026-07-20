@@ -104,7 +104,7 @@ public class HelloBuddyInnerMemory {
 	                    redisTemplate.opsForValue().set(countryIso+":"+prod.getId(), commisionValueString, 1, TimeUnit.HOURS);
 	                }
 	                // --- REDIS CACHING BLOCK END ---
-	                if (purchasePrice > 0.5) {
+	                if (purchasePrice > 0.26) {
 	                    dto = new ProductItemDTO(
 	                            Integer.parseInt(prod.getId().replaceAll("\\D", "")),
 	                            description, 
