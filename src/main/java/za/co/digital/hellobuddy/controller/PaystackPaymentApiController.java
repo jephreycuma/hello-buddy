@@ -90,7 +90,7 @@ public class PaystackPaymentApiController {
             BigDecimal discountPct = (discount != null) ? new BigDecimal(discount) : BigDecimal.ZERO;
             BigDecimal localPrice = new BigDecimal(originalLocalPrice);
             
-            BigDecimal finalizedChargeAmount = calculatePayStackCharge(localPrice, fxRate,new BigDecimal(southAfricaFx), discountPct);
+            BigDecimal finalizedChargeAmount = calculatePayStackCharge(localPrice, fxRate,new BigDecimal(southAfricaFx));
             
             // Paystack expects amount in cents/sub-units (e.g., R10.50 -> 1050)
             long paystackAmountCents = Math.round(finalizedChargeAmount.setScale(2, RoundingMode.HALF_UP).doubleValue() * 100);
@@ -171,35 +171,45 @@ public class PaystackPaymentApiController {
         return derivedAmount;
     }
     
-    private BigDecimal calculatePayStackCharge( BigDecimal originalLocalPrice, BigDecimal localToUsdFxRate, BigDecimal usdToZarFxRate,BigDecimal reloadlyDiscount) {
-    	    BigDecimal STRIPE_FIXED = new BigDecimal(stripeFixedFee);
-    	    BigDecimal STRIPE_INVERSE_PERCENT = BigDecimal.ONE.subtract(new BigDecimal(stripePercentageFee));
-    	    
-    	    if (reloadlyDiscount == null) {
-    	        reloadlyDiscount = BigDecimal.ZERO;
-    	    }
-    	    
-    	    if (reloadlyDiscount.compareTo(BigDecimal.ONE) > 0) {
-    	        reloadlyDiscount = reloadlyDiscount.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
-    	    }
 
-    	    // 1. Convert local airtime price (MZN) to USD using the local FX rate
-    	    BigDecimal baseCostUsd = originalLocalPrice
-    	            .divide(localToUsdFxRate, 4, RoundingMode.HALF_UP)
-    	            .multiply(BigDecimal.ONE.subtract(reloadlyDiscount));
 
-    	    // 2. Add PayStack/Stripe processing markup in USD
-    	    BigDecimal derivedAmountUsd = baseCostUsd.add(STRIPE_FIXED)
-    	            .divide(STRIPE_INVERSE_PERCENT, 4, RoundingMode.HALF_UP); 
-    	    
-    	    BigDecimal minimumAmountUsd = new BigDecimal(stripeMinimumAmount);
-    	    if (derivedAmountUsd.compareTo(minimumAmountUsd) < 0) {
-    	        derivedAmountUsd = minimumAmountUsd;
-    	    }
-    	    
-    	    // 3. CORRECTED: Convert USD to ZAR using the proper ZAR exchange rate
-    	    BigDecimal finalAmountZar = derivedAmountUsd.multiply(usdToZarFxRate).setScale(2, RoundingMode.HALF_UP);
-    	    
-    	    return finalAmountZar;
-    	}
+    /**
+     * Calculates the exact final PayStack charge in ZAR matching the storefront display price.
+     *
+     * @param storefrontLocalPrice The exact display price shown to the user on the storefront (e.g., R7.00, R110.00, or foreign denomination).
+     * @param localToUsdFxRate     FX rate from local currency to USD (set to 1.0 if local currency is ZAR or USD).
+     * @param usdToZarFxRate       FX rate from USD to ZAR (set to 1.0 if local currency is ZAR).
+     * @return Exact ZAR charge to be sent to PayStack (e.g., 7.00 or 110.00).
+     */
+    private BigDecimal calculatePayStackCharge(
+            BigDecimal storefrontLocalPrice,
+            BigDecimal localToUsdFxRate,
+            BigDecimal usdToZarFxRate) {
+
+        // 1. Safety check for null or non-positive prices
+        if (storefrontLocalPrice == null || storefrontLocalPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+
+        // 2. Default FX rates to 1.0 if missing or invalid
+        if (localToUsdFxRate == null || localToUsdFxRate.compareTo(BigDecimal.ZERO) <= 0) {
+            localToUsdFxRate = BigDecimal.ONE;
+        }
+
+        if (usdToZarFxRate == null || usdToZarFxRate.compareTo(BigDecimal.ZERO) <= 0) {
+            usdToZarFxRate = BigDecimal.ONE;
+        }
+
+        // 3. Direct ZAR Product: Return exact storefront price without modifications
+        if (localToUsdFxRate.compareTo(BigDecimal.ONE) == 0 && usdToZarFxRate.compareTo(BigDecimal.ONE) == 0) {
+            return storefrontLocalPrice.setScale(2, RoundingMode.HALF_UP);
+        }
+
+        // 4. Foreign Product: Convert Local -> USD -> ZAR using exact storefront face value
+        BigDecimal usdPrice = storefrontLocalPrice.divide(localToUsdFxRate, 6, RoundingMode.HALF_UP);
+        BigDecimal finalAmountZar = usdPrice.multiply(usdToZarFxRate);
+
+        // 5. Return exact rounded price to send to PayStack
+        return finalAmountZar.setScale(2, RoundingMode.HALF_UP);
+    }
 }
