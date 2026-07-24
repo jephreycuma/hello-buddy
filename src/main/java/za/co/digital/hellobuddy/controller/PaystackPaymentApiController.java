@@ -38,14 +38,6 @@ public class PaystackPaymentApiController {
 
     @Value("${hello.buddy.url}")
     private String helloBuddyUrl;
-
-    @Value("${stripe.fixed.fee}")
-    private String stripeFixedFee;
-
-    @Value("${stripe.percentage.fee}")
-    private String stripePercentageFee;
-    @Value("${strip.minimum.amount}")
-    private String stripeMinimumAmount;
     @Value("${customer.default.email}")
     private String defaultCustomerEmail;
     @Value("${south.african.fx}")
@@ -58,9 +50,6 @@ public class PaystackPaymentApiController {
         try {
         	logger.info("Hello Buddy frontend received Paystack payload: " + payload);
 
-            // Extract customer email (Paystack strictly requires this)
-            //String customerEmail = (String) payload.getOrDefault("recipientEmail", defaultCustomerEmail);
-            
             String customerEmail = (String) payload.get("recipientEmail");
             if (customerEmail == null || customerEmail.trim().isEmpty()) {
                 customerEmail = defaultCustomerEmail;
@@ -146,32 +135,6 @@ public class PaystackPaymentApiController {
         }
     }
 
-    private BigDecimal calculateStripeCharge(BigDecimal originalLocalPrice, BigDecimal fxRate, BigDecimal reloadlyDiscount) {
-        BigDecimal STRIPE_FIXED = new BigDecimal(stripeFixedFee);
-        BigDecimal STRIPE_INVERSE_PERCENT = BigDecimal.ONE.subtract(new BigDecimal(stripePercentageFee));
-        
-        if (reloadlyDiscount == null)
-        	reloadlyDiscount = BigDecimal.ZERO;
-        
-        if (reloadlyDiscount.compareTo(BigDecimal.ONE) > 0) {
-            reloadlyDiscount = reloadlyDiscount.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
-        }
-
-        BigDecimal baseCostUsd = originalLocalPrice
-                .divide(fxRate, 4, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.ONE.subtract(reloadlyDiscount));
-
-        BigDecimal derivedAmount = baseCostUsd.add(STRIPE_FIXED)
-                .divide(STRIPE_INVERSE_PERCENT, 2, RoundingMode.HALF_UP);
-        
-        BigDecimal minimumAmount = new BigDecimal(stripeMinimumAmount);
-        if (derivedAmount.compareTo(minimumAmount) < 0) {
-			derivedAmount = minimumAmount;
-		}
-        return derivedAmount;
-    }
-    
-
 
     /**
      * Calculates the exact final PayStack charge in ZAR matching the storefront display price.
@@ -186,12 +149,10 @@ public class PaystackPaymentApiController {
             BigDecimal localToUsdFxRate,
             BigDecimal usdToZarFxRate) {
 
-        // 1. Safety check for null or non-positive prices
         if (storefrontLocalPrice == null || storefrontLocalPrice.compareTo(BigDecimal.ZERO) <= 0) {
             return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
         }
 
-        // 2. Default FX rates to 1.0 if missing or invalid
         if (localToUsdFxRate == null || localToUsdFxRate.compareTo(BigDecimal.ZERO) <= 0) {
             localToUsdFxRate = BigDecimal.ONE;
         }
@@ -200,16 +161,13 @@ public class PaystackPaymentApiController {
             usdToZarFxRate = BigDecimal.ONE;
         }
 
-        // 3. Direct ZAR Product: Return exact storefront price without modifications
         if (localToUsdFxRate.compareTo(BigDecimal.ONE) == 0 && usdToZarFxRate.compareTo(BigDecimal.ONE) == 0) {
             return storefrontLocalPrice.setScale(2, RoundingMode.HALF_UP);
         }
 
-        // 4. Foreign Product: Convert Local -> USD -> ZAR using exact storefront face value
         BigDecimal usdPrice = storefrontLocalPrice.divide(localToUsdFxRate, 6, RoundingMode.HALF_UP);
         BigDecimal finalAmountZar = usdPrice.multiply(usdToZarFxRate);
 
-        // 5. Return exact rounded price to send to PayStack
         return finalAmountZar.setScale(2, RoundingMode.HALF_UP);
     }
 }
