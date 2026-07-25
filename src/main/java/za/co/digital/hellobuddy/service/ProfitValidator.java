@@ -68,6 +68,9 @@ public class ProfitValidator {
 	public EvaluationResult evaluateProduct(BigDecimal rawPrice, BigDecimal localFxRateToUsd, BigDecimal usdToZarRate,
 			BigDecimal reloadlyDiscount) {
 
+		System.out.println("Evaluating product with rawPrice: " + rawPrice + ", localFxRateToUsd: " + localFxRateToUsd
+				+ ", usdToZarRate: " + usdToZarRate + ", reloadlyDiscount: " + reloadlyDiscount);
+		
 		if (rawPrice == null || rawPrice.compareTo(BigDecimal.ZERO) <= 0) {
 			return new EvaluationResult(false, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
 		}

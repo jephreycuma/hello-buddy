@@ -16,6 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -40,6 +41,9 @@ public class HelloBuddyInnerMemory {
     private final StringRedisTemplate redisTemplate;
     private final RestClient restClient;
     private final ProfitValidator profitValidator;
+    
+    @Value("${south.african.fx:15.35}")
+    private String southAfricanFx;
 
     // Constructor Injection managed by Spring
     public HelloBuddyInnerMemory(
@@ -90,7 +94,7 @@ public class HelloBuddyInnerMemory {
         List<ProductItemDTO> dataList = new ArrayList<>();
         List<ProductItemDTO> giftCardsList = new ArrayList<>();
 
-        BigDecimal usdToZarRate = new BigDecimal("18.50");
+        BigDecimal usdToZarRate = new BigDecimal(southAfricanFx);
         if (redisTemplate != null) {
             try {
                 String cachedUsdZar = redisTemplate.opsForValue().get("fx:USD_ZAR");
