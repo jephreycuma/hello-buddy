@@ -33,21 +33,79 @@
 	    </div>
 	</header>
 
-    <!-- Country Selector Dropdown Region -->
-		<div class="w-full bg-gray-100 border-b border-gray-200 py-3">
-		    <div class="max-w-xl mx-auto px-4 flex items-center justify-start space-x-3">
-		        <label for="countrySelector" class="text-xs font-bold text-gray-600 uppercase tracking-wider shrink-0">
-		            Select Country:
-		        </label>
-		        <div class="relative min-w-[180px]">
-		            <select id="countrySelector" onchange="handleCountryChange(this.value)" class="w-full bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-700 shadow-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 appearance-none cursor-pointer">
-		                </select>
-		            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-		                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-		            </div>
-		        </div>
-		    </div>
-		</div>
+	<!-- Country Selector & Wallet Access Region -->
+	<div class="w-full bg-gray-100 border-b border-gray-200 py-2.5">
+	    <div class="max-w-6xl mx-auto px-4 flex items-center justify-between space-x-6">
+	        
+	        <!-- Left: Country Selection -->
+	        <div class="flex items-center space-x-2">
+	            <label for="countrySelector" class="text-xs font-bold text-gray-600 uppercase tracking-wider shrink-0">
+	                Select Country:
+	            </label>
+	            <div class="relative min-w-[150px]">
+	                <select id="countrySelector" onchange="handleCountryChange(this.value)" class="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1 text-xs font-semibold text-gray-700 shadow-sm focus:outline-none focus:border-red-500 appearance-none cursor-pointer">
+	                </select>
+	                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+	                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+	                </div>
+	            </div>
+	        </div>
+	
+	        <!-- Right: Wallet Login/Register OR Authenticated User Info + Logout -->
+	        <div class="flex items-center space-x-3 text-xs font-bold">
+	            
+	            <!-- Logout success or status feedback message if present -->
+	            <div th:if="${successMessage}" class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200" th:text="${successMessage}"></div>
+	
+	            <!-- Unauthenticated State: Login & Register Buttons -->
+	            <th:block th:if="${session.LOGGED_IN_CUSTOMER == null}">
+	                <div class="flex items-center space-x-2">
+	                    <a th:href="@{/wallet/login}" class="inline-flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition shadow-sm">
+	                        <span>Login</span>
+	                    </a>
+	                    <a th:href="@{/wallet/register}" class="inline-flex items-center space-x-1 bg-gray-900 hover:bg-black text-white px-3 py-1.5 rounded-lg transition shadow-sm">
+	                        <span>Register</span>
+	                    </a>
+	                </div>
+	            </th:block>
+	
+	            <!-- Authenticated State: Wallet Details + Far Right Logout Button -->
+	            <th:block th:if="${session.LOGGED_IN_CUSTOMER != null}">
+	                <div class="bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm flex items-center space-x-2.5 text-xs">
+	                    <!-- User -->
+	                    <span class="flex items-center space-x-1 text-gray-600 font-semibold">
+	                        <span>💳</span>
+	                        <span>Wallet:</span>
+	                        <strong class="text-gray-900" th:text="${session.LOGGED_IN_CUSTOMER}">User</strong>
+	                    </span>
+	                    
+	                    <span class="text-gray-300">|</span>
+	                    
+	                    <!-- Unique ID -->
+	                    <span class="text-gray-600 font-semibold">
+	                        ID: <strong class="text-red-600 font-mono tracking-wider" th:text="${session.CUSTOMER_REF != null ? session.CUSTOMER_REF : 'N/A'}">HB-000000</strong>
+	                    </span>
+	                    
+	                    <span class="text-gray-300">|</span>
+	                    
+	                    <!-- Balance -->
+	                    <span class="font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+	                        Balance: <span th:text="${session.WALLET_BALANCE != null ? 'R ' + #numbers.formatDecimal(session.WALLET_BALANCE, 1, 'COMMA', 2, 'POINT') : 'R 0.00'}">R 0.00</span>
+	                    </span>
+	
+	                    <span class="text-gray-300">|</span>
+	
+	                    <!-- Far Right: Logout Link/Button -->
+	                    <a th:href="@{/wallet/logout}" class="inline-flex items-center space-x-1 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded transition">
+	                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+	                        <span>Logout</span>
+	                    </a>
+	                </div>
+	            </th:block>
+	        </div>
+	
+	    </div>
+	</div>
 
     <!-- Navigation Tabs Section -->
     <nav class="w-full bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
@@ -1295,6 +1353,13 @@
             activeReplyParentText = "";
             document.getElementById('customerReplyPreview').classList.add('hidden');
         }
+        
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted || (performance && performance.getEntriesByType("navigation")[0].type === "back_forward")) {
+                // Force a hard reload from server to re-verify session state
+                window.location.reload();
+            }
+        });
         
     </script>
 </body>

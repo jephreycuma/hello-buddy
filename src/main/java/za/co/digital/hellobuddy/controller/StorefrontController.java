@@ -1,5 +1,6 @@
 package za.co.digital.hellobuddy.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import za.co.digital.hellobuddy.cache.HelloBuddyInnerMemory;
 import za.co.digital.hellobuddy.dto.ProductItemDTO;
 import org.springframework.stereotype.Controller;
@@ -26,13 +27,22 @@ public class StorefrontController {
 
     @GetMapping("/")
     public String showStorefront(
-            @RequestParam(value = "country", required = false, defaultValue = "ZA") String countryIso, 
+            @RequestParam(value = "country", required = false, defaultValue = "ZA") String countryIso,
+            @RequestParam(value = "logoutSuccess", required = false) String logoutSuccess,
+            HttpServletRequest request,
             Model model) {
-            
-        // Clean, direct call to the Spring-managed component
+
+        // 0. Force session initialization before Thymeleaf starts streaming the response
+        request.getSession(true);
+
+        // 1. Handle Reloadly catalog loading
         Map<String, List<ProductItemDTO>> catalogMap = innerMemory.getReloadlyProducts(countryIso);
-        
         model.addAttribute("catalogProducts", catalogMap);
+
+        // 2. Handle Logout Success message feedback
+        if ("true".equals(logoutSuccess)) {
+            model.addAttribute("successMessage", "You have been successfully logged out.");
+        }
 
         return "index";
     }

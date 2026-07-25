@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello Buddy - Wallet Registration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div class="bg-gray-900 text-white p-6 border-b-2 border-red-600 text-center">
+            <h2 class="text-2xl font-extrabold tracking-wide">Create Hello Buddy Wallet</h2>
+            <p class="text-xs text-gray-400 mt-1">Register once to fund airtime & data seamlessly</p>
+        </div>
+        <form th:action="@{/wallet/register}" method="POST" id="registerForm" class="p-6 space-y-4">
+            <div th:if="${error}" class="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-semibold" th:text="${error}"></div>
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">First Name</label>
+                <input type="text" name="firstName" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-600">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Last Name (Surname)</label>
+                <input type="text" name="lastName" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-600">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Username / Email</label>
+                <input type="text" name="username" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-600">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Password</label>
+                <input type="password" id="password" name="password" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-600">
+            </div>
+
+            <!-- Confirm Password Field -->
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-600 transition-colors">
+                <p id="passwordMismatchError" class="hidden text-xs text-red-600 font-semibold mt-1.5 flex items-center space-x-1">
+                    <span>⚠️</span>
+                    <span>Passwords do not match</span>
+                </p>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                Register Wallet
+            </button>
+            
+            <div class="text-center pt-2">
+                <a th:href="@{/wallet/login}" class="text-xs text-red-600 hover:underline font-bold">Already have a wallet? Login here</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const errorMessage = document.getElementById('passwordMismatchError');
+        const registerForm = document.getElementById('registerForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function validatePasswords() {
+            const pwd = passwordInput.value;
+            const confirmPwd = confirmPasswordInput.value;
+
+            // Only validate if user has started typing in confirm password
+            if (confirmPwd.length === 0) {
+                errorMessage.classList.add('hidden');
+                confirmPasswordInput.classList.remove('border-red-500', 'border-emerald-500');
+                confirmPasswordInput.classList.add('border-gray-200');
+                submitBtn.disabled = false;
+                return true;
+            }
+
+            if (pwd !== confirmPwd) {
+                errorMessage.classList.remove('hidden');
+                confirmPasswordInput.classList.remove('border-gray-200', 'border-emerald-500');
+                confirmPasswordInput.classList.add('border-red-500');
+                submitBtn.disabled = true;
+                return false;
+            } else {
+                errorMessage.classList.add('hidden');
+                confirmPasswordInput.classList.remove('border-gray-200', 'border-red-500');
+                confirmPasswordInput.classList.add('border-emerald-500');
+                submitBtn.disabled = false;
+                return true;
+            }
+        }
+
+        passwordInput.addEventListener('input', validatePasswords);
+        confirmPasswordInput.addEventListener('input', validatePasswords);
+
+        registerForm.addEventListener('submit', function(e) {
+            if (!validatePasswords()) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
