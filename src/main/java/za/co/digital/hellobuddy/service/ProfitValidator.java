@@ -12,8 +12,8 @@ public class ProfitValidator {
 	private final BigDecimal paystackPercentIncVat;
 	private final BigDecimal paystackFixedIncVat;
 
-	public ProfitValidator(@Value("${paystack.fee.percentage-inc-vat:0.03105}") BigDecimal paystackPercentIncVat,
-			@Value("${paystack.fee.fixed-inc-vat:2.30}") BigDecimal paystackFixedIncVat) {
+	public ProfitValidator(@Value("${paystack.fee.percentage-inc-vat:0.03335}") BigDecimal paystackPercentIncVat,
+			@Value("${paystack.fee.fixed-inc-vat:1.15}") BigDecimal paystackFixedIncVat) {
 		this.paystackPercentIncVat = paystackPercentIncVat;
 		this.paystackFixedIncVat = paystackFixedIncVat;
 	}
@@ -79,7 +79,7 @@ public class ProfitValidator {
 		BigDecimal safeUsdToZar = (usdToZarRate != null && usdToZarRate.compareTo(BigDecimal.ZERO) > 0) ? usdToZarRate
 				: BigDecimal.ONE;
 
-		// 1. Convert retail price to ZAR
+		// 1. Convert retail price to ZAR (retail price in local currency converted via operator FX to USD, then to ZAR)
 		BigDecimal priceInZar;
 		if (safeLocalFx.compareTo(BigDecimal.ONE) == 0 && safeUsdToZar.compareTo(BigDecimal.ONE) == 0) {
 			priceInZar = rawPrice;
@@ -95,6 +95,7 @@ public class ProfitValidator {
 		BigDecimal paystackPayoutZar = priceInZar.subtract(paystackFeeZar).setScale(2, RoundingMode.HALF_UP);
 
 		// 3. Calculate Reloadly cost in ZAR
+		// Parse discount/commission (handles both 5.0 for 5% or 0.05)
 		BigDecimal discountFraction = BigDecimal.ZERO;
 		if (reloadlyDiscount != null && reloadlyDiscount.compareTo(BigDecimal.ZERO) > 0) {
 			discountFraction = (reloadlyDiscount.compareTo(BigDecimal.ONE) > 0)
@@ -102,8 +103,14 @@ public class ProfitValidator {
 					: reloadlyDiscount;
 		}
 
-		BigDecimal reloadlyCostZar = priceInZar.multiply(BigDecimal.ONE.subtract(discountFraction)).setScale(2,
-				RoundingMode.HALF_UP);
+		// Step A: Convert local price to USD using product operator FX rate (prod.getFxRate())
+		BigDecimal priceInUsd = rawPrice.divide(safeLocalFx, 6, RoundingMode.HALF_UP);
+
+		// Step B: Calculate Net USD cost after applying Reloadly discount
+		BigDecimal netCostUsd = priceInUsd.multiply(BigDecimal.ONE.subtract(discountFraction));
+
+		// Step C: Convert Net USD cost to ZAR using South Africa Reloadly account FX rate
+		BigDecimal reloadlyCostZar = netCostUsd.multiply(safeUsdToZar).setScale(2, RoundingMode.HALF_UP);
 
 		// 4. Margin decision
 		BigDecimal netDiffZar = paystackPayoutZar.subtract(reloadlyCostZar).setScale(2, RoundingMode.HALF_UP);
