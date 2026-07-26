@@ -269,31 +269,58 @@
 	            </div>
 	        </div>
 	
-	        <!-- Intercepted Form Submission Container -->
-	        <!-- Update your paymentForm tag to look exactly like this -->
-			<form id="paymentForm" onsubmit="event.preventDefault(); handleCheckout();" class="p-5 space-y-4">
+	        <!-- Checkout Form -->
+	        <form id="paymentForm" onsubmit="event.preventDefault();" class="p-5 space-y-4">
 	            
-	            <!-- Secure Notice Framework -->
-	            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3.5 flex items-start space-x-3">
-	                <span class="text-xl select-none">🛡️</span>
-	                <div class="text-xs text-blue-800 leading-relaxed">
-	                    <span class="font-bold block mb-0.5">Hosted Stripe Checkout</span>
-	                    You will be redirected safely to Stripe to finalize your billing details. Hello Buddy never logs or processes your credit card numbers locally.
+	            <!-- Dynamic Error Alert Box (Insufficient Funds / Server Exceptions) -->
+	            <div id="paymentErrorAlert" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700 font-semibold leading-snug">
+	            </div>
+	
+	            <!-- LOGGED IN STATE: Pay from Wallet -->
+	            <th:block th:if="${session.LOGGED_IN_CUSTOMER != null}">
+	                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex items-start space-x-3">
+	                    <span class="text-xl select-none">💳</span>
+	                    <div class="text-xs text-emerald-800 leading-relaxed">
+	                        <span class="font-bold block mb-0.5">Wallet Payment Active</span>
+	                        Logged in as <strong th:text="${session.LOGGED_IN_CUSTOMER}">User</strong>. Your current balance is 
+	                        <strong class="text-emerald-900" th:text="${session.WALLET_BALANCE != null ? 'R ' + #numbers.formatDecimal(session.WALLET_BALANCE, 1, 'COMMA', 2, 'POINT') : 'R 0.00'}">R 0.00</strong>.
+	                    </div>
 	                </div>
-	            </div>
 	
-	            <!-- Dynamic Network Execution Error Feedback -->
-	            <div id="paymentErrorAlert" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600 font-medium">
-	                Could not connect to the Stripe payment gateway. Please verify server connectivity.
-	            </div>
-	
-	            <!-- Action Controllers -->
-	            <div class="grid grid-cols-2 gap-3 pt-2">
-	                <button type="button" onclick="closePaymentModal()" class="w-full border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold py-3 rounded-xl text-sm transition">
-	                    Cancel
+	                <button type="button" id="btnPayWallet" onclick="handleCheckout('WALLET')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md shadow-emerald-100 flex items-center justify-center space-x-2">
+	                    <span>Pay from Wallet</span>
 	                </button>
-	                <button type="submit" id="btnPaySubmit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md shadow-red-100">
-	                    Pay Securely via Stripe
+	
+	                <!-- Greyed out Paystack / Card option for logged-in users -->
+	                <button type="button" disabled class="w-full bg-gray-200 text-gray-400 font-bold py-3 rounded-xl text-xs cursor-not-allowed border border-gray-300 flex items-center justify-center space-x-1" title="Card payment is disabled for logged-in wallet users">
+	                    <span>🔒 Paystack / Card Payment (Disabled for Logged-In Users)</span>
+	                </button>
+	            </th:block>
+	
+	            <!-- NON-LOGGED IN STATE: Pay via Paystack / Gateway -->
+	            <th:block th:if="${session.LOGGED_IN_CUSTOMER == null}">
+	                <div class="bg-blue-50 border border-blue-200 rounded-xl p-3.5 flex items-start space-x-3">
+	                    <span class="text-xl select-none">🛡️</span>
+	                    <div class="text-xs text-blue-800 leading-relaxed">
+	                        <span class="font-bold block mb-0.5">Hosted Secure Checkout</span>
+	                        You will be redirected safely to Paystack to finalize your purchase. Log in to pay instantly using your wallet balance.
+	                    </div>
+	                </div>
+	
+	                <button type="button" id="btnPayGateway" onclick="handleCheckout('PAYSTACK')" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md shadow-red-100 flex items-center justify-center space-x-2">
+	                    <span>Pay via Paystack</span>
+	                </button>
+	
+	                <!-- Greyed out Wallet Option for Guests -->
+	                <button type="button" disabled class="w-full bg-gray-200 text-gray-400 font-bold py-3 rounded-xl text-xs cursor-not-allowed border border-gray-300 flex items-center justify-center space-x-1" title="Please login to use your Wallet">
+	                    <span>💳 Pay from Wallet (Requires Login)</span>
+	                </button>
+	            </th:block>
+	
+	            <!-- Cancel Action -->
+	            <div class="pt-1">
+	                <button type="button" onclick="closePaymentModal()" class="w-full border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold py-2.5 rounded-xl text-xs transition">
+	                    Cancel
 	                </button>
 	            </div>
 	        </form>
@@ -1170,78 +1197,101 @@
             document.getElementById('infoModal').classList.add('hidden');
         }
         
-        async function handleCheckout() {
-            // Retrieve dynamic product properties cached inside the hidden native form engine
-            const productId = document.getElementById('hiddenProductId').value;
-            const productName = document.getElementById('hiddenProductName').value;
-            const productPrice = document.getElementById('hiddenProductPrice').value;
-            const productCategory = document.getElementById('hiddenProductCategory').value;
-            
-            const originalPrice = document.getElementById('hiddenProductPrice').getAttribute('data-original-price');	
-            
-            // Retrieve validated delivery metrics populated by Step 1 (phoneModal)
-            const senderPhone = document.getElementById('senderPhoneInput').value;
-            const recipientPhone = document.getElementById('hiddenRecipientPhone').value;
-            const recipientEmail = document.getElementById('hiddenRecipientEmail').value;
-            
-            // Derive currency type safely based on current active storefront context rules
-            const currentRegion = document.getElementById('countrySelector').value; // "ZA" or "NG"
-            const currency = 'usd';
-            //const currency = (currentRegion === 'NG' || (productName && productName.includes('₦'))) ? 'ngn' : 'zar';
-
-            // Show UI loading state on the button if available
-            const payButton = document.getElementById('btnPaySubmit');
-            const originalButtonText = payButton ? payButton.innerText : "Authorize Payment";
-            if (payButton) {
-                payButton.disabled = true;
-                payButton.innerText = "Connecting to Gateway...";
+        async function handleCheckout(paymentMethod) {
+            // Hide previous error messages
+            const errorAlert = document.getElementById('paymentErrorAlert');
+            if (errorAlert) {
+                errorAlert.classList.add('hidden');
+                errorAlert.innerText = '';
             }
 
-         // Inside your handleCheckout() function, update the fetch block:
-        	 //api/stripe
-            try {
-            	const response = await fetch('/api/paystack/create-session', {
-            	    method: 'POST',
-            	    headers: {
-            	        'Content-Type': 'application/json'
-            	    },
-            	    body: JSON.stringify({
-            	        productId: productId,
-            	        productName: productName,
-            	        price: parseFloat(productPrice),
-            	        originalPrice: originalPrice,
-            	        category: productCategory,
-            	        currency: currency.toLowerCase(),
-            	        countryIso: currentRegion,
-            	        senderPhone: senderPhone,
-            	        recipientPhone: recipientPhone,
-            	        recipientEmail: recipientEmail
-            	    })
-            	});
+            // Retrieve dynamic product properties from the hidden form fields
+            const productId = document.getElementById('hiddenProductId')?.value;
+            const productName = document.getElementById('hiddenProductName')?.value;
+            const productPrice = document.getElementById('hiddenProductPrice')?.value;
+            const productCategory = document.getElementById('hiddenProductCategory')?.value;
+            const originalPrice = document.getElementById('hiddenProductPrice')?.getAttribute('data-original-price');	
+            
+            // Retrieve validated delivery metrics
+            const senderPhone = document.getElementById('senderPhoneInput')?.value;
+            const recipientPhone = document.getElementById('hiddenRecipientPhone')?.value;
+            const recipientEmail = document.getElementById('hiddenRecipientEmail')?.value;
+            const currentRegion = document.getElementById('countrySelector')?.value || 'ZA';
+            const currency = 'usd';
 
-                if (!response.ok) {
-                    throw new Error("Backend server returned an error status: " + response.status);
-                }
+            // Disable action buttons during active connection
+            const activeBtn = paymentMethod === 'WALLET' 
+                ? document.getElementById('btnPayWallet') 
+                : document.getElementById('btnPayGateway');
+                
+            const originalBtnText = activeBtn ? activeBtn.innerText : 'Processing...';
+
+            if (activeBtn) {
+                activeBtn.disabled = true;
+                activeBtn.innerText = paymentMethod === 'WALLET' ? "Deducting from Wallet..." : "Connecting to Gateway...";
+            }
+
+            try {
+                // Determine endpoint based on payment method
+                const targetEndpoint = paymentMethod === 'WALLET' 
+                    ? '/api/reloadly/wallet-topup'   // Points to your Reloadly Controller
+                    : '/api/paystack/create-session'; // Points to your Paystack Controller
+
+                const response = await fetch(targetEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        productId: productId,
+                        productName: productName,
+                        price: parseFloat(productPrice),
+                        originalPrice: originalPrice,
+                        category: productCategory,
+                        currency: currency.toLowerCase(),
+                        countryIso: currentRegion,
+                        senderPhone: senderPhone,
+                        recipientPhone: recipientPhone,
+                        recipientEmail: recipientEmail
+                    })
+                });
 
                 const data = await response.json();
-                
-                // This is what redirects the user to the Stripe page where they input credit card info
-                if (data && data.stripeUrl) {
-                    window.location.href = data.stripeUrl;
-                } else {
-                    alert("The backend did not return a valid Stripe redirect URL.");
-                    if (payButton) {
-                        payButton.disabled = false;
-                        payButton.innerText = originalButtonText;
-                    }
+
+                if (!response.ok) {
+                    // Handle expected errors (e.g., HTTP 400 Insufficient Funds or HTTP 500 Reloadly execution errors)
+                    const message = data.message || data.error || "Transaction could not be processed.";
+                    throw new Error(message);
                 }
+
+                // Branch 1: Wallet Transaction Success
+                if (paymentMethod === 'WALLET') {
+                    alert("Top-up successful! " + (data.message || "Your wallet balance has been updated."));
+                    window.location.reload(); // Reload page to update header wallet balance
+                } 
+                // Branch 2: Paystack Gateway Redirect
+                else if (data && data.authorizationUrl) {
+                    window.location.href = data.authorizationUrl; // Redirect to Paystack
+                } else if (data && data.stripeUrl) {
+                    window.location.href = data.stripeUrl; // Legacy fallback if still returning stripeUrl
+                } else {
+                    throw new Error("Invalid payment response returned from gateway.");
+                }
+
             } catch (error) {
-                console.error("Stripe initialization fault occurred:", error);
-                alert("Connection Error: " + error.message);
+                console.error("Checkout transaction error:", error);
                 
-                if (payButton) {
-                    payButton.disabled = false;
-                    payButton.innerText = originalButtonText;
+                // Display error banner directly inside modal
+                if (errorAlert) {
+                    errorAlert.innerText = error.message;
+                    errorAlert.classList.remove('hidden');
+                } else {
+                    alert("Checkout Error: " + error.message);
+                }
+            } finally {
+                if (activeBtn) {
+                    activeBtn.disabled = false;
+                    activeBtn.innerText = originalBtnText;
                 }
             }
         }
