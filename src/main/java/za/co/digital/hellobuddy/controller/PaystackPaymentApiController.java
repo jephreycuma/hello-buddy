@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import za.co.digital.hellobuddy.service.ProfitValidator;
+
 @RestController
 @RequestMapping("/api/paystack")
 public class PaystackPaymentApiController {
@@ -27,6 +29,9 @@ public class PaystackPaymentApiController {
 
     @Autowired
     private StringRedisTemplate redisTemplate;
+    
+    @Autowired
+    private ProfitValidator profitValidator;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -79,7 +84,7 @@ public class PaystackPaymentApiController {
             BigDecimal discountPct = (discount != null) ? new BigDecimal(discount) : BigDecimal.ZERO;
             BigDecimal localPrice = new BigDecimal(originalLocalPrice);
             
-            BigDecimal finalizedChargeAmount = calculatePayStackCharge(localPrice, fxRate,new BigDecimal(southAfricaFx));
+            BigDecimal finalizedChargeAmount = profitValidator.calculatePayStackCharge(localPrice, fxRate,new BigDecimal(southAfricaFx));
             
             // Paystack expects amount in cents/sub-units (e.g., R10.50 -> 1050)
             long paystackAmountCents = Math.round(finalizedChargeAmount.setScale(2, RoundingMode.HALF_UP).doubleValue() * 100);
@@ -136,38 +141,5 @@ public class PaystackPaymentApiController {
     }
 
 
-    /**
-     * Calculates the exact final PayStack charge in ZAR matching the storefront display price.
-     *
-     * @param storefrontLocalPrice The exact display price shown to the user on the storefront (e.g., R7.00, R110.00, or foreign denomination).
-     * @param localToUsdFxRate     FX rate from local currency to USD (set to 1.0 if local currency is ZAR or USD).
-     * @param usdToZarFxRate       FX rate from USD to ZAR (set to 1.0 if local currency is ZAR).
-     * @return Exact ZAR charge to be sent to PayStack (e.g., 7.00 or 110.00).
-     */
-    private BigDecimal calculatePayStackCharge(
-            BigDecimal storefrontLocalPrice,
-            BigDecimal localToUsdFxRate,
-            BigDecimal usdToZarFxRate) {
-
-        if (storefrontLocalPrice == null || storefrontLocalPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
-        }
-
-        if (localToUsdFxRate == null || localToUsdFxRate.compareTo(BigDecimal.ZERO) <= 0) {
-            localToUsdFxRate = BigDecimal.ONE;
-        }
-
-        if (usdToZarFxRate == null || usdToZarFxRate.compareTo(BigDecimal.ZERO) <= 0) {
-            usdToZarFxRate = BigDecimal.ONE;
-        }
-
-        if (localToUsdFxRate.compareTo(BigDecimal.ONE) == 0 && usdToZarFxRate.compareTo(BigDecimal.ONE) == 0) {
-            return storefrontLocalPrice.setScale(2, RoundingMode.HALF_UP);
-        }
-
-        BigDecimal usdPrice = storefrontLocalPrice.divide(localToUsdFxRate, 6, RoundingMode.HALF_UP);
-        BigDecimal finalAmountZar = usdPrice.multiply(usdToZarFxRate);
-
-        return finalAmountZar.setScale(2, RoundingMode.HALF_UP);
-    }
+    
 }

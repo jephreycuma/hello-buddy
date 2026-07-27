@@ -3,6 +3,7 @@ package za.co.digital.hellobuddy.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -16,7 +17,9 @@ import org.springframework.web.client.RestClient;
 import za.co.digital.hellobuddy.dto.CheckoutRequestDTO;
 import za.co.digital.hellobuddy.dto.ReloadlyTopupResult;
 import za.co.digital.hellobuddy.dto.TopupResponse;
+import za.co.digital.hellobuddy.service.ProfitValidator;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,6 +29,12 @@ public class ReloadlyPaymentController {
 
     @Autowired
     private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    private ProfitValidator profitValidator;
+
+    @Value("${south.african.fx:15.35}")
+    private String southAfricanFx;
 
     // Reloadly internal communication client
     private final RestClient restClient = RestClient.builder()
@@ -44,7 +53,7 @@ public class ReloadlyPaymentController {
 
         String username = (String) session.getAttribute("LOGGED_IN_CUSTOMER");
 
-        // 2. Fetch Wallet Balance & Check Funds
+        // 2. Fetch Wallet Balance
         Object rawBalance = session.getAttribute("WALLET_BALANCE");
         double walletBalance = 0.0;
 
@@ -56,33 +65,75 @@ public class ReloadlyPaymentController {
             } catch (NumberFormatException ignored) {}
         }
 
-        double totalDue = requestDTO.getPrice();
+        String countryIso = requestDTO.getCountryIso() != null ? requestDTO.getCountryIso().toUpperCase() : "ZA";
 
-        if (walletBalance < totalDue) {
+        // 4. Safely Parse Local Price
+        BigDecimal localPrice = BigDecimal.ONE;
+        if (requestDTO.getOriginalPrice() != null && !requestDTO.getOriginalPrice().trim().isEmpty()) {
+            try {
+                localPrice = new BigDecimal(requestDTO.getOriginalPrice().trim());
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid originalPrice format: " + requestDTO.getOriginalPrice() + ". Defaulting to 1.0");
+            }
+        }
+
+        // 5. Fetch FX Rate from Redis with Defensive Null Guards
+        String currencySymbol = redisTemplate.opsForValue().get(countryIso);
+        String redisKey = "fx:" + countryIso.toUpperCase() + "_" + currencySymbol;
+        String fxRateStr = redisTemplate.opsForValue().get(redisKey);
+
+        BigDecimal localToUsdFxRate = BigDecimal.ONE;
+        if (fxRateStr != null && !fxRateStr.trim().isEmpty()) {
+            try {
+                localToUsdFxRate = new BigDecimal(fxRateStr.trim());
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid FX rate format in Redis for key [" + redisKey + "]: " + fxRateStr + ". Defaulting to 1.0");
+            }
+        } else {
+            System.out.println("FX key [" + redisKey + "] missing in Redis. Defaulting local-to-USD rate to 1.0");
+        }
+
+        // 6. Safely Parse South African FX Rate Property
+        String saFxRate = (redisTemplate.opsForValue().get("fx:ZA_ZAR")!=null && !redisTemplate.opsForValue().get("fx:ZA_ZAR").isEmpty())
+        		?redisTemplate.opsForValue().get("fx:ZA_ZAR"):southAfricanFx ;
+        BigDecimal usdToZarFxRate = BigDecimal.ONE;
+        if (saFxRate != null && !saFxRate.trim().isEmpty()) {
+            try {
+                usdToZarFxRate = new BigDecimal(saFxRate.trim());
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid south.african.fx property value: " + saFxRate + ". Defaulting to 1.0");
+            }
+        }
+
+        // 7. Calculate Exact Amount Due in ZAR
+        BigDecimal amountInZar = profitValidator.calculatePayStackCharge(localPrice, localToUsdFxRate, usdToZarFxRate);
+
+        // 8. Validate Sufficient Wallet Funds
+        if (walletBalance < amountInZar.doubleValue()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
                             "status", "FAILED",
-                            "message", String.format("Insufficient wallet balance (Available: R %.2f, Required: R %.2f). Please top up your wallet.", walletBalance, totalDue)
+                            "message", String.format("Insufficient wallet balance (Available: R %.2f, Required: R %.2f). Please top up your wallet.", walletBalance, amountInZar)
                     ));
         }
 
-        // 3. Extract and Clean Inputs
+        // 9. Extract and Clean Phone Inputs
         int productId = Integer.parseInt(requestDTO.getProductId());
-        String countryIso = requestDTO.getCountryIso() != null ? requestDTO.getCountryIso() : "ZA";
-        
         String rawSender = requestDTO.getSenderPhone() != null ? requestDTO.getSenderPhone() : "0";
         String rawRecipient = requestDTO.getRecipientPhone();
-        
+
         String cleanSender = rawSender.replaceAll("\\D", "");
         String cleanReceiver = validatePhoneNumber(rawRecipient, countryIso).replaceAll("\\D", "");
-        
-        double originalPrice = requestDTO.getOriginalPrice() != null ? Double.parseDouble(requestDTO.getOriginalPrice()) : totalDue;
 
-        // Generate tracking reference
+        double originalPrice = requestDTO.getOriginalPrice() != null 
+                ? Double.parseDouble(requestDTO.getOriginalPrice()) 
+                : amountInZar.doubleValue();
+
+        // Tracking reference
         String txReference = "WLT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         try {
-            // 4. Dispatch Top-Up to Reloadly Microservice
+            // 10. Dispatch Top-Up to Reloadly Microservice
             ReloadlyTopupResult results = restClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/api/v1/telecom/topups")
@@ -97,14 +148,12 @@ public class ReloadlyPaymentController {
                     .retrieve()
                     .body(new ParameterizedTypeReference<ReloadlyTopupResult>() {});
 
-            // 5. Handle Fulfillment Response & Update Wallet
+            // 11. Handle Fulfillment Response & Deduct Wallet
             if (results != null && results.isSuccessful()) {
                 TopupResponse successData = results.getTopupResponse();
 
-                // Deduct balance from session (and update your DB/Redis wallet record)
-                double newBalance = walletBalance - totalDue;
-                session.setAttribute("WALLET_BALANCE", java.math.BigDecimal.valueOf(newBalance));
-                //session.setAttribute("WALLET_BALANCE", newBalance);
+                double newBalance = walletBalance - amountInZar.doubleValue();
+                session.setAttribute("WALLET_BALANCE", BigDecimal.valueOf(newBalance));
 
                 return ResponseEntity.ok(Map.of(
                         "status", "SUCCESS",
@@ -126,7 +175,6 @@ public class ReloadlyPaymentController {
 
     private String validatePhoneNumber(String phone, String countryIso) {
         if (phone == null) return "";
-        // Simple fallback validation placeholder
         return phone.trim();
     }
 }
