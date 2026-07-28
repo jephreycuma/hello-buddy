@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello Buddy</title>
-    <link rel="icon" type="image/x-icon" th:href="@{/images.png}" href="images.png">
+    <link rel="icon" type="image/x-icon" th:href="@{/images.png}" href="images.png">    
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Include STOMP and SockJS libraries in the head tag of your HTML file -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
@@ -75,14 +75,15 @@
 	                        
 	                        <span class="text-gray-300">|</span>
 	                        
-	                        <!-- Balance -->
-	                        <span class="font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-	                            Balance: <span th:text="${session.WALLET_BALANCE != null ? 'R ' + #numbers.formatDecimal(session.WALLET_BALANCE, 1, 'COMMA', 2, 'POINT') : 'R 0.00'}">R 0.00</span>
+	                        <!-- Balance Container -->
+	                        <span class="font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 flex items-center space-x-1">
+	                            <span>Balance:</span>
+	                            <span id="walletBalanceDisplay" th:text="${session.WALLET_BALANCE != null ? 'R ' + #numbers.formatDecimal(session.WALLET_BALANCE, 1, 'COMMA', 2, 'POINT') : 'R 0.00'}">R 0.00</span>
 	                        </span>
 	
 	                        <span class="text-gray-300">|</span>
 	
-	                        <!-- Logout Link (Placed immediately after Balance) -->
+	                        <!-- Logout Link -->
 	                        <a th:href="@{/wallet/logout}" class="inline-flex items-center space-x-1 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded transition shrink-0">
 	                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
 	                            <span>Logout</span>
@@ -1410,6 +1411,33 @@
             if (event.persisted || (performance && performance.getEntriesByType("navigation")[0].type === "back_forward")) {
                 // Force a hard reload from server to re-verify session state
                 window.location.reload();
+            }
+        });
+        
+        document.addEventListener("DOMContentLoaded", function () {
+            const balanceDisplay = document.getElementById("walletBalanceDisplay");
+            
+            // Only run polling if the balance display element exists (i.e. user is logged in)
+            if (balanceDisplay) {
+                function fetchLatestBalance() {
+                    fetch('/wallet/balance')
+                        .then(response => {
+                            if (response.ok) {
+                                return response.json();
+                            }
+                            throw new Error('Failed to fetch balance');
+                        })
+                        .then(data => {
+                            if (data && data.formattedBalance) {
+                                balanceDisplay.textContent = data.formattedBalance;
+                            }
+                        })
+                        .catch(err => console.error('Error auto-refreshing balance:', err));
+                }
+
+                // Set interval to trigger every 5 minutes (300,000 milliseconds)
+                const FIVE_MINUTES_MS = 5 * 60 * 1000;
+                setInterval(fetchLatestBalance, FIVE_MINUTES_MS);
             }
         });
         

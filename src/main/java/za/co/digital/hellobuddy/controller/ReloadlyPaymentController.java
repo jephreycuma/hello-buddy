@@ -138,7 +138,7 @@ public class ReloadlyPaymentController {
                     .uri(uriBuilder -> uriBuilder
                             .path("/api/v1/telecom/topups")
                             .queryParam("amount", originalPrice)
-                            .queryParam("senderPhone", Long.parseLong(cleanSender.isEmpty() ? "0" : cleanSender))
+                            .queryParam("senderPhoone", Long.parseLong(cleanSender.isEmpty() ? "0" : cleanSender))
                             .queryParam("receiverPhone", Long.parseLong(cleanReceiver))
                             .queryParam("countryISO", countryIso)
                             .queryParam("operatorId", productId)

@@ -12,6 +12,7 @@ import dev.samstevens.totp.code.DefaultCodeVerifier;
 import dev.samstevens.totp.time.SystemTimeProvider;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,12 +21,14 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import za.co.digital.hellobuddy.model.CustomerWallet;
 import za.co.digital.hellobuddy.repository.CustomerWalletRepository;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/wallet")
@@ -181,5 +184,36 @@ public class WalletAuthController {
 
         model.addAttribute("error", "Invalid 6-digit Authenticator code.");
         return "wallet-2fa";
+    }
+    
+    @GetMapping("/balance")
+    @ResponseBody
+    public ResponseEntity<?> getUpdatedBalance(HttpSession session) {
+        String username = (String) session.getAttribute("LOGGED_IN_CUSTOMER");
+        
+        if (username == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+
+        var optionalUser = walletRepository.findByUsername(username);
+        if (optionalUser.isPresent()) {
+            BigDecimal currentBalance = optionalUser.get().getWalletBalance();
+            if (currentBalance == null) {
+                currentBalance = BigDecimal.ZERO;
+            }
+
+            // Keep session updated with fresh database value
+            session.setAttribute("WALLET_BALANCE", currentBalance);
+
+            // Format for UI (R 0.00)
+            String formattedBalance = String.format("R %.2f", currentBalance);
+
+            return ResponseEntity.ok(Map.of(
+                "balance", currentBalance,
+                "formattedBalance", formattedBalance
+            ));
+        }
+
+        return ResponseEntity.status(440).body(Map.of("error", "User not found"));
     }
 }
