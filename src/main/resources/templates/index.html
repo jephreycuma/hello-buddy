@@ -10,7 +10,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+<body class="bg-gradient-to-b from-sky-400 to-sky-100 text-gray-800 font-sans min-h-screen flex flex-col">
 
 	<!-- Header Banner Section -->
 	<header class="w-full bg-gray-900 text-white py-6 shadow-md border-b border-red-600">
@@ -878,7 +878,7 @@
                 card.innerHTML = `
                     <div>
                         <div class="flex items-center justify-between mb-3">
-                            <span class="px-2.5 py-1 text-xs font-bold tracking-wide rounded-full bg-red-50 text-red-600 uppercase">
+                            <span class="px-2.5 py-1 text-xs font-bold tracking-wide rounded-full bg-gray-50 text-gray-600 uppercase">
                                 ${item.type || category}
                             </span>
                             <img src="${item.logoUrl || '/img/fallback-logo.png'}" class="w-8 h-8 object-contain rounded-lg" alt="">
@@ -891,7 +891,7 @@
                             <span class="text-xs text-gray-400 block uppercase font-semibold tracking-wider">Price</span>
                             <span class="text-xl font-black text-gray-900">${item.displayPrice}</span>
                         </div>
-                        <button onclick="initiatePurchaseProcess('${productArg}')" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm">
+                        <button onclick="initiatePurchaseProcess('${productArg}')" class="bg-gray-600 hover:bg-gray-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm">
                             Purchase
                         </button>
                     </div>
