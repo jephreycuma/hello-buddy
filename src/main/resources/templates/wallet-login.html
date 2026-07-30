@@ -42,27 +42,37 @@
             <!-- 3. LOGIN FORM -->
             <form th:action="@{/wallet/login}" method="POST" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Username / Email</label>
-                    <input type="text" name="username" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-600">
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Username</label>
+                    <input type="text" name="username" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-gray-500">
                 </div>
                 
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Password</label>
-                    <input type="password" name="password" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-600">
+                    <input type="password" name="password" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-gray-500">
                 </div>
 
                 <!-- ACTION BUTTONS: Cancel (left) & Continue (right) -->
                 <div class="flex items-center space-x-3 pt-2">
-                    <a th:href="@{/}" class="w-1/2 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-sm transition border border-gray-200">
+                    <a th:href="@{/}" class="w-1/2 text-center bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm border border-gray-700">
                         Cancel
                     </a>
-                    <button type="submit" class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
-                        Continue to 2FA
+                    <button type="submit" class="w-1/2 bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm border border-gray-700">
+                        Login
                     </button>
                 </div>
 
+                <!-- FORGOT PASSWORD BUTTON (Equal width & height as the top row) -->
+                <div>
+                    <a th:href="@{/wallet/forgot-password}" class="w-full inline-block text-center bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm border border-gray-700">
+                        🔑 Forgot Password?
+                    </a>
+                </div>
+
+                <!-- GREY LINK -->
                 <div class="text-center pt-2">
-                    <a th:href="@{/wallet/register}" class="text-xs text-red-600 hover:underline font-bold">Need a wallet? Register here</a>
+                    <a th:href="@{/wallet/register}" class="text-xs text-gray-600 hover:text-gray-900 hover:underline font-bold transition">
+                        Need a wallet? Register here
+                    </a>
                 </div>
             </form>
         </div>

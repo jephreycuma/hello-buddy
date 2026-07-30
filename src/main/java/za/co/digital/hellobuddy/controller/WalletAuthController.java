@@ -11,9 +11,9 @@ import dev.samstevens.totp.code.DefaultCodeGenerator;
 import dev.samstevens.totp.code.DefaultCodeVerifier;
 import dev.samstevens.totp.time.SystemTimeProvider;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,21 +23,32 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import za.co.digital.hellobuddy.model.CustomerWallet;
 import za.co.digital.hellobuddy.repository.CustomerWalletRepository;
+import za.co.digital.hellobuddy.service.WalletPasswordResetService;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.Map;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/wallet")
 public class WalletAuthController {
 
-    @Autowired
-    private CustomerWalletRepository walletRepository;
+    private final CustomerWalletRepository walletRepository;
+    private final WalletPasswordResetService resetService;
+    private final PasswordEncoder passwordEncoder;
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    // Spring automatically injects all parameters in single-constructor components
+    public WalletAuthController(CustomerWalletRepository walletRepository, 
+                                WalletPasswordResetService resetService, 
+                                PasswordEncoder passwordEncoder) {
+        this.walletRepository = walletRepository;
+        this.resetService = resetService;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @GetMapping("/register")
     public String showRegistrationForm() {
@@ -60,7 +71,7 @@ public class WalletAuthController {
         customer.setReferenceNumber(uniqueRef);
         customer.setWalletBalance(BigDecimal.ZERO);
 
-        // 2. Hash password
+        // 2. Hash password using injected PasswordEncoder
         customer.setPassword(passwordEncoder.encode(customer.getPassword()));
 
         // 3. Generate 2FA Secret Key
@@ -107,7 +118,6 @@ public class WalletAuthController {
             model.addAttribute("qrCodeImage", dataUri);
             model.addAttribute("secretKey", user.getSecretKey());
             
-            // Returns your exact template name: wallet-2fa-setup.html
             return "wallet-2fa-setup"; 
         } catch (Exception e) {
             model.addAttribute("error", "Failed to generate QR Code. Please try again.");
@@ -119,7 +129,6 @@ public class WalletAuthController {
     public String showLoginForm(@RequestParam(value = "registered", required = false) String registered, 
                                 HttpSession session, 
                                 Model model) {
-        // If arriving from the "I've Scanned It" button, finalize registration messaging
         if ("true".equals(registered)) {
             String username = (String) session.getAttribute("SETUP_2FA_USER");
             if (username != null) {
@@ -128,7 +137,7 @@ public class WalletAuthController {
                             "Wallet successfully created! Your Unique Identifier is: " + user.getReferenceNumber());
                     model.addAttribute("customerRef", user.getReferenceNumber());
                 });
-                session.removeAttribute("SETUP_2FA_USER"); // Clear setup session token
+                session.removeAttribute("SETUP_2FA_USER");
             }
         }
         return "wallet-login";
@@ -206,10 +215,7 @@ public class WalletAuthController {
                 currentBalance = BigDecimal.ZERO;
             }
 
-            // Keep session updated with fresh database value
             session.setAttribute("WALLET_BALANCE", currentBalance);
-
-            // Format for UI (R 0.00)
             String formattedBalance = String.format("R %.2f", currentBalance);
 
             return ResponseEntity.ok(Map.of(
@@ -219,5 +225,73 @@ public class WalletAuthController {
         }
 
         return ResponseEntity.status(440).body(Map.of("error", "User not found"));
+    }
+    
+    @GetMapping("/change-password")
+    public String showChangePasswordForm(HttpSession session) {
+        String username = (String) session.getAttribute("LOGGED_IN_CUSTOMER");
+        if (username == null) {
+            return "redirect:/wallet/login";
+        }
+        return "wallet-change-password";
+    }
+
+    @PostMapping("/change-password")
+    public String processChangePassword(
+            @RequestParam String currentPassword,
+            @RequestParam String newPassword,
+            @RequestParam String confirmPassword,
+            HttpSession session,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+
+        String username = (String) session.getAttribute("LOGGED_IN_CUSTOMER");
+        if (username == null) {
+            return "redirect:/wallet/login";
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            model.addAttribute("error", "New passwords do not match.");
+            return "wallet-change-password";
+        }
+
+        var optionalUser = walletRepository.findByUsername(username);
+        if (optionalUser.isPresent()) {
+            CustomerWallet user = optionalUser.get();
+
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                model.addAttribute("error", "Current password is incorrect.");
+                return "wallet-change-password";
+            }
+
+            user.setPassword(passwordEncoder.encode(newPassword));
+            walletRepository.save(user);
+
+            redirectAttributes.addFlashAttribute("successMessage", "Password updated successfully!");
+            return "redirect:/";
+        }
+
+        return "redirect:/wallet/login";
+    }
+    
+    @GetMapping("/forgot-password")
+    public String showForgotPasswordForm() {
+        return "wallet-forgot-password";
+    }
+
+    @PostMapping("/forgot-password")
+    public String processForgotPassword(@RequestParam String username,
+                                        @RequestParam String email,
+                                        @RequestParam String walletId,
+                                        Model model) {
+        Optional<String> tempPasswordOpt = resetService.processPasswordReset(username, email, walletId);
+
+        if (tempPasswordOpt.isPresent()) {
+            model.addAttribute("tempPassword", tempPasswordOpt.get());
+        } else {
+            model.addAttribute("error", "The information provided does not match our records.");
+        }
+
+        return "wallet-forgot-password"; // returns the updated view
     }
 }

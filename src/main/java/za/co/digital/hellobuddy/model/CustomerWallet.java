@@ -45,6 +45,9 @@ public class CustomerWallet {
 	@Column(name = "secret_key")
 	private String secretKey;
 
+	@Column(name = "require_password_change", nullable = false)
+	private boolean requirePasswordChange = false;
+
 	public CustomerWallet() {
 	}
 
@@ -56,6 +59,7 @@ public class CustomerWallet {
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.walletBalance = BigDecimal.ZERO;
+		this.requirePasswordChange = false;
 	}
 
 	// Getters and Setters
@@ -93,6 +97,15 @@ public class CustomerWallet {
 
 	public void setReferenceNumber(String referenceNumber) {
 		this.referenceNumber = referenceNumber;
+	}
+
+	// Alias Getter & Setter for customerRef (Maps to referenceNumber)
+	public String getCustomerRef() {
+		return referenceNumber;
+	}
+
+	public void setCustomerRef(String customerRef) {
+		this.referenceNumber = customerRef;
 	}
 
 	public String getFirstName() {
@@ -141,5 +154,13 @@ public class CustomerWallet {
 
 	public void setSecretKey(String secretKey) {
 		this.secretKey = secretKey;
+	}
+
+	public boolean isRequirePasswordChange() {
+		return requirePasswordChange;
+	}
+
+	public void setRequirePasswordChange(boolean requirePasswordChange) {
+		this.requirePasswordChange = requirePasswordChange;
 	}
 }

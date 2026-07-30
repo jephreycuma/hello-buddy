@@ -30,18 +30,18 @@
                 </ol>
             </div>
 
-            <!-- Manual Key Entry Option -->
+            <!-- Manual Key Entry Option (Updated text color to black) -->
             <div class="text-left bg-gray-50 p-3 rounded-xl border border-gray-200">
                 <span class="block text-[10px] font-bold text-gray-500 uppercase">Manual Setup Key:</span>
-                <code class="text-xs font-mono font-bold text-red-600 tracking-wider break-all" th:text="${secretKey}">ABCD1234EFGH5678</code>
+                <code class="text-xs font-mono font-bold text-gray-900 tracking-wider break-all" th:text="${secretKey}">ABCD1234EFGH5678</code>
             </div>
 
             <!-- ACTION BUTTONS: Cancel (left) & Continue to Login (right) -->
             <div class="flex items-center space-x-3 pt-2">
-                <a th:href="@{/}" class="w-1/2 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-sm transition border border-gray-200">
+                <a th:href="@{/}" class="w-1/2 text-center bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm border border-gray-700">
                     Cancel
                 </a>
-                <a th:href="@{/wallet/login?registered=true}" class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
+                <a th:href="@{/wallet/login?registered=true}" class="w-1/2 text-center bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm border border-gray-700">
                     Continue to Login
                 </a>
             </div>

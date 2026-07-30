@@ -18,15 +18,15 @@
             
             <div>
                 <label class="block text-xs font-bold text-gray-600 uppercase mb-1">6-Digit Verification Code</label>
-                <input type="text" name="otpCode" maxlength="6" required placeholder="123456" class="w-full p-3 border border-gray-200 rounded-xl text-center font-mono text-2xl font-bold tracking-widest focus:outline-none focus:border-red-600">
+                <input type="text" name="otpCode" maxlength="6" required placeholder="123456" class="w-full p-3 border border-gray-200 rounded-xl text-center font-mono text-2xl font-bold tracking-widest focus:outline-none focus:border-gray-500">
             </div>
 
             <!-- Action Buttons -->
             <div class="flex gap-3 pt-2">
-               <a th:href="@{/}" class="w-1/2 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-sm transition border border-gray-200">
-                        Cancel
-                    </a>
-                <button type="submit" class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
+                <a th:href="@{/}" class="w-1/2 text-center bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm border border-gray-700">
+                    Cancel
+                </a>
+                <button type="submit" class="w-1/2 bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm border border-gray-700">
                     Verify & Login
                 </button>
             </div>

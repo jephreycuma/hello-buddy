@@ -36,10 +36,10 @@
 
 	<!-- Country Selector & Wallet Access Region -->
 	<div class="w-full bg-gray-100 border-b border-gray-200 py-3">
-	    <div class="max-w-6xl mx-auto px-4 flex flex-col space-y-3">
+	    <div class="max-w-6xl mx-auto px-4 flex flex-col space-y-2.5">
 	        
-	        <!-- TOP ROW: Wallet Login/Register OR Authenticated User Info + Logout -->
-	        <div class="flex items-center justify-between space-x-3 text-xs font-bold">
+	        <!-- TOP ROW: Wallet Info & Balance -->
+	        <div class="flex items-center text-xs font-bold">
 	            
 	            <!-- Logout success or status feedback message if present -->
 	            <div th:if="${successMessage}" class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200" th:text="${successMessage}"></div>
@@ -47,7 +47,7 @@
 	            <!-- Unauthenticated State: Login & Register Buttons -->
 	            <th:block th:if="${session.LOGGED_IN_CUSTOMER == null}">
 	                <div class="flex items-center space-x-2 ml-auto">
-	                    <a th:href="@{/wallet/login}" class="inline-flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition shadow-sm">
+	                    <a th:href="@{/wallet/login}" class="inline-flex items-center space-x-1 bg-gray-900 hover:bg-black text-white px-3 py-1.5 rounded-lg transition shadow-sm">
 	                        <span>Login</span>
 	                    </a>
 	                    <a th:href="@{/wallet/register}" class="inline-flex items-center space-x-1 bg-gray-900 hover:bg-black text-white px-3 py-1.5 rounded-lg transition shadow-sm">
@@ -56,46 +56,53 @@
 	                </div>
 	            </th:block>
 	
-	            <!-- Authenticated State: Wallet Details + Inline Logout Button -->
+	            <!-- Authenticated State: Wallet Details -->
 	            <th:block th:if="${session.LOGGED_IN_CUSTOMER != null}">
-	                <div class="w-full bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm flex items-center text-xs">
-	                    <div class="flex items-center space-x-2.5">
-	                        <!-- User -->
-	                        <span class="flex items-center space-x-1 text-gray-600 font-semibold">
-	                            <span>💳</span>
-	                            <span>Wallet:</span>
-	                            <strong class="text-gray-900" th:text="${session.LOGGED_IN_CUSTOMER}">User</strong>
-	                        </span>
-	                        
-	                        <span class="text-gray-300">|</span>
-	                        
-	                        <!-- Unique ID -->
-	                        <span class="text-gray-600 font-semibold">
-	                            ID: <strong class="text-red-600 font-mono tracking-wider" th:text="${session.CUSTOMER_REF != null ? session.CUSTOMER_REF : 'N/A'}">HB-000000</strong>
-	                        </span>
-	                        
-	                        <span class="text-gray-300">|</span>
-	                        
-	                        <!-- Balance Container -->
-	                        <span class="font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 flex items-center space-x-1">
-	                            <span>Balance:</span>
-	                            <span id="walletBalanceDisplay" th:text="${session.WALLET_BALANCE != null ? 'R ' + #numbers.formatDecimal(session.WALLET_BALANCE, 1, 'COMMA', 2, 'POINT') : 'R 0.00'}">R 0.00</span>
-	                        </span>
+	                <div class="inline-flex items-center bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-xs space-x-2.5">
+	                    <!-- User -->
+	                    <span class="flex items-center space-x-1 text-gray-600 font-semibold">
+	                        <span>💳</span>
+	                        <span>Wallet:</span>
+	                        <strong class="text-gray-900" th:text="${session.LOGGED_IN_CUSTOMER}">User</strong>
+	                    </span>
+	                    
+	                    <span class="text-gray-300">|</span>
+	                    
+	                    <!-- Unique ID -->
+	                    <span class="text-gray-600 font-semibold shrink-0">
+	                        ID: <strong class="text-black-600 font-mono tracking-wider" th:text="${session.CUSTOMER_REF != null ? session.CUSTOMER_REF : 'N/A'}">HB-000000</strong>
+	                    </span>
 	
-	                        <span class="text-gray-300">|</span>
+	                    <span class="text-gray-300">|</span>
 	
-	                        <!-- Logout Link -->
-	                        <a th:href="@{/wallet/logout}" class="inline-flex items-center space-x-1 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded transition shrink-0">
-	                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-	                            <span>Logout</span>
-	                        </a>
-	                    </div>
+	                    <!-- Balance Container (Placed directly after ID) -->
+	                    <span class="font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100 flex items-center space-x-1 shrink-0">
+	                        <span>Balance:</span>
+	                        <span id="walletBalanceDisplay" th:text="${session.WALLET_BALANCE != null ? 'R ' + #numbers.formatDecimal(session.WALLET_BALANCE, 1, 'COMMA', 2, 'POINT') : 'R 0.00'}">R 0.00</span>
+	                    </span>
 	                </div>
 	            </th:block>
 	        </div>
 	
+	        <!-- MIDDLE ROW: Logout and Change Password Action Group -->
+	        <th:block th:if="${session.LOGGED_IN_CUSTOMER != null}">
+	            <div class="flex items-center space-x-2 pt-0.5 text-xs font-bold">
+	                <!-- Logout Button -->
+	                <a th:href="@{/wallet/logout}" class="inline-flex items-center space-x-1 text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 px-3 py-1 rounded-lg transition border border-gray-100 shadow-sm">
+	                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+	                    <span>Logout</span>
+	                </a>
+	
+	                <!-- Change Password Button -->
+	                <a th:href="@{/wallet/change-password}" class="inline-flex items-center space-x-1 text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-50 px-3 py-1 rounded-lg transition border border-gray-200 shadow-sm">
+	                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 0121 9z"></path></svg>
+	                    <span>Change Password</span>
+	                </a>
+	            </div>
+	        </th:block>
+	
 	        <!-- BOTTOM ROW: Country Selection -->
-	        <div class="flex items-center space-x-2 pt-1 border-t border-gray-200/60">
+	        <div class="flex items-center space-x-2 pt-1.5 border-t border-gray-200/60">
 	            <label for="countrySelector" class="text-xs font-bold text-gray-600 uppercase tracking-wider shrink-0">
 	                Select Country:
 	            </label>
@@ -237,10 +244,10 @@
 		            </div>
 		
 		            <div class="grid grid-cols-2 gap-3 pt-2">
-		                <button type="button" onclick="closePhoneModal()" class="w-full border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold py-3 rounded-xl text-sm transition">
+		                <button type="button" onclick="closePhoneModal()" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
 		                    Cancel
 		                </button>
-		                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
+		                <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
 		                    Confirm Details
 		                </button>
 		            </div>
@@ -267,7 +274,7 @@
 	            </div>
 	            <div class="text-right">
 	                <span class="text-xs text-gray-400 block font-semibold uppercase tracking-wider">Total Due</span>
-	                <span id="modalItemPrice" class="font-black text-xl text-red-600">0.00</span>
+	                <span id="modalItemPrice" class="font-black text-xl text-gray-600">0.00</span>
 	            </div>
 	        </div>
 	
@@ -295,7 +302,7 @@
 	
 	                <!-- Greyed out Paystack / Card option for logged-in users -->
 	                <button type="button" disabled class="w-full bg-gray-200 text-gray-400 font-bold py-3 rounded-xl text-xs cursor-not-allowed border border-gray-300 flex items-center justify-center space-x-1" title="Card payment is disabled for logged-in wallet users">
-	                    <span>🔒 Paystack / Card Payment (Disabled for Logged-In Users)</span>
+	                    <span>🔒 Card Payment (Disabled for Logged-In Users)</span>
 	                </button>
 	            </th:block>
 	
@@ -309,8 +316,8 @@
 	                    </div>
 	                </div>
 	
-	                <button type="button" id="btnPayGateway" onclick="handleCheckout('PAYSTACK')" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md shadow-red-100 flex items-center justify-center space-x-2">
-	                    <span>Pay via Paystack</span>
+	                <button type="button" id="btnPayGateway" onclick="handleCheckout('PAYSTACK')" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md shadow-gray-100 flex items-center justify-center space-x-2">
+	                    <span>Card Payment</span>
 	                </button>
 	
 	                <!-- Greyed out Wallet Option for Guests -->
