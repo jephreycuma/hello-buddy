@@ -19,13 +19,16 @@ public class CustomerWallet {
 	private Long id;
 
 	@Column(nullable = false, unique = true)
+	private String email;
+
+	@Column(nullable = false, unique = true)
 	private String username;
 
 	@Column(nullable = false, length = 255)
 	private String password;
 
 	@Column(unique = true, nullable = false)
-    private String referenceNumber;
+	private String referenceNumber;
 
 	@Column(nullable = false)
 	private String firstName;
@@ -45,7 +48,8 @@ public class CustomerWallet {
 	public CustomerWallet() {
 	}
 
-	public CustomerWallet(String username, String password, String referenceNumber, String firstName, String lastName) {
+	public CustomerWallet(String email, String username, String password, String referenceNumber, String firstName, String lastName) {
+		this.email = email;
 		this.username = username;
 		this.password = password;
 		this.referenceNumber = referenceNumber;
@@ -57,6 +61,14 @@ public class CustomerWallet {
 	// Getters and Setters
 	public Long getId() {
 		return id;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
 	}
 
 	public String getUsername() {
@@ -76,12 +88,12 @@ public class CustomerWallet {
 	}
 
 	public String getReferenceNumber() {
-        return referenceNumber;
-    }
+		return referenceNumber;
+	}
 
-    public void setReferenceNumber(String referenceNumber) {
-        this.referenceNumber = referenceNumber;
-    }
+	public void setReferenceNumber(String referenceNumber) {
+		this.referenceNumber = referenceNumber;
+	}
 
 	public String getFirstName() {
 		return firstName;

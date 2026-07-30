@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello Buddy - Wallet Login</title>
+    <link rel="icon" type="image/x-icon" th:href="@{/images.png}" href="images.png">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
@@ -16,7 +17,7 @@
         </div>
 
         <div class="p-6">
-            <!-- 1. SUCCESS ALERT WITH UNIQUE ID & SAFETY NOTICE (ADDED HERE) -->
+            <!-- 1. SUCCESS ALERT WITH UNIQUE ID & SAFETY NOTICE -->
             <div th:if="${successMessage}" class="mb-5 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs shadow-sm">
                 <div class="flex items-start space-x-2.5">
                     <span class="text-base">🎉</span>
@@ -50,9 +51,15 @@
                     <input type="password" name="password" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-600">
                 </div>
 
-                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
-                    Continue to 2FA
-                </button>
+                <!-- ACTION BUTTONS: Cancel (left) & Continue (right) -->
+                <div class="flex items-center space-x-3 pt-2">
+                    <a th:href="@{/}" class="w-1/2 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-sm transition border border-gray-200">
+                        Cancel
+                    </a>
+                    <button type="submit" class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
+                        Continue to 2FA
+                    </button>
+                </div>
 
                 <div class="text-center pt-2">
                     <a th:href="@{/wallet/register}" class="text-xs text-red-600 hover:underline font-bold">Need a wallet? Register here</a>

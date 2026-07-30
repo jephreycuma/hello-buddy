@@ -3,7 +3,6 @@ package za.co.digital.hellobuddy.config;
 import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -30,13 +29,15 @@ public class SecurityConfig {
                 		"/", 
                 	    "/index",
                 	    "/error",
+                	    "/agent/login",
+                	    "/agent/workspace",
                 	    "/success",
                 	    "/wallet/**", 
                 	    "/vouchers/**",  
                 	    "/api/paystack/**",
                 	    "/api/**",          
                 	    "/images/**", 
-                	    "/images.png", // <--- ADD THIS
+                	    "/images.png",
                 	    "/favicon.ico",
                 	    "/css/**", 
                 	    "/js/**"

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello Buddy - Setup Authenticator App</title>
+    <link rel="icon" type="image/x-icon" th:href="@{/images.png}" href="images.png">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
@@ -35,9 +36,15 @@
                 <code class="text-xs font-mono font-bold text-red-600 tracking-wider break-all" th:text="${secretKey}">ABCD1234EFGH5678</code>
             </div>
 
-            <a th:href="@{/wallet/login?registered=true}" class="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
-                I've Scanned It — Continue to Login
-            </a>
+            <!-- ACTION BUTTONS: Cancel (left) & Continue to Login (right) -->
+            <div class="flex items-center space-x-3 pt-2">
+                <a th:href="@{/}" class="w-1/2 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-sm transition border border-gray-200">
+                    Cancel
+                </a>
+                <a th:href="@{/wallet/login?registered=true}" class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md">
+                    Continue to Login
+                </a>
+            </div>
         </div>
     </div>
 

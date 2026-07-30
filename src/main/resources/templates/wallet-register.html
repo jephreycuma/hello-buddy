@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello Buddy - Wallet Registration</title>
+    <link rel="icon" type="image/x-icon" th:href="@{/images.png}" href="images.png">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
@@ -24,15 +25,30 @@
                 <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Last Name (Surname)</label>
                 <input type="text" name="lastName" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-600">
             </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Email Address</label>
+                <input type="email" name="email" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-600">
+            </div>
             
             <div>
-                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Username / Email</label>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Username</label>
                 <input type="text" name="username" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-600">
             </div>
             
             <div>
                 <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Password</label>
                 <input type="password" id="password" name="password" required class="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-600">
+                
+                <!-- PASSWORD STRENGTH INDICATOR -->
+                <div id="strengthContainer" class="hidden mt-2">
+                    <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                        <div id="strengthBar" class="h-full w-0 transition-all duration-300 rounded-full"></div>
+                    </div>
+                    <div class="flex justify-between items-center mt-1">
+                        <span id="strengthText" class="text-[11px] font-bold"></span>
+                    </div>
+                </div>
             </div>
 
             <!-- Confirm Password Field -->
@@ -45,9 +61,15 @@
                 </p>
             </div>
 
-            <button type="submit" id="submitBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
-                Register Wallet
-            </button>
+            <!-- ACTION BUTTONS: Cancel (left) & Register Wallet (right) -->
+            <div class="flex items-center space-x-3 pt-2">
+                <a th:href="@{/}" class="w-1/2 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-sm transition border border-gray-200">
+                    Cancel
+                </a>
+                <button type="submit" id="submitBtn" class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                    Register Wallet
+                </button>
+            </div>
             
             <div class="text-center pt-2">
                 <a th:href="@{/wallet/login}" class="text-xs text-red-600 hover:underline font-bold">Already have a wallet? Login here</a>
@@ -61,6 +83,54 @@
         const errorMessage = document.getElementById('passwordMismatchError');
         const registerForm = document.getElementById('registerForm');
         const submitBtn = document.getElementById('submitBtn');
+
+        // Password Strength Elements
+        const strengthContainer = document.getElementById('strengthContainer');
+        const strengthBar = document.getElementById('strengthBar');
+        const strengthText = document.getElementById('strengthText');
+
+        function evaluatePasswordStrength() {
+            const pwd = passwordInput.value;
+
+            if (pwd.length === 0) {
+                strengthContainer.classList.add('hidden');
+                return;
+            }
+
+            strengthContainer.classList.remove('hidden');
+
+            let score = 0;
+
+            // Length criteria
+            if (pwd.length >= 6) score++;
+            if (pwd.length >= 10) score++;
+
+            // Complexity criteria
+            if (/[0-9]/.test(pwd)) score++;
+            if (/[A-Z]/.test(pwd)) score++;
+            if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+            // Determine Strength Level
+            if (score <= 2) {
+                // WEAK (Short red line)
+                strengthBar.style.width = '33%';
+                strengthBar.className = 'h-full transition-all duration-300 rounded-full bg-red-600';
+                strengthText.textContent = 'Weak password';
+                strengthText.className = 'text-[11px] font-bold text-red-600';
+            } else if (score <= 4) {
+                // MEDIUM (Medium maroon line)
+                strengthBar.style.width = '66%';
+                strengthBar.className = 'h-full transition-all duration-300 rounded-full bg-amber-800';
+                strengthText.textContent = 'Medium strength password';
+                strengthText.className = 'text-[11px] font-bold text-amber-800';
+            } else {
+                // STRONG (Long green line)
+                strengthBar.style.width = '100%';
+                strengthBar.className = 'h-full transition-all duration-300 rounded-full bg-emerald-500';
+                strengthText.textContent = 'Strong password';
+                strengthText.className = 'text-[11px] font-bold text-emerald-600';
+            }
+        }
 
         function validatePasswords() {
             const pwd = passwordInput.value;
@@ -90,7 +160,11 @@
             }
         }
 
-        passwordInput.addEventListener('input', validatePasswords);
+        passwordInput.addEventListener('input', () => {
+            evaluatePasswordStrength();
+            validatePasswords();
+        });
+
         confirmPasswordInput.addEventListener('input', validatePasswords);
 
         registerForm.addEventListener('submit', function(e) {

@@ -50,6 +50,10 @@ public class WalletAuthController {
             redirectAttributes.addFlashAttribute("error", "Username/Email already registered.");
             return "redirect:/wallet/register";
         }
+        if (walletRepository.findByEmail(customer.getEmail()).isPresent()) {
+            redirectAttributes.addFlashAttribute("error", "Email address is already registered.");
+            return "redirect:/wallet/register";
+        }
 
         // 1. Generate unique reference ID
         String uniqueRef = "HB-" + String.format("%06d", new SecureRandom().nextInt(1000000));
