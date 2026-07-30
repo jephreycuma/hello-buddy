@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -67,7 +68,8 @@ public class WalletAuthController {
         }
 
         // 1. Generate unique reference ID
-        String uniqueRef = "HB-" + String.format("%06d", new SecureRandom().nextInt(1000000));
+        String uniqueRef = generateWalletReference();
+        		//"HB-" + String.format("%06d", new SecureRandom().nextInt(1000000));
         customer.setReferenceNumber(uniqueRef);
         customer.setWalletBalance(BigDecimal.ZERO);
 
@@ -293,5 +295,11 @@ public class WalletAuthController {
         }
 
         return "wallet-forgot-password"; // returns the updated view
+    }
+    
+    @Transactional
+    private String generateWalletReference() {
+        Long nextSeq = walletRepository.getNextWalletSequence();
+        return "HB-" + String.format("%06d", nextSeq); 
     }
 }
