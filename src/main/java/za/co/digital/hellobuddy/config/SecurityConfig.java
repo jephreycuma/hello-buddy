@@ -41,6 +41,9 @@ public class SecurityConfig {
                 	    "/api/**",          
                 	    "/images/**", 
                 	    "/images.png",
+                	    "/ws-chat/**", 
+                	    "/topic/**", 
+                	    "/app/**",
                 	    "/favicon.ico",
                 	    "/css/**", 
                 	    "/js/**"

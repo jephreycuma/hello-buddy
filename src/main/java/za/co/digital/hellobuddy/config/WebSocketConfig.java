@@ -12,19 +12,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // /topic is for broadcasting to subscribers (e.g., specific chat threads)
-        // /queue is for targeted user-to-user routing
-        config.enableSimpleBroker("/topic", "/queue");
-        
-        // Application-bound prefix for incoming messages from clients
-        config.setApplicationDestinationPrefixes("/app");
+        config.enableSimpleBroker("/topic"); // Where messages are broadcasted back to clients
+        config.setApplicationDestinationPrefixes("/app"); // Prefix required for @MessageMapping
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Expose endpoint for SockJS connection fallback options
-        registry.addEndpoint("/ws-chat")
+        registry.addEndpoint("/ws-chat") // Must match SockJS connection path in JS
                 .setAllowedOriginPatterns("*")
-                .withSockJS();
+                .withSockJS(); // Enables SockJS fallback
     }
 }

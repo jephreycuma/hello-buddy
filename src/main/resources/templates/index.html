@@ -35,7 +35,7 @@
 	</header>
 
 	<!-- Country Selector & Wallet Access Region -->
-	<div class="w-full bg-gray-100 border-b border-gray-200 py-3">
+	<div class="w-full bg-gray-100 border-b border-gray-200 py-3 relative">
 	    <div class="max-w-6xl mx-auto px-4 flex flex-col space-y-2.5">
 	        
 	        <!-- TOP ROW: Wallet Info & Balance -->
@@ -75,7 +75,7 @@
 	
 	                    <span class="text-gray-300">|</span>
 	
-	                    <!-- Balance Container (Placed directly after ID) -->
+	                    <!-- Balance Container -->
 	                    <span class="font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100 flex items-center space-x-1 shrink-0">
 	                        <span>Balance:</span>
 	                        <span id="walletBalanceDisplay" th:text="${session.WALLET_BALANCE != null ? 'R ' + #numbers.formatDecimal(session.WALLET_BALANCE, 1, 'COMMA', 2, 'POINT') : 'R 0.00'}">R 0.00</span>
@@ -117,6 +117,107 @@
 	
 	    </div>
 	</div>
+	
+	<!-- INACTIVITY LOGOUT WARNING MODAL & SCRIPT -->
+<th:block th:if="${session.LOGGED_IN_CUSTOMER != null}">
+    <div id="inactivityModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl border border-gray-100 text-center space-y-4">
+            <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-xl font-bold">
+                ⚠️
+            </div>
+            <h3 class="text-gray-900 font-bold text-base">Inactivity Warning</h3>
+            <p class="text-gray-600 text-xs">
+                You will be automatically logged out in <span id="countdownTimer" class="font-bold text-gray-900">60</span> seconds due to inactivity.
+            </p>
+            <div class="flex space-x-2 pt-2">
+                <button type="button" onclick="staySignedIn()" class="w-full bg-gray-900 hover:bg-black text-white text-xs font-bold py-2 px-4 rounded-lg transition shadow-sm cursor-pointer">
+                    Stay Signed In
+                </button>
+                <a th:href="@{/wallet/logout}" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2 px-4 rounded-lg transition flex items-center justify-center">
+                    Log Out Now
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        (function() {
+            const INACTIVITY_LIMIT_MS = 3 * 60 * 1000; 
+            const COUNTDOWN_DURATION_SEC = 60; 
+            
+            let lastActivityTime = Date.now();
+            let countdownInterval = null;
+            let isWarningActive = false;
+
+            const modal = document.getElementById('inactivityModal');
+            const timerDisplay = document.getElementById('countdownTimer');
+            const logoutUrl = /*[[@{/wallet/logout}]]*/ '/wallet/logout';
+
+            function resetTimer() {
+                if (!isWarningActive) {
+                    lastActivityTime = Date.now();
+                    console.log("Activity detected. Timer reset.");
+                }
+            }
+
+            // Track user interaction
+            ['mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(eventType => {
+                window.addEventListener(eventType, resetTimer, { passive: true });
+            });
+
+            // Master checker interval
+            setInterval(() => {
+                if (isWarningActive) return;
+
+                const elapsed = Date.now() - lastActivityTime;
+                console.log("Idle time (seconds):", Math.floor(elapsed / 1000));
+
+                if (elapsed >= INACTIVITY_LIMIT_MS) {
+                    triggerWarning();
+                }
+            }, 1000);
+
+            function triggerWarning() {
+                isWarningActive = true;
+                console.log("Inactivity limit reached. Showing warning modal.");
+                if (modal) {
+                    modal.classList.remove('hidden');
+                }
+
+                let remainingSeconds = COUNTDOWN_DURATION_SEC;
+                if (timerDisplay) {
+                    timerDisplay.textContent = remainingSeconds;
+                }
+
+                if (countdownInterval) clearInterval(countdownInterval);
+
+                countdownInterval = setInterval(() => {
+                    remainingSeconds--;
+                    if (timerDisplay) {
+                        timerDisplay.textContent = remainingSeconds;
+                    }
+                    console.log("Countdown:", remainingSeconds);
+
+                    if (remainingSeconds <= 0) {
+                        clearInterval(countdownInterval);
+                        console.log("Triggering automatic logout...");
+                        window.location.href = logoutUrl;
+                    }
+                }, 1000);
+            }
+
+            window.staySignedIn = function() {
+                console.log("User clicked Stay Signed In");
+                if (countdownInterval) clearInterval(countdownInterval);
+                isWarningActive = false;
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
+                lastActivityTime = Date.now();
+            }
+        })();
+    </script>
+</th:block>
 
     <!-- Navigation Tabs Section -->
     <nav class="w-full bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">

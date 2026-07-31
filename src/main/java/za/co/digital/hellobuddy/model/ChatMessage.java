@@ -14,20 +14,28 @@ public class ChatMessage {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false)
-	private String threadId; // Unique session token identifying the customer thread
+	@Column(name = "thread_id", nullable = false)
+	private String threadId;
 
 	@Column(nullable = false)
-	private String sender; // "user" or "agent"
+	private String sender;
 
+	@Column(name = "sender_name")
 	private String senderName;
 
 	@Column(columnDefinition = "TEXT", nullable = false)
 	private String message;
 
+	@Column(nullable = false)
 	private long timestamp;
+
+	@Column(name = "parent_id")
 	private Long parentId;
+
+	@Column(name = "parent_message", columnDefinition = "TEXT")
 	private String parentMessage;
+
+	@Column(name = "client_ref_id")
 	private String clientRefId;
 
 	// Constructors

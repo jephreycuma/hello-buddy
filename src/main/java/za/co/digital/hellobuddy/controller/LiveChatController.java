@@ -10,6 +10,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -75,21 +76,19 @@ public class LiveChatController {
     // ==========================================
 
     @MessageMapping("/chat.send")
+    @Transactional
     public void processMessage(@Payload ChatMessage message) {
+    	System.out.println(">>> RECEIVED CHAT MESSAGE FROM CLIENT: " + message.getMessage()); // Add this debug print!
         if (message.getTimestamp() == 0) {
             message.setTimestamp(System.currentTimeMillis());
         }
 
-        // 1. Save every single message to the DB instantly
-        messageRepository.save(message);
-
-        // 2. Broadcast to customer thread
+        messageRepository.saveAndFlush(message);
         messagingTemplate.convertAndSend("/topic/thread/" + message.getThreadId(), message);
-
-        // 3. Forward to the agent's live dashboard stream
-        // For simplicity, routing to agent ID "1". You can dynamic-link this later.
+        System.out.println(">>> SUCCESSFULLY SAVED MESSAGE ID TO DB: " + message.getId());
         String assignedAgentId = "1"; 
         messagingTemplate.convertAndSend("/topic/agent-" + assignedAgentId, message);
+        //messagingTemplate.convertAndSend("/topic/support-pool", message);
     }
 
     // ==========================================
