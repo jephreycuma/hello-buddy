@@ -9,6 +9,7 @@ import za.co.digital.hellobuddy.repository.ChatMessageRepository;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
@@ -27,13 +28,16 @@ public class LiveChatController {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatMessageRepository messageRepository;
     private final AgentRepository agentRepository;
+    private final PasswordEncoder passwordEncoder; // Injected PasswordEncoder
 
     public LiveChatController(SimpMessagingTemplate messagingTemplate, 
-                              ChatMessageRepository messageRepository, 
-                              AgentRepository agentRepository) {
+                               ChatMessageRepository messageRepository, 
+                               AgentRepository agentRepository,
+                               PasswordEncoder passwordEncoder) {
         this.messagingTemplate = messagingTemplate;
         this.messageRepository = messageRepository;
         this.agentRepository = agentRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // ==========================================
@@ -52,7 +56,8 @@ public class LiveChatController {
                                Model model) {
         Optional<Agent> agentOpt = agentRepository.findByUsername(username);
         
-        if (agentOpt.isPresent() && agentOpt.get().getPassword().equals(password)) {
+        // Use passwordEncoder.matches() instead of .equals()
+        if (agentOpt.isPresent() && passwordEncoder.matches(password, agentOpt.get().getPassword())) {
             session.setAttribute("loggedInAgent", agentOpt.get());
             return "redirect:/agent/workspace";
         }
@@ -78,7 +83,7 @@ public class LiveChatController {
     @MessageMapping("/chat.send")
     @Transactional
     public void processMessage(@Payload ChatMessage message) {
-    	System.out.println(">>> RECEIVED CHAT MESSAGE FROM CLIENT: " + message.getMessage()); // Add this debug print!
+        System.out.println(">>> RECEIVED CHAT MESSAGE FROM CLIENT: " + message.getMessage());
         if (message.getTimestamp() == 0) {
             message.setTimestamp(System.currentTimeMillis());
         }
@@ -88,7 +93,6 @@ public class LiveChatController {
         System.out.println(">>> SUCCESSFULLY SAVED MESSAGE ID TO DB: " + message.getId());
         String assignedAgentId = "1"; 
         messagingTemplate.convertAndSend("/topic/agent-" + assignedAgentId, message);
-        //messagingTemplate.convertAndSend("/topic/support-pool", message);
     }
 
     // ==========================================
@@ -101,15 +105,12 @@ public class LiveChatController {
         return messageRepository.findByThreadIdOrderByTimestampAsc(threadId);
     }
     
- // Add this new endpoint inside your LiveChatController.java class
     @GetMapping("/api/chat/active-threads")
     @ResponseBody
     public List<ChatMessage> getActiveThreads() {
         return messageRepository.findLatestMessagesPerThread();
     }
     
- // inside LiveChatController.java
-
     @MessageMapping("/chat.edit")
     public void processMessageEdit(@Payload ChatMessage message) {
         // 1. Fetch the original message from DB and update its text

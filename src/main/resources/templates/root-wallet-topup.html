@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Root Agent - Wallet Top-Up Portal</title>
-     <link rel="icon" type="image/x-icon" th:href="@{/images.png}" href="images.png">
+    <link rel="icon" type="image/x-icon" th:href="@{/images.png}" href="images.png">
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        body { background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 1rem; }
         .container { background: #ffffff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 440px; }
         h2 { margin-top: 0; color: #1a1a1a; text-align: center; }
         .subtitle { font-size: 0.875rem; color: #666; text-align: center; margin-bottom: 1.5rem; }
@@ -19,7 +19,7 @@
         .button-group { display: flex; gap: 10px; margin-top: 1.5rem; }
         .btn { flex: 1; padding: 0.75rem; border: none; border-radius: 4px; font-size: 1rem; font-weight: 600; cursor: pointer; text-align: center; }
         
-        /* Updated Gray Button Styles */
+        /* Gray Button Styles */
         .btn-primary { background-color: #6c757d; color: white; width: 100%; }
         .btn-primary:hover { background-color: #5a6268; }
         
@@ -28,10 +28,17 @@
         
         .btn-cancel { background-color: #6c757d; color: white; text-decoration: none; border: none; }
         .btn-cancel:hover { background-color: #5a6268; }
+
+        .btn-register-toggle { background-color: #6c757d; color: white; width: 100%; margin-top: 10px; }
+        .btn-register-toggle:hover { background-color: #5a6268; }
         
         .alert { padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.9rem; }
         .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+
+        /* Hidden Utility Class */
+        .hidden { display: none !important; }
+        .register-section { margin-top: 1rem; }
     </style>
 </head>
 <body>
@@ -61,33 +68,92 @@
         </form>
     </div>
 
-    <!-- STATE 2: TOP-UP DETAILS FORM (Visible ONLY when Root is logged in) -->
+    <!-- STATE 2: TOP-UP & REGISTER AGENT FORMS (Visible ONLY when Root is logged in) -->
     <div th:if="${isRootLoggedIn}">
         <div class="badge-root">Authenticated as Root Agent</div>
-        <p class="subtitle">Enter bank notification details below to credit the customer's wallet.</p>
 
-        <form th:action="@{/wallet/root-topup}" method="post">
-            <div class="form-group">
-                <label for="referenceNumber">Wallet Reference ID</label>
-                <input type="text" id="referenceNumber" name="referenceNumber" placeholder="e.g. HB-000001" required autocomplete="off">
-            </div>
+        <!-- SECTION A: TOP-UP FORM DETAILS (Default visible) -->
+        <div id="topupFormSection">
+            <p class="subtitle">Enter bank notification details below to credit the customer's wallet.</p>
 
-            <div class="form-group">
-                <label for="amount">Amount to Add (ZAR)</label>
-                <input type="number" id="amount" name="amount" step="0.01" min="0.01" placeholder="0.00" required>
-            </div>
+            <form th:action="@{/wallet/root-topup}" method="post">
+                <div class="form-group">
+                    <label for="referenceNumber">Wallet Reference ID</label>
+                    <input type="text" id="referenceNumber" name="referenceNumber" placeholder="e.g. HB-000001" required autocomplete="off">
+                </div>
 
-            <div class="button-group">
-                <button type="submit" class="btn btn-submit">Submit Top-Up</button>
-                <button type="button" class="btn btn-cancel" onclick="document.getElementById('cancelForm').submit();">Cancel</button>
-            </div>
-        </form>
+                <div class="form-group">
+                    <label for="amount">Amount to Add (ZAR)</label>
+                    <input type="number" id="amount" name="amount" step="0.01" min="0.01" placeholder="0.00" required>
+                </div>
 
-        <!-- Hidden Logout Form triggered by Cancel Button -->
+                <div class="button-group">
+                    <button type="submit" class="btn btn-submit">Submit Top-Up</button>
+                    <button type="button" class="btn btn-cancel" onclick="document.getElementById('cancelForm').submit();">Cancel</button>
+                </div>
+            </form>
+
+            <!-- Button to Register Agent (Placed below Submit Top-up & Cancel buttons) -->
+            <button type="button" id="toggleRegisterBtn" class="btn btn-register-toggle" onclick="showRegisterForm()">Register Agent</button>
+        </div>
+
+        <!-- Hidden Logout Form triggered by Top-Up Cancel Button -->
         <form id="cancelForm" th:action="@{/wallet/root-cancel}" method="post" style="display: none;"></form>
-    </div>
 
+        <!-- SECTION B: REGISTER AGENT FORM (Hidden by default) -->
+        <div id="registerAgentSection" class="register-section hidden">
+            <p class="subtitle">Enter registration details below to add a new agent.</p>
+            <form th:action="@{/wallet/register-agent}" method="post" onsubmit="return validatePasswords()">
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" name="fullName" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="username">User Name</label>
+                    <input type="text" id="username" name="username" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-cancel" onclick="showTopupForm()">Cancel</button>
+                    <button type="submit" class="btn btn-submit">Submit Registration</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+
+<script>
+    function showRegisterForm() {
+        document.getElementById('topupFormSection').classList.add('hidden');
+        document.getElementById('registerAgentSection').classList.remove('hidden');
+    }
+
+    function showTopupForm() {
+        document.getElementById('registerAgentSection').classList.add('hidden');
+        document.getElementById('topupFormSection').classList.remove('hidden');
+    }
+
+    function validatePasswords() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        if (password !== confirmPassword) {
+            alert('Passwords do not match!');
+            return false;
+        }
+        return true;
+    }
+</script>
 
 </body>
 </html>

@@ -95,9 +95,18 @@
     let activeAgentReplyParentText = "";
     
     const threads = {};
+
     window.onload = function() {
         connectAgentDashboard();
         loadOfflineActiveThreads();
+
+        // 🔄 Polling: Auto-refresh thread list and active chat history every 3 seconds
+        setInterval(() => {
+            refreshActiveThreads();
+            if (activeThreadId) {
+                refreshActiveChatHistory(activeThreadId);
+            }
+        }, 3000);
     };
 
     function loadOfflineActiveThreads() {
@@ -106,9 +115,7 @@
             .then(latestMessages => {
                 latestMessages.forEach(msg => {
                     const id = msg.threadId;
-                    
                     addMessageToThreadState(id, msg);
-                    
                     subscribeToIndividualThread(id);
                 });
                 
@@ -120,6 +127,62 @@
                 renderThreadSidebar();
             })
             .catch(err => console.error("Error seeding initial offline threads:", err));
+    }
+
+    // Background thread refresher (called every 3 seconds)
+    function refreshActiveThreads() {
+        fetch('/api/chat/active-threads')
+            .then(response => response.json())
+            .then(latestMessages => {
+                let updated = false;
+                latestMessages.forEach(msg => {
+                    const id = msg.threadId;
+                    if (!threads[id]) {
+                        subscribeToIndividualThread(id);
+                    }
+                    const beforeLen = threads[id] ? threads[id].messages.length : 0;
+                    addMessageToThreadState(id, msg);
+                    const afterLen = threads[id].messages.length;
+
+                    if (beforeLen !== afterLen) {
+                        updated = true;
+                    }
+                });
+
+                if (latestMessages.length > 0) {
+                    const noThreads = document.getElementById('noThreadsMsg');
+                    if (noThreads) noThreads.style.display = 'none';
+                }
+
+                if (updated) {
+                    renderThreadSidebar();
+                }
+            })
+            .catch(err => console.error("Error refreshing active threads:", err));
+    }
+
+    // Background active chat history refresher (called every 3 seconds)
+    function refreshActiveChatHistory(threadId) {
+        fetch('/api/chat/history/' + threadId)
+            .then(response => response.json())
+            .then(history => {
+                let hasNewMessage = false;
+                const existingLength = threads[threadId] ? threads[threadId].messages.length : 0;
+
+                history.forEach(historyMsg => {
+                    addMessageToThreadState(threadId, historyMsg);
+                });
+
+                if (threads[threadId] && threads[threadId].messages.length > existingLength) {
+                    hasNewMessage = true;
+                }
+
+                if (hasNewMessage) {
+                    renderThreadSidebar();
+                    renderMessages(threadId);
+                }
+            })
+            .catch(err => console.error("Error refreshing active chat history:", err));
     }
 
     function connectAgentDashboard() {
@@ -140,7 +203,6 @@
             stompClient.subscribe('/topic/thread/' + id, function(response) {
                 const threadMessage = JSON.parse(response.body);
                 
-                // Route message safely through central appender
                 addMessageToThreadState(id, threadMessage);
                 
                 renderThreadSidebar();
@@ -199,11 +261,8 @@
             const button = document.createElement('button');
             button.onclick = () => selectThread(thread.threadId);
             
-            // Get the latest message to extract its timestamp and text
             const lastMsg = thread.messages[thread.messages.length - 1];
             const snippet = lastMsg ? lastMsg.message : "No messages";
-            
-            // 👉 Get the friendly date/time string using our helper
             const timeDisplay = lastMsg ? formatChatDate(lastMsg.timestamp) : "Just now";
 
             button.className = `w-full text-left p-4 transition flex flex-col space-y-1 ${
@@ -234,8 +293,8 @@
             senderName: currentAgentName,
             message: messageText,
             timestamp: Date.now(),
-            parentId: activeAgentReplyParentId,          // Send ID of reply parent
-            parentMessage: activeAgentReplyParentText   // Send text of reply parent
+            parentId: activeAgentReplyParentId,
+            parentMessage: activeAgentReplyParentText
         };
 
         if (stompClient && stompClient.connected) {
@@ -243,7 +302,7 @@
         }
 
         replyInput.value = '';
-        cancelAgentReply(); // Dismiss preview bar
+        cancelAgentReply();
     }
     
     function insertAgentEmoji(emoji) {
@@ -261,15 +320,12 @@
             };
         }
 
-        // Check if the message is actually an edit update to an existing message
         const existingIndex = threads[threadId].messages.findIndex(m => m.id === msg.id);
         if (existingIndex !== -1) {
-            // Update the message in-place
             threads[threadId].messages[existingIndex] = msg;
             return;
         }
 
-        // Normal Deduplication for brand-new incoming entries
         const isDuplicate = threads[threadId].messages.some(m => 
             (msg.id && m.id === msg.id) || 
             (m.message === msg.message && m.sender === msg.sender && Math.abs(Number(m.timestamp) - Number(msg.timestamp)) < 1500)
@@ -300,7 +356,6 @@
             const wrapper = document.createElement('div');
             wrapper.className = `flex flex-col ${isAgent ? 'items-end' : 'items-start'}`;
 
-            // 👉 UPDATED: Format and append the message timestamp next to the sender's name
             const timeStr = formatMessageTime(msg.timestamp);
             const label = document.createElement('span');
             label.className = 'text-[9px] text-gray-400 font-bold mb-0.5 px-1';
@@ -318,7 +373,6 @@
                 : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
             }`;
             
-            // Render the quote block inside agent screen bubbles if a reply parent exists
             if (msg.parentMessage) {
                 const quoteDiv = document.createElement('div');
                 quoteDiv.className = `text-[10px] italic border-l-2 mb-1.5 pl-1.5 py-0.5 max-w-full truncate ${
@@ -333,7 +387,6 @@
             bubble.appendChild(messageTextSpan);
             bubbleContainer.appendChild(bubble);
 
-            // Add reply action button to hover group
             const replyBtn = document.createElement('button');
             replyBtn.className = 'hidden group-hover:block text-[10px] text-gray-400 hover:text-red-600 transition';
             replyBtn.innerText = '↩️';
@@ -346,7 +399,7 @@
                 editBtn.onclick = () => triggerAgentMessageEdit(msg.id, msg.message);
                 
                 bubbleContainer.insertBefore(editBtn, bubble);
-                bubbleContainer.insertBefore(replyBtn, editBtn); // Arrange controls
+                bubbleContainer.insertBefore(replyBtn, editBtn);
             } else {
                 bubbleContainer.appendChild(replyBtn);
             }
@@ -382,12 +435,10 @@
         const date = new Date(Number(timestamp));
         const now = new Date();
         
-        // Check if the message was sent today
         const isToday = date.getDate() === now.getDate() &&
                         date.getMonth() === now.getMonth() &&
                         date.getFullYear() === now.getFullYear();
 
-        // Check if the message was sent yesterday
         const yesterday = new Date(now);
         yesterday.setDate(now.getDate() - 1);
         const isYesterday = date.getDate() === yesterday.getDate() &&
@@ -402,7 +453,6 @@
         } else if (isYesterday) {
             return "Yesterday, " + timeString;
         } else {
-            // e.g., "16 Jul, 13:44"
             const day = date.getDate();
             const month = date.toLocaleString('default', { month: 'short' });
             return `${day} ${month}, ${timeString}`;

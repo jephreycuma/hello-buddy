@@ -12,6 +12,7 @@ import dev.samstevens.totp.code.DefaultCodeVerifier;
 import dev.samstevens.totp.time.SystemTimeProvider;
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -25,12 +26,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import za.co.digital.hellobuddy.config.DatabaseSeeder;
 import za.co.digital.hellobuddy.model.CustomerWallet;
 import za.co.digital.hellobuddy.repository.CustomerWalletRepository;
 import za.co.digital.hellobuddy.service.WalletPasswordResetService;
 
 import java.math.BigDecimal;
-import java.security.SecureRandom;
 import java.util.Map;
 import java.util.Optional;
 
@@ -41,14 +42,20 @@ public class WalletAuthController {
     private final CustomerWalletRepository walletRepository;
     private final WalletPasswordResetService resetService;
     private final PasswordEncoder passwordEncoder;
+    private final DatabaseSeeder databaseSeeder;
+    
+    @Value("${wallet.root.username:jephreycuma}")
+    private String rootUser;
 
     // Spring automatically injects all parameters in single-constructor components
     public WalletAuthController(CustomerWalletRepository walletRepository, 
                                 WalletPasswordResetService resetService, 
-                                PasswordEncoder passwordEncoder) {
+                                PasswordEncoder passwordEncoder,
+                                DatabaseSeeder databaseSeeder) {
         this.walletRepository = walletRepository;
         this.resetService = resetService;
         this.passwordEncoder = passwordEncoder;
+        this.databaseSeeder = databaseSeeder;
     }
 
     @GetMapping("/register")
@@ -324,16 +331,18 @@ public class WalletAuthController {
                                    RedirectAttributes redirectAttributes) {
 
         // Validate Root Credentials (replace with your secure authentication mechanism / DB role check)
+    	if(rootUsername !=null && rootUsername.trim().equals(rootUser)) {
         var optionalUser = walletRepository.findByUsername(rootUsername);
-        if (optionalUser.isPresent()) {
-            CustomerWallet user = optionalUser.get();
-            if (passwordEncoder.matches(rootPassword, user.getPassword())) {
-                // Set Root Session Flag
-                session.setAttribute("IS_ROOT_LOGGED_IN", true);
-                session.setAttribute("ROOT_USER", rootUsername);
-                return "redirect:/wallet/root-topup";
-            }
-        }
+	        if (optionalUser.isPresent()) {
+	            CustomerWallet user = optionalUser.get();
+	            if (passwordEncoder.matches(rootPassword, user.getPassword())) {
+	                // Set Root Session Flag
+	                session.setAttribute("IS_ROOT_LOGGED_IN", true);
+	                session.setAttribute("ROOT_USER", rootUsername);
+	                return "redirect:/wallet/root-topup";
+	            }
+	        }
+    	}
 
         redirectAttributes.addFlashAttribute("error", "Invalid root username or password.");
         return "redirect:/wallet/root-topup";
@@ -394,6 +403,43 @@ public class WalletAuthController {
         session.removeAttribute("ROOT_USER");
         session.invalidate();
         redirectAttributes.addFlashAttribute("successMessage", "Logged out successfully.");
+        return "redirect:/wallet/root-topup";
+    }
+    
+    /**
+     * Endpoint to process Agent Registration submitted by Root User.
+     */
+    @PostMapping("/register-agent")
+    public String registerAgent(@RequestParam String fullName,
+                                @RequestParam String username,
+                                @RequestParam String password,
+                                @RequestParam String confirmPassword,
+                                HttpSession session,
+                                RedirectAttributes redirectAttributes) {
+
+        // Check root session authentication
+        Boolean isRootLoggedIn = (Boolean) session.getAttribute("IS_ROOT_LOGGED_IN");
+        if (!Boolean.TRUE.equals(isRootLoggedIn)) {
+            redirectAttributes.addFlashAttribute("error", "Unauthorized access.");
+            return "redirect:/wallet/root-topup";
+        }
+
+        // Validate password matching
+        if (!password.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("error", "Passwords do not match.");
+            return "redirect:/wallet/root-topup";
+        }
+
+        try {
+            // Call DatabaseSeeder to persist encrypted agent user
+            databaseSeeder.registerNewAgent(fullName, username, password);
+            redirectAttributes.addFlashAttribute("successMessage", "Agent '" + username + "' registered successfully!");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to register agent. Please try again.");
+        }
+
         return "redirect:/wallet/root-topup";
     }
 }
