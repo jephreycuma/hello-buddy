@@ -302,4 +302,98 @@ public class WalletAuthController {
         Long nextSeq = walletRepository.getNextWalletSequence();
         return "HB-" + String.format("%06d", nextSeq); 
     }
+    
+    /**
+     * Display the combined Root Top-Up page.
+     * Uses session check to determine whether to show login or top-up inputs.
+     */
+    @GetMapping("/root-topup")
+    public String showRootTopupForm(HttpSession session, Model model) {
+        Boolean isRootLoggedIn = (Boolean) session.getAttribute("IS_ROOT_LOGGED_IN");
+        model.addAttribute("isRootLoggedIn", Boolean.TRUE.equals(isRootLoggedIn));
+        return "root-wallet-topup";
+    }
+
+    /**
+     * Process Root User Login.
+     */
+    @PostMapping("/root-login")
+    public String processRootLogin(@RequestParam String rootUsername,
+                                   @RequestParam String rootPassword,
+                                   HttpSession session,
+                                   RedirectAttributes redirectAttributes) {
+
+        // Validate Root Credentials (replace with your secure authentication mechanism / DB role check)
+        var optionalUser = walletRepository.findByUsername(rootUsername);
+        if (optionalUser.isPresent()) {
+            CustomerWallet user = optionalUser.get();
+            if (passwordEncoder.matches(rootPassword, user.getPassword())) {
+                // Set Root Session Flag
+                session.setAttribute("IS_ROOT_LOGGED_IN", true);
+                session.setAttribute("ROOT_USER", rootUsername);
+                return "redirect:/wallet/root-topup";
+            }
+        }
+
+        redirectAttributes.addFlashAttribute("error", "Invalid root username or password.");
+        return "redirect:/wallet/root-topup";
+    }
+
+    /**
+     * Process Top-Up submission.
+     */
+    @PostMapping("/root-topup")
+    @Transactional
+    public String processRootTopup(@RequestParam String referenceNumber,
+                                   @RequestParam BigDecimal amount,
+                                   HttpSession session,
+                                   RedirectAttributes redirectAttributes) {
+
+        // 1. Enforce authentication
+        Boolean isRootLoggedIn = (Boolean) session.getAttribute("IS_ROOT_LOGGED_IN");
+        if (!Boolean.TRUE.equals(isRootLoggedIn)) {
+            redirectAttributes.addFlashAttribute("error", "Unauthorized access. Please login as root first.");
+            return "redirect:/wallet/root-topup";
+        }
+
+        // 2. Validate input
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            redirectAttributes.addFlashAttribute("error", "Amount must be greater than zero.");
+            return "redirect:/wallet/root-topup";
+        }
+
+        // 3. Find customer by HB reference number
+        Optional<CustomerWallet> optionalWallet = walletRepository.findByReferenceNumber(referenceNumber.trim());
+
+        if (optionalWallet.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Wallet Reference ID not found.");
+            return "redirect:/wallet/root-topup";
+        }
+
+        // 4. Perform atomic update
+        CustomerWallet wallet = optionalWallet.get();
+        BigDecimal currentBalance = wallet.getWalletBalance() == null ? BigDecimal.ZERO : wallet.getWalletBalance();
+        BigDecimal newBalance = currentBalance.add(amount);
+
+        wallet.setWalletBalance(newBalance);
+        walletRepository.save(wallet);
+
+        redirectAttributes.addFlashAttribute("successMessage",
+            String.format("Successfully credited R %.2f to %s. New Balance: R %.2f", 
+                amount, wallet.getReferenceNumber(), newBalance));
+
+        return "redirect:/wallet/root-topup";
+    }
+
+    /**
+     * Handle Cancel / Logout Action.
+     */
+    @PostMapping("/root-cancel")
+    public String cancelAndLogout(HttpSession session, RedirectAttributes redirectAttributes) {
+        session.removeAttribute("IS_ROOT_LOGGED_IN");
+        session.removeAttribute("ROOT_USER");
+        session.invalidate();
+        redirectAttributes.addFlashAttribute("successMessage", "Logged out successfully.");
+        return "redirect:/wallet/root-topup";
+    }
 }

@@ -34,6 +34,7 @@ public class SecurityConfig {
                 	    "/agent/login",
                 	    "/agent/workspace",
                 	    "/wallet/forgot-password",
+                	    "/wallet/root-topup",
                 	    "/success",
                 	    "/wallet/**", 
                 	    "/vouchers/**",  
