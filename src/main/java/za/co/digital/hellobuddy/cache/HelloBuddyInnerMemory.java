@@ -128,7 +128,7 @@ public class HelloBuddyInnerMemory {
         BigDecimal usdToZarRate = new BigDecimal(southAfricanFx);
         if (redisTemplate != null) {
             try {
-                String cachedUsdZar = redisTemplate.opsForValue().get("fx:USD_ZAR");
+                String cachedUsdZar = redisTemplate.opsForValue().get("fx:ZA_ZAR");
                 if (cachedUsdZar != null && !cachedUsdZar.isBlank()) {
                     usdToZarRate = new BigDecimal(cachedUsdZar.trim());
                 }
@@ -161,9 +161,11 @@ public class HelloBuddyInnerMemory {
                     double purchasePrice = prod.getUsdPrice();
 
                     if (redisTemplate != null && prod.getFxRate() != null && prod.getCurrencySymbol() != null) {
-                        String redisKey = "fx:" + countryIso.toUpperCase() + "_" + prod.getDestinationCurrencyCode().toUpperCase();
+                        String redisKey = "fx:" + countryIso.toUpperCase() + "_" + prod.getDestinationCurrencyCode().toUpperCase()+"_"+prod.getId();
                         redisTemplate.opsForValue().set(redisKey, String.valueOf(prod.getFxRate()), CACHE_TTL);
                         redisTemplate.opsForValue().set(countryIso, prod.getDestinationCurrencyCode().toUpperCase(), CACHE_TTL);
+                        if("ZA".equalsIgnoreCase(countryIso))
+                        	redisTemplate.opsForValue().set("fx:ZA_ZAR", String.valueOf(prod.getFxRate()), CACHE_TTL);
 
                         String commissionValue = (prod.getCommission() != null) ? prod.getCommission().toString() : "0.0";
                         redisTemplate.opsForValue().set(countryIso + ":" + prod.getId(), commissionValue, CACHE_TTL);
@@ -244,7 +246,7 @@ public class HelloBuddyInnerMemory {
         BigDecimal usdToZarRate = new BigDecimal(southAfricanFx);
         if (redisTemplate != null) {
             try {
-                String cachedUsdZar = redisTemplate.opsForValue().get("fx:USD_ZAR");
+                String cachedUsdZar = redisTemplate.opsForValue().get("fx:ZA_ZAR");
                 if (cachedUsdZar != null && !cachedUsdZar.isBlank()) {
                     usdToZarRate = new BigDecimal(cachedUsdZar.trim());
                 }
@@ -277,9 +279,13 @@ public class HelloBuddyInnerMemory {
                     double purchasePrice = prod.getUsdPrice();
 
                     if (redisTemplate != null && prod.getFxRate() != null && prod.getCurrencySymbol() != null) {
-                        String redisKey = "fx:" + countryIso.toUpperCase() + "_" + prod.getDestinationCurrencyCode().toUpperCase();
+                    	
+                    	String redisKey = "fx:"+countryIso.toUpperCase() + "_" + prod.getDestinationCurrencyCode().toUpperCase()+"_"+prod.getId();
+                    	
                         redisTemplate.opsForValue().set(redisKey, String.valueOf(prod.getFxRate()), CACHE_TTL);
                         redisTemplate.opsForValue().set(countryIso, prod.getDestinationCurrencyCode().toUpperCase(), CACHE_TTL);
+                        if("ZA".equalsIgnoreCase(countryIso))
+                        	redisTemplate.opsForValue().set("fx:ZA_ZAR", String.valueOf(prod.getFxRate()), CACHE_TTL);
 
                         String commissionValue = (prod.getCommission() != null) ? prod.getCommission().toString() : "0.0";
                         redisTemplate.opsForValue().set(countryIso + ":" + prod.getId(), commissionValue, CACHE_TTL);
@@ -290,14 +296,6 @@ public class HelloBuddyInnerMemory {
                     if ("AIRTIME TOPUP".equalsIgnoreCase(type)) {
                         generateLocalDenominations(cleanedNetwork, prod, sanitizedId, topupList, usdToZarRate, true);
                     } else {
-                        /*BigDecimal localFxRate = (prod.getFxRate() != null && prod.getFxRate() > 0)
-                                ? BigDecimal.valueOf(prod.getFxRate())
-                                : BigDecimal.ONE;
-
-                        BigDecimal reloadlyDiscount = (prod.getCommission() != null)
-                                ? prod.getCommission()
-                                : BigDecimal.ZERO;*/
-
                             ProductItemDTO dto = new ProductItemDTO(
                                     sanitizedId,
                                     description,

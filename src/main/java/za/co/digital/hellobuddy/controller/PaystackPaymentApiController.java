@@ -68,7 +68,7 @@ public class PaystackPaymentApiController {
 
             // Your existing Redis FX logic
             String currencySymbol = redisTemplate.opsForValue().get(currentRegion);
-            String redisKey = "fx:" + currentRegion.toUpperCase() + "_" + (currencySymbol != null ? currencySymbol.toUpperCase() : "ZAR");
+            String redisKey = "fx:" + currentRegion.toUpperCase() + "_" + (currencySymbol != null ? currencySymbol.toUpperCase() : "ZAR")+"_"+payload.getOrDefault("productId", "");
             String cachedFx = redisTemplate.opsForValue().get(redisKey);
             String discount = redisTemplate.opsForValue().get(currentRegion + ":" + payload.getOrDefault("productId", ""));
             String southAfricaFx = redisTemplate.opsForValue().get("fx:ZA_ZAR");

@@ -26,10 +26,12 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/reloadly")
 public class ReloadlyPaymentController {
+	private static final Logger logger = Logger.getLogger(ReloadlyPaymentController.class.getName());
 
     @Autowired
     private StringRedisTemplate redisTemplate;
@@ -87,7 +89,7 @@ public class ReloadlyPaymentController {
 
         // 4. Fetch FX Rate from Redis with Defensive Null Guards
         String currencySymbol = redisTemplate.opsForValue().get(countryIso);
-        String redisKey = "fx:" + countryIso.toUpperCase() + "_" + currencySymbol;
+        String redisKey = "fx:" + countryIso.toUpperCase() + "_" + currencySymbol+"_"+requestDTO.getProductId();
         String fxRateStr = redisTemplate.opsForValue().get(redisKey);
 
         BigDecimal localToUsdFxRate = BigDecimal.ONE;
@@ -114,6 +116,8 @@ public class ReloadlyPaymentController {
                 System.err.println("Invalid south.african.fx property value: " + saFxRate + ". Defaulting to 1.0");
             }
         }
+        
+        logger.info("Using FX rates - Local to USD: " + localToUsdFxRate + ", USD to ZAR: " + usdToZarFxRate);
 
         // 6. Calculate Exact Amount Due in ZAR
         BigDecimal amountInZar = profitValidator.calculatePayStackCharge(localPrice, localToUsdFxRate, usdToZarFxRate);
