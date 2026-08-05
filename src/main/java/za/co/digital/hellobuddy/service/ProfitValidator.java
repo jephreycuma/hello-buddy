@@ -157,4 +157,16 @@ public class ProfitValidator {
 
         return finalAmountZar.setScale(2, RoundingMode.HALF_UP);
     }
+    
+    public BigDecimal convertCountryPriceToUsd(BigDecimal localPrice, BigDecimal localToUsdFxRate) {
+		if (localPrice == null || localPrice.compareTo(BigDecimal.ZERO) <= 0) {
+			return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+		}
+
+		if (localToUsdFxRate == null || localToUsdFxRate.compareTo(BigDecimal.ZERO) <= 0) {
+			localToUsdFxRate = BigDecimal.ONE;
+		}
+
+		return localPrice.divide(localToUsdFxRate, 6, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
+	}
 }

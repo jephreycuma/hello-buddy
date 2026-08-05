@@ -1,7 +1,10 @@
 package za.co.digital.hellobuddy.controller;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,15 +18,23 @@ import org.springframework.web.client.RestClient;
 
 import za.co.digital.hellobuddy.dto.ReloadlyTopupResult;
 import za.co.digital.hellobuddy.dto.TopupResponse;
+import za.co.digital.hellobuddy.service.ProfitValidator;
 
 @Controller
 public class HelloBuddyWebViewController {
+	
+	 private static final Logger logger = Logger.getLogger(HelloBuddyWebViewController.class.getName());
 
 	@Autowired
 	private StringRedisTemplate redisTemplate;
+	@Autowired
+    private ProfitValidator profitValidator;
 
 	@Value("${paystack.api.key}")
 	private String paystackSecretKey;
+	
+	 @Value("${south.african.fx:15.35}")
+	 private String southAfricanFx;
 
 	// Paystack base client configuration
 	private final RestClient paystackClient = RestClient.builder()
@@ -95,6 +106,25 @@ public class HelloBuddyWebViewController {
 			model.addAttribute("chargedUsd", checkoutPriceUsd);
 			model.addAttribute("phoneNumber", recipientPhone);
 			model.addAttribute("sessionId", txReference); // Swapped for reference context
+			
+	        String redisKey = "fx:" + countryIso.toUpperCase() + "_" + currencySymbol + "_" + id;
+	        String fxRateStr = redisTemplate.opsForValue().get(redisKey);
+
+	        BigDecimal localToUsdFxRate = BigDecimal.ONE;
+	        if (fxRateStr != null && !fxRateStr.trim().isEmpty()) {
+	            try {
+	                localToUsdFxRate = new BigDecimal(fxRateStr.trim());
+	            } catch (NumberFormatException e) {
+	                logger.warning("Invalid FX rate format in Redis for key [" + redisKey + "]: " + fxRateStr + ". Defaulting to 1.0");
+	            }
+	        } else {
+	            logger.info("FX key [" + redisKey + "] missing in Redis. Defaulting local-to-USD rate to 1.0");
+	        }
+	        
+	        BigDecimal localPriceBd = profitValidator.convertCountryPriceToUsd(new BigDecimal(originalPrice), localToUsdFxRate);
+			
+			/*BigDecimal localPriceBd = new BigDecimal(originalPrice);
+	        BigDecimal amountInUsd = localPriceBd.divide(usdToZarFxRate, 2, RoundingMode.HALF_UP);*/
 
 			// 3. Request Reloadly Delivery API
 			ReloadlyTopupResult results = null;
@@ -102,13 +132,13 @@ public class HelloBuddyWebViewController {
 				results = restClient.post()
 						.uri(uriBuilder -> uriBuilder
 								.path("/api/v1/telecom/topups")
-								.queryParam("amount", originalPrice)
-								.queryParam("senderPhoone", Long.parseLong(cleanSender))
+								.queryParam("amount", localPriceBd.setScale(2, RoundingMode.HALF_UP).doubleValue())
+								.queryParam("senderPhone", Long.parseLong(cleanSender))
 								.queryParam("receiverPhone", Long.parseLong(cleanReceiver))
 								.queryParam("countryISO", countryIso)
 								.queryParam("operatorId", id)
 								.queryParam("senderEmail", recipientEmail)
-								.queryParam("useLocalAmount", true)
+								.queryParam("useLocalAmount", false)
 								.build())
 						.retrieve()
 						.body(new ParameterizedTypeReference<ReloadlyTopupResult>() {});
