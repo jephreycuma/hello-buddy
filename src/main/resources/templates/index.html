@@ -15,19 +15,23 @@
 	<!-- Header Banner Section -->
 	<header class="w-full bg-gray-900 text-white py-6 shadow-md border-b border-red-600">
 	    <div class="max-w-4xl mx-auto px-4">
-	        <div class="text-center md:text-left">
-	            <!-- Wrapped text and SVG inside a flex row to align them on the same line -->
-	            <!-- Changed text-red to text-red-600 below -->
+	        <div class="flex flex-col items-center md:items-start">
+	            
+	            <!-- Row 1: Hello Buddy + SVG + Quote -->
 	            <h1 class="text-3xl font-extrabold tracking-wide text-red-600 flex items-center justify-center md:justify-start space-x-3">
 	                <span>Hello Buddy</span>
 	                
 	                <!-- Handshake image inline right next to the text -->
 	                <svg class="w-8 h-8 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-label="Handshake icon">
 	                    <image href="/images/images.png" x="0" y="0" height="24" width="24" />
-	                </svg>
+	                </svg> <span class="text-sm font-medium text-red-600 tracking-normal">"Connecting Families globally, One Top-up at a Time"</span>
 	            </h1>	            
-	           <p class="text-sm font-medium text-gray-400 mt-2 tracking-normal">Purchase international airtime and data top-ups for family and friends through our secure digital platform.</p>
-			   <p class="text-sm font-medium text-gray-400 tracking-normal">If you have not yet registered, please register and top up your wallet to enjoy instant purchases.</p>
+	            
+	            <!-- Row 2: Subtext aligned directly under 'Buddy' -->
+	            <p class="text-sm font-medium text-gray-400 mt-1 tracking-normal md:pl-[5.2rem]">
+	                Register and top up your wallet to enjoy instant purchases.
+	            </p>
+	
 	        </div>
 	    </div>
 	</header>
@@ -276,19 +280,22 @@
     </nav>
 
     <!-- Main Workspace Display Canvas -->
-    <main class="flex-grow max-w-7xl w-full mx-auto p-6">
-        <div id="viewHeader" class="mb-6 text-center hidden">
-            <h2 id="activeCategoryTitle" class="text-2xl font-bold text-gray-900">Category</h2>
-            <p id="activeNetworkSubtitle" class="text-sm text-gray-500 mt-1">Select your item package below</p>
-        </div>
-
-        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <div id="emptyState" class="col-span-full text-center py-16 text-gray-400">
-                <span class="text-5xl block mb-3">🛒</span>
-                Hover over a menu tab above and select a network to view available products!
-            </div>
-        </div>
-    </main>
+	  <main class="flex-grow max-w-7xl w-full mx-auto p-6">
+	    <div id="viewHeader" class="mb-6 text-center hidden">
+	        <h2 id="activeCategoryTitle" class="text-2xl font-bold text-gray-900">Category</h2>
+	        <p id="activeNetworkSubtitle" class="text-sm text-gray-500 mt-1">Select your item package below</p>
+	    </div>
+	
+	    <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+	        <div id="emptyState" class="col-span-full text-center py-8 text-gray-400">
+	            <!-- Height reduced to h-48 with object-contain, and mix-blend-multiply to blend background -->
+	            <img src="/images/hero-banner.png" alt="Hero Banner" class="w-1/2 h-48 object-contain mx-auto block mb-6 mix-blend-multiply" />
+	            <p class="text-base text-gray-600 font-medium">
+	                Hover over a menu tab above and select a network to view available products!
+	            </p>
+	        </div>
+	    </div>
+	</main>
 
     <!-- STEP 1: Recipient Phone Verification Modal -->
 		<div id="phoneModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4">

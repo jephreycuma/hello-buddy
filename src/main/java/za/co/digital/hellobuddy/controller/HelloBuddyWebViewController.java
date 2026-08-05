@@ -46,8 +46,8 @@ public class HelloBuddyWebViewController {
 
     public HelloBuddyWebViewController() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(5000); // 5s connect
-        requestFactory.setReadTimeout(15000);    // 15s read
+        requestFactory.setConnectTimeout(60000);
+        requestFactory.setReadTimeout(60000);
 
         this.paystackClient = RestClient.builder()
                 .baseUrl("https://api.paystack.co")

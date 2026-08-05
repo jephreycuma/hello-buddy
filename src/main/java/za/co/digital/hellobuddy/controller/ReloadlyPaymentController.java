@@ -53,8 +53,8 @@ public class ReloadlyPaymentController {
 
     public ReloadlyPaymentController() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(5000); // 5s connect timeout
-        requestFactory.setReadTimeout(20000);    // 20s read timeout
+        requestFactory.setConnectTimeout(60000);
+        requestFactory.setReadTimeout(60000);
 
         this.restClient = RestClient.builder()
                 .baseUrl("http://localhost:8081")
