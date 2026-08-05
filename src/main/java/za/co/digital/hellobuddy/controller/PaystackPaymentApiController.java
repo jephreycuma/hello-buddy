@@ -86,6 +86,7 @@ public class PaystackPaymentApiController {
             
             BigDecimal finalizedChargeAmount = profitValidator.calculatePayStackCharge(localPrice, fxRate,new BigDecimal(southAfricaFx));
             
+            logger.info("Paystack Charge amount : " + finalizedChargeAmount);
             // Paystack expects amount in cents/sub-units (e.g., R10.50 -> 1050)
             long paystackAmountCents = Math.round(finalizedChargeAmount.setScale(2, RoundingMode.HALF_UP).doubleValue() * 100);
 

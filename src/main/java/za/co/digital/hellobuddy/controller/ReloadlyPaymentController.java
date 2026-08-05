@@ -9,12 +9,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClient;
 
 import za.co.digital.hellobuddy.dto.CheckoutRequestDTO;
@@ -22,6 +17,7 @@ import za.co.digital.hellobuddy.dto.ReloadlyTopupResult;
 import za.co.digital.hellobuddy.dto.TopupResponse;
 import za.co.digital.hellobuddy.model.CustomerWallet;
 import za.co.digital.hellobuddy.repository.CustomerWalletRepository;
+import za.co.digital.hellobuddy.service.CustomerWalletService;
 import za.co.digital.hellobuddy.service.ProfitValidator;
 
 import java.math.BigDecimal;
@@ -47,16 +43,18 @@ public class ReloadlyPaymentController {
     @Autowired
     private CustomerWalletRepository walletRepository;
 
+    @Autowired
+    private CustomerWalletService walletService;
+
     @Value("${south.african.fx:15.35}")
     private String southAfricanFx;
 
-    // RestClient configured with explicit connect and read timeouts
     private final RestClient restClient;
 
     public ReloadlyPaymentController() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(5000); // 5 seconds connect timeout
-        requestFactory.setReadTimeout(20000);    // 20 seconds read timeout
+        requestFactory.setConnectTimeout(5000); // 5s connect timeout
+        requestFactory.setReadTimeout(20000);    // 20s read timeout
 
         this.restClient = RestClient.builder()
                 .baseUrl("http://localhost:8081")
@@ -76,7 +74,7 @@ public class ReloadlyPaymentController {
 
         String username = (String) session.getAttribute("LOGGED_IN_CUSTOMER");
 
-        // 2. Fetch Customer Wallet Entity and Balance from Database
+        // 2. Fetch Customer Wallet Record
         Optional<CustomerWallet> walletOptional = walletRepository.findByUsername(username);
         if (walletOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -90,19 +88,27 @@ public class ReloadlyPaymentController {
 
         String countryIso = requestDTO.getCountryIso() != null ? requestDTO.getCountryIso().toUpperCase() : "ZA";
 
-        // 3. Safely Parse Local Price
-        BigDecimal localPrice = BigDecimal.ONE;
-        if (requestDTO.getOriginalPrice() != null && !requestDTO.getOriginalPrice().trim().isEmpty()) {
-            try {
-                localPrice = new BigDecimal(requestDTO.getOriginalPrice().trim());
-            } catch (NumberFormatException e) {
-                logger.warning("Invalid originalPrice format: " + requestDTO.getOriginalPrice() + ". Defaulting to 1.0");
-            }
+        // 3. Strict Validation on Original Price (Fail Fast)
+        if (requestDTO.getOriginalPrice() == null || requestDTO.getOriginalPrice().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("status", "FAILED", "message", "Invalid or missing originalPrice."));
         }
 
-        // 4. Fetch FX Rate from Redis with Defensive Null Guards
+        BigDecimal localPrice;
+        try {
+            localPrice = new BigDecimal(requestDTO.getOriginalPrice().trim());
+            if (localPrice.compareTo(BigDecimal.ZERO) <= 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("status", "FAILED", "message", "Original price must be greater than zero."));
+            }
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("status", "FAILED", "message", "Invalid price format."));
+        }
+
+        // 4. Fetch FX Rates from Redis
         String currencySymbol = redisTemplate.opsForValue().get(countryIso);
-        String redisKey = "fx:" + countryIso.toUpperCase() + "_" + currencySymbol + "_" + requestDTO.getProductId();
+        String redisKey = "fx:" + countryIso + "_" + currencySymbol + "_" + requestDTO.getProductId();
         String fxRateStr = redisTemplate.opsForValue().get(redisKey);
 
         BigDecimal localToUsdFxRate = BigDecimal.ONE;
@@ -110,70 +116,82 @@ public class ReloadlyPaymentController {
             try {
                 localToUsdFxRate = new BigDecimal(fxRateStr.trim());
             } catch (NumberFormatException e) {
-                logger.warning("Invalid FX rate format in Redis for key [" + redisKey + "]: " + fxRateStr + ". Defaulting to 1.0");
+                logger.warning("Invalid FX rate in Redis for key [" + redisKey + "]: " + fxRateStr);
             }
-        } else {
-            logger.info("FX key [" + redisKey + "] missing in Redis. Defaulting local-to-USD rate to 1.0");
+        } else if (!"ZA".equalsIgnoreCase(countryIso) && !"US".equalsIgnoreCase(countryIso)) {
+            logger.severe("Missing critical Redis FX key [" + redisKey + "] for foreign country " + countryIso);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", "FAILED", "message", "Exchange rate unavailable. Please try again later."));
         }
 
-        // 5. Safely Parse South African FX Rate Property
-        String saFxRate = (redisTemplate.opsForValue().get("fx:ZA_ZAR") != null && !redisTemplate.opsForValue().get("fx:ZA_ZAR").isEmpty())
-                ? redisTemplate.opsForValue().get("fx:ZA_ZAR") 
-                : southAfricanFx;
-        
+        // 5. South African FX Rate Property
+        String saFxRate = redisTemplate.opsForValue().get("fx:ZA_ZAR");
+        if (saFxRate == null || saFxRate.trim().isEmpty()) {
+            saFxRate = southAfricanFx;
+        }
+
         BigDecimal usdToZarFxRate = BigDecimal.ONE;
-        if (saFxRate != null && !saFxRate.trim().isEmpty()) {
-            try {
-                usdToZarFxRate = new BigDecimal(saFxRate.trim());
-            } catch (NumberFormatException e) {
-                logger.warning("Invalid south.african.fx property value: " + saFxRate + ". Defaulting to 1.0");
-            }
+        try {
+            usdToZarFxRate = new BigDecimal(saFxRate.trim());
+        } catch (Exception e) {
+            logger.warning("Invalid south.african.fx property value: " + saFxRate + ". Defaulting to 1.0");
         }
-        
-        logger.info("Using FX rates - Local to USD: " + localToUsdFxRate + ", USD to ZAR: " + usdToZarFxRate);
 
-        // 6. Calculate Exact Amount Due in ZAR
+        // 6. Calculate Charge in ZAR
         BigDecimal amountInZar = profitValidator.calculatePayStackCharge(localPrice, localToUsdFxRate, usdToZarFxRate);
 
-        // 7. Validate Sufficient Wallet Funds against Database Balance
+        // 7. Validate Sufficient Wallet Funds
         if (currentDbBalance.compareTo(amountInZar) < 0) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
                             "status", "FAILED",
-                            "message", String.format("Insufficient wallet balance (Available: R %.2f, Required: R %.2f). Please top up your wallet.", currentDbBalance, amountInZar)
+                            "message", String.format("Insufficient wallet balance (Available: R %.2f, Required: R %.2f).", currentDbBalance, amountInZar)
                     ));
         }
 
-        // 8. Extract and Clean Phone Inputs
-        int productId = Integer.parseInt(requestDTO.getProductId());
+        // 8. Sanitize Inputs
+        int productId;
+        try {
+            productId = Integer.parseInt(requestDTO.getProductId());
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("status", "FAILED", "message", "Invalid productId format."));
+        }
+
         String rawSender = requestDTO.getSenderPhone() != null ? requestDTO.getSenderPhone() : "0";
         String rawRecipient = requestDTO.getRecipientPhone();
 
-        String cleanSender = rawSender.replaceAll("\\D", "");
-        String cleanReceiver = validatePhoneNumber(rawRecipient, countryIso).replaceAll("\\D", "");
+        if (rawRecipient == null || rawRecipient.trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("status", "FAILED", "message", "Recipient phone number is required."));
+        }
 
-        /*double originalPrice = requestDTO.getOriginalPrice() != null 
-                ? Double.parseDouble(requestDTO.getOriginalPrice()) 
-                : amountInZar.doubleValue();*/
+        String cleanSender = rawSender.replaceAll("\\D", "");
+        String cleanReceiver = rawRecipient.replaceAll("\\D", "");
 
         String txReference = "WLT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-        // 9. DEDUCT BALANCE AND COMMIT TO DATABASE BEFORE MAKING API CALL
-        BigDecimal newDeductedBalance = deductWallet(username, amountInZar);
-        
-        // Synchronize session immediately
-        session.setAttribute("WALLET_BALANCE", newDeductedBalance);
-        
-        BigDecimal localPriceBd = profitValidator.convertCountryPriceToUsd(localPrice, localToUsdFxRate);
+        // 9. Deduct Balance via Proxy-Managed Service
+        BigDecimal newDeductedBalance;
+        try {
+            newDeductedBalance = walletService.deductWallet(username, amountInZar);
+            session.setAttribute("WALLET_BALANCE", newDeductedBalance);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", "FAILED", "message", "Wallet transaction failed: " + e.getMessage()));
+        }
 
-        ReloadlyTopupResult results = null;
+        // Calculate precise USD cost for Reloadly
+        BigDecimal localPriceInUsd = profitValidator.convertCountryPriceToUsd(localPrice, localToUsdFxRate);
+
+        ReloadlyTopupResult results;
 
         try {
             // 10. Dispatch Top-Up to Reloadly Microservice
             results = restClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/api/v1/telecom/topups")
-                            .queryParam("amount", localPriceBd.setScale(2, RoundingMode.HALF_UP).doubleValue())
+                            .queryParam("amount", localPriceInUsd.setScale(2, RoundingMode.HALF_UP).doubleValue())
                             .queryParam("senderPhone", Long.parseLong(cleanSender.isEmpty() ? "0" : cleanSender))
                             .queryParam("receiverPhone", Long.parseLong(cleanReceiver))
                             .queryParam("countryISO", countryIso)
@@ -185,14 +203,12 @@ public class ReloadlyPaymentController {
                     .body(new ParameterizedTypeReference<ReloadlyTopupResult>() {});
 
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Reloadly API request failed or timed out: " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Reloadly API timeout or error: " + e.getMessage(), e);
 
-            // Timeout or connection loss: DO NOT automatically refund because Reloadly may have processed the top-up.
-            // Balance remains deducted to prevent double-spending/free product.
             return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT)
                     .body(Map.of(
                             "status", "PENDING",
-                            "message", "Top-up request sent but confirmation timed out. Your wallet balance has been updated.",
+                            "message", "Top-up request sent but confirmation timed out. Balance updated.",
                             "transactionId", txReference,
                             "newBalance", newDeductedBalance
                     ));
@@ -209,56 +225,16 @@ public class ReloadlyPaymentController {
                     "newBalance", newDeductedBalance
             ));
         } else {
-            // Reloadly explicitly rejected the transaction (e.g. invalid phone number, operator error).
-            // It is safe to refund the deducted balance back to the customer.
-            BigDecimal restoredBalance = reverseWalletDeduction(username, amountInZar);
+            // Safe Refund via Proxy-Managed Service
+            BigDecimal restoredBalance = walletService.reverseWalletDeduction(username, amountInZar);
             session.setAttribute("WALLET_BALANCE", restoredBalance);
 
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                     .body(Map.of(
                             "status", "FAILED",
-                            "message", "Reloadly fulfillment failed. Funds have been returned to your wallet.",
+                            "message", "Reloadly fulfillment failed. Funds returned to wallet.",
                             "newBalance", restoredBalance
                     ));
         }
-    }
-
-    /**
-     * Deducts amount from customer wallet in an isolated, committed transaction.
-     */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public BigDecimal deductWallet(String username, BigDecimal amount) {
-        CustomerWallet wallet = walletRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalStateException("Wallet not found during deduction"));
-
-        BigDecimal currentBalance = wallet.getWalletBalance() != null ? wallet.getWalletBalance() : BigDecimal.ZERO;
-        BigDecimal newBalance = currentBalance.subtract(amount);
-
-        wallet.setWalletBalance(newBalance);
-        walletRepository.saveAndFlush(wallet);
-
-        return newBalance;
-    }
-
-    /**
-     * Reverses a failed deduction and commits the restored balance to DB in an isolated transaction.
-     */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public BigDecimal reverseWalletDeduction(String username, BigDecimal amount) {
-        CustomerWallet wallet = walletRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalStateException("Wallet not found during refund"));
-
-        BigDecimal currentBalance = wallet.getWalletBalance() != null ? wallet.getWalletBalance() : BigDecimal.ZERO;
-        BigDecimal newBalance = currentBalance.add(amount);
-
-        wallet.setWalletBalance(newBalance);
-        walletRepository.saveAndFlush(wallet);
-
-        return newBalance;
-    }
-
-    private String validatePhoneNumber(String phone, String countryIso) {
-        if (phone == null) return "";
-        return phone.trim();
     }
 }

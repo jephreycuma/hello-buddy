@@ -4,12 +4,15 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,190 +25,220 @@ import za.co.digital.hellobuddy.service.ProfitValidator;
 
 @Controller
 public class HelloBuddyWebViewController {
-	
-	 private static final Logger logger = Logger.getLogger(HelloBuddyWebViewController.class.getName());
 
-	@Autowired
-	private StringRedisTemplate redisTemplate;
-	@Autowired
+    private static final Logger logger = Logger.getLogger(HelloBuddyWebViewController.class.getName());
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
+    @Autowired
     private ProfitValidator profitValidator;
 
-	@Value("${paystack.api.key}")
-	private String paystackSecretKey;
-	
-	 @Value("${south.african.fx:15.35}")
-	 private String southAfricanFx;
+    @Value("${paystack.api.key}")
+    private String paystackSecretKey;
 
-	// Paystack base client configuration
-	private final RestClient paystackClient = RestClient.builder()
-			.baseUrl("https://api.paystack.co")
-			.build();
+    @Value("${south.african.fx:15.35}")
+    private String southAfricanFx;
 
-	// Reloadly internal communication client
-	private final RestClient restClient = RestClient.builder()
-			.baseUrl("http://localhost:8081") 
-			.build();
+    // Build RestClients with strict timeouts
+    private final RestClient paystackClient;
+    private final RestClient restClient;
 
-	@GetMapping("/success")
-	public String paymentSuccess(@RequestParam("reference") String reference, Model model) {
-		// Keep track of the transaction reference for possible reversal tracking
-		String txReference = reference;
-		
-		try {
-			// 1. Verify transaction status and fetch payload metadata via Paystack API
-			Map<String, Object> paystackResponse = paystackClient.get()
-					.uri("/transaction/verify/{reference}", txReference)
-					.header("Authorization", "Bearer " + this.paystackSecretKey)
-					.retrieve()
-					.body(new ParameterizedTypeReference<Map<String, Object>>() {});
+    public HelloBuddyWebViewController() {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(5000); // 5s connect
+        requestFactory.setReadTimeout(15000);    // 15s read
 
-			if (paystackResponse == null || !Boolean.TRUE.equals(paystackResponse.get("status"))) {
-				throw new IllegalStateException("Payment verification failed via Paystack gateway.");
-			}
+        this.paystackClient = RestClient.builder()
+                .baseUrl("https://api.paystack.co")
+                .requestFactory(requestFactory)
+                .build();
 
-			@SuppressWarnings("unchecked")
-			Map<String, Object> data = (Map<String, Object>) paystackResponse.get("data");
-			String status = (String) data.get("status");
+        this.restClient = RestClient.builder()
+                .baseUrl("http://localhost:8081")
+                .requestFactory(requestFactory)
+                .build();
+    }
 
-			if (!"success".equalsIgnoreCase(status)) {
-				throw new IllegalStateException("Transaction reference status is marked as: " + status);
-			}
+    @GetMapping("/success")
+    public String paymentSuccess(@RequestParam("reference") String reference, Model model) {
+        String txReference = reference;
+        Object paystackNumericId = null;
 
-			@SuppressWarnings("unchecked")
-			Map<String, String> metadata = (Map<String, String>) data.get("metadata");
-			if (metadata == null) {
-				metadata = new HashMap<>();
-			}
-			
-			// Unpack Identification Records from Paystack custom metadata array
-			Integer id = Integer.parseInt(metadata.getOrDefault("productId", "0"));
-			String name = metadata.getOrDefault("productName", "Hello Buddy Voucher");
-			String senderPhone = metadata.getOrDefault("senderPhone", "");
-			String recipientPhone = metadata.getOrDefault("recipientPhone", "");
-			String recipientEmail = metadata.getOrDefault("recipientEmail", "");
-			String countryIso = metadata.getOrDefault("countryIso", "ZA");
+        // Idempotency check: Protect against browser refresh double-fulfillment
+        String processedKey = "processed_tx:" + txReference;
+        Boolean isAlreadyProcessed = redisTemplate.hasKey(processedKey);
+        if (Boolean.TRUE.equals(isAlreadyProcessed)) {
+            logger.info("Transaction reference " + txReference + " was already processed. Rendering receipt.");
+            model.addAttribute("errorMessage", "This transaction has already been processed.");
+            return "receipt";
+        }
 
-			// Fetch Prices
-			Double originalPrice = Double.parseDouble(metadata.getOrDefault("originalPrice", "0.0"));
-			Double checkoutPriceUsd = Double.parseDouble(metadata.getOrDefault("checkoutPriceUsd", "0.0"));
+        try {
+            // 1. Verify transaction status via Paystack API
+            Map<String, Object> paystackResponse = paystackClient.get()
+                    .uri("/transaction/verify/{reference}", txReference)
+                    .header("Authorization", "Bearer " + this.paystackSecretKey)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<Map<String, Object>>() {});
 
-			if (senderPhone == null || senderPhone.trim().isEmpty()) {
-				senderPhone = "0";
-			}
+            if (paystackResponse == null || !Boolean.TRUE.equals(paystackResponse.get("status"))) {
+                throw new IllegalStateException("Payment verification failed via Paystack gateway.");
+            }
 
-			recipientPhone = validatePhoneNumber(recipientPhone, countryIso);
-			String cleanSender = senderPhone.replaceAll("\\D", ""); 
-			String cleanReceiver = recipientPhone.replaceAll("\\D", ""); 
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) paystackResponse.get("data");
+            String status = (String) data.get("status");
+            paystackNumericId = data.get("id"); // Extract numeric ID for refunds
 
-			// 2. Bind basic details to UI template upfront
-			String currencySymbol = redisTemplate.opsForValue().get(countryIso);
-			model.addAttribute("productId", id);
-			model.addAttribute("productName", name);
-			model.addAttribute("productPrice", originalPrice);     
-			model.addAttribute("currencySymbol", currencySymbol);
-			model.addAttribute("chargedUsd", checkoutPriceUsd);
-			model.addAttribute("phoneNumber", recipientPhone);
-			model.addAttribute("sessionId", txReference); // Swapped for reference context
-			
-	        String redisKey = "fx:" + countryIso.toUpperCase() + "_" + currencySymbol + "_" + id;
-	        String fxRateStr = redisTemplate.opsForValue().get(redisKey);
+            if (!"success".equalsIgnoreCase(status)) {
+                throw new IllegalStateException("Transaction status is: " + status);
+            }
 
-	        BigDecimal localToUsdFxRate = BigDecimal.ONE;
-	        if (fxRateStr != null && !fxRateStr.trim().isEmpty()) {
-	            try {
-	                localToUsdFxRate = new BigDecimal(fxRateStr.trim());
-	            } catch (NumberFormatException e) {
-	                logger.warning("Invalid FX rate format in Redis for key [" + redisKey + "]: " + fxRateStr + ". Defaulting to 1.0");
-	            }
-	        } else {
-	            logger.info("FX key [" + redisKey + "] missing in Redis. Defaulting local-to-USD rate to 1.0");
-	        }
-	        
-	        BigDecimal localPriceBd = profitValidator.convertCountryPriceToUsd(new BigDecimal(originalPrice), localToUsdFxRate);
-			
-			/*BigDecimal localPriceBd = new BigDecimal(originalPrice);
-	        BigDecimal amountInUsd = localPriceBd.divide(usdToZarFxRate, 2, RoundingMode.HALF_UP);*/
+            @SuppressWarnings("unchecked")
+            Map<String, String> metadata = (Map<String, String>) data.get("metadata");
+            if (metadata == null) {
+                metadata = new HashMap<>();
+            }
 
-			// 3. Request Reloadly Delivery API
-			ReloadlyTopupResult results = null;
-			try {
-				results = restClient.post()
-						.uri(uriBuilder -> uriBuilder
-								.path("/api/v1/telecom/topups")
-								.queryParam("amount", localPriceBd.setScale(2, RoundingMode.HALF_UP).doubleValue())
-								.queryParam("senderPhone", Long.parseLong(cleanSender))
-								.queryParam("receiverPhone", Long.parseLong(cleanReceiver))
-								.queryParam("countryISO", countryIso)
-								.queryParam("operatorId", id)
-								.queryParam("senderEmail", recipientEmail)
-								.queryParam("useLocalAmount", false)
-								.build())
-						.retrieve()
-						.body(new ParameterizedTypeReference<ReloadlyTopupResult>() {});
-			} catch (Exception e) {
-				System.err.println("Network exception calling Reloadly: " + e.getMessage());
-			}
+            // Unpack Metadata
+            Integer productId = Integer.parseInt(metadata.getOrDefault("productId", "0"));
+            String name = metadata.getOrDefault("productName", "Hello Buddy Voucher");
+            String senderPhone = metadata.getOrDefault("senderPhone", "0");
+            String recipientPhone = metadata.getOrDefault("recipientPhone", "");
+            String recipientEmail = metadata.getOrDefault("recipientEmail", "");
+            String countryIso = metadata.getOrDefault("countryIso", "ZA");
 
-			// 4. Evaluate response & Trigger Paystack Reversal if order fails
-			if (results != null && results.isSuccessful()) {
-				TopupResponse successData = results.getTopupResponse();
-				model.addAttribute("referenceId", successData.getTransactionId());
-			} else {
-				System.err.println("Reloadly distribution failure. Initiating automated Paystack refund workflow...");
-				triggerPaystackRefund(txReference, "Reloadly distribution failure.");
-				model.addAttribute("errorMessage", "Delivery failed. We couldn't fulfill your voucher order, so your payment has been automatically reversed.");
-			}
+            Double originalPrice = Double.parseDouble(metadata.getOrDefault("originalPrice", "0.0"));
+            Double checkoutPriceUsd = Double.parseDouble(metadata.getOrDefault("checkoutPriceUsd", "0.0"));
 
-		} catch (Exception e) {
-			System.err.println("Critical controller runtime exception breakdown: " + e.getMessage());
-			if (txReference != null) {
-				triggerPaystackRefund(txReference, "System runtime crash recovery refund.");
-			}
-			model.addAttribute("errorMessage", "Processing Error: " + e.getMessage() + ". Your payment has been queue-reversed.");
-		}
+            String cleanSender = senderPhone.replaceAll("\\D", "");
+            String cleanReceiver = validatePhoneNumber(recipientPhone, countryIso).replaceAll("\\D", "");
 
-		return "receipt";
-	}
+            if (cleanSender.isEmpty()) {
+                cleanSender = "0";
+            }
 
-	/**
-	 * Executes an asynchronous full refund back to the customer via Paystack API.
-	 */
-	private void triggerPaystackRefund(String reference, String reason) {
-		if (reference == null || reference.isEmpty()) {
-			System.err.println("Refund execution skipped: Missing reference tracking token link context.");
-			return;
-		}
+            // Bind details to UI model
+            String currencySymbol = redisTemplate.opsForValue().get(countryIso);
+            model.addAttribute("productId", productId);
+            model.addAttribute("productName", name);
+            model.addAttribute("productPrice", originalPrice);
+            model.addAttribute("currencySymbol", currencySymbol);
+            model.addAttribute("chargedUsd", checkoutPriceUsd);
+            model.addAttribute("phoneNumber", recipientPhone);
+            model.addAttribute("sessionId", txReference);
 
-		try {
-			Map<String, String> requestBody = new HashMap<>();
-			requestBody.put("transaction", reference); // Can accept reference token string
-			requestBody.put("merchant_note", reason);
+            // Fetch FX rate
+            String redisKey = "fx:" + countryIso.toUpperCase() + "_" + currencySymbol + "_" + productId;
+            String fxRateStr = redisTemplate.opsForValue().get(redisKey);
 
-			Map<String, Object> refundResponse = paystackClient.post()
-					.uri("/refund")
-					.header("Authorization", "Bearer " + this.paystackSecretKey)
-					.body(requestBody)
-					.retrieve()
-					.body(new ParameterizedTypeReference<Map<String, Object>>() {});
+            BigDecimal localToUsdFxRate = BigDecimal.ONE;
+            if (fxRateStr != null && !fxRateStr.trim().isEmpty()) {
+                try {
+                    localToUsdFxRate = new BigDecimal(fxRateStr.trim());
+                } catch (NumberFormatException e) {
+                    logger.warning("Invalid FX rate in Redis for key [" + redisKey + "]: " + fxRateStr);
+                }
+            }
 
-			if (refundResponse != null && Boolean.TRUE.equals(refundResponse.get("status"))) {
-				System.out.println("Paystack Reversal Complete! Refund processed successfully: " + refundResponse.get("message"));
-			} else {
-				System.err.println("Paystack rejected refund execution request payload instructions.");
-			}
-			
-		} catch (Exception e) {
-			System.err.println("CRITICAL: Failed to reverse user funds via Paystack REST API: " + e.getMessage());
-		}
-	}
+            BigDecimal localPriceBd = profitValidator.convertCountryPriceToUsd(new BigDecimal(originalPrice), localToUsdFxRate);
 
-	private String validatePhoneNumber(String recipientPhone, String countryIso) {
-		recipientPhone = recipientPhone.replaceAll("\\D", ""); 
-		if (countryIso.equalsIgnoreCase("ZA") && !recipientPhone.startsWith("27") && recipientPhone.length() == 10) {
-			recipientPhone = "27" + recipientPhone.substring(1);
-		} else if (countryIso.equalsIgnoreCase("NG") && !recipientPhone.startsWith("234") && recipientPhone.length() == 11) {
-			recipientPhone = "234" + recipientPhone.substring(1);          
-		}
-		return recipientPhone;
-	}
+            // 2. Request Reloadly Delivery API
+            ReloadlyTopupResult results = null;
+            boolean requestTimedOut = false;
+
+            try {
+                final String finalCleanSender = cleanSender;
+                final String finalCleanReceiver = cleanReceiver;
+
+                results = restClient.post()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/api/v1/telecom/topups")
+                                .queryParam("amount", localPriceBd.setScale(2, RoundingMode.HALF_UP).doubleValue())
+                                .queryParam("senderPhone", Long.parseLong(finalCleanSender))
+                                .queryParam("receiverPhone", Long.parseLong(finalCleanReceiver))
+                                .queryParam("countryISO", countryIso)
+                                .queryParam("operatorId", productId)
+                                .queryParam("senderEmail", recipientEmail)
+                                .queryParam("useLocalAmount", false)
+                                .build())
+                        .retrieve()
+                        .body(new ParameterizedTypeReference<ReloadlyTopupResult>() {});
+
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Network/Timeout exception calling Reloadly: " + e.getMessage(), e);
+                requestTimedOut = true;
+            }
+
+            // 3. Process Response
+            if (results != null && results.isSuccessful()) {
+                // Mark transaction as processed in Redis (24-hour expiration)
+                redisTemplate.opsForValue().set(processedKey, "SUCCESS", 24, TimeUnit.HOURS);
+
+                TopupResponse successData = results.getTopupResponse();
+                model.addAttribute("referenceId", successData != null ? successData.getTransactionId() : txReference);
+
+            } else if (requestTimedOut) {
+                // DO NOT auto-refund on timeouts! Mark for manual review / webhook check
+                logger.warning("Topup status UNKNOWN for ref: " + txReference + ". Skipping refund to avoid double loss.");
+                model.addAttribute("errorMessage", "Your transaction is being processed. If your top-up isn't delivered within 5 minutes, please contact support with Reference: " + txReference);
+
+            } else {
+                // Explicit rejection from Reloadly API: Safe to refund
+                logger.warning("Reloadly distribution failed explicitly. Initiating refund...");
+                triggerPaystackRefund(paystackNumericId != null ? paystackNumericId.toString() : txReference, "Reloadly distribution failure.");
+                model.addAttribute("errorMessage", "Delivery failed. We couldn't fulfill your voucher order, so your payment has been automatically reversed.");
+            }
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Runtime exception in paymentSuccess: " + e.getMessage(), e);
+            model.addAttribute("errorMessage", "Processing Error: " + e.getMessage());
+        }
+
+        return "receipt";
+    }
+
+    /**
+     * Executes a refund back to the customer via Paystack API.
+     */
+    private void triggerPaystackRefund(String transactionIdentifier, String reason) {
+        if (transactionIdentifier == null || transactionIdentifier.isEmpty()) {
+            logger.warning("Refund execution skipped: Missing transaction identifier.");
+            return;
+        }
+
+        try {
+            Map<String, String> requestBody = new HashMap<>();
+            requestBody.put("transaction", transactionIdentifier);
+            requestBody.put("merchant_note", reason);
+
+            Map<String, Object> refundResponse = paystackClient.post()
+                    .uri("/refund")
+                    .header("Authorization", "Bearer " + this.paystackSecretKey)
+                    .body(requestBody)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+
+            if (refundResponse != null && Boolean.TRUE.equals(refundResponse.get("status"))) {
+                logger.info("Paystack Refund Complete! Message: " + refundResponse.get("message"));
+            } else {
+                logger.warning("Paystack rejected refund execution: " + refundResponse);
+            }
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "CRITICAL: Failed to refund user via Paystack: " + e.getMessage(), e);
+        }
+    }
+
+    private String validatePhoneNumber(String recipientPhone, String countryIso) {
+        if (recipientPhone == null) return "";
+        recipientPhone = recipientPhone.replaceAll("\\D", "");
+        if ("ZA".equalsIgnoreCase(countryIso) && !recipientPhone.startsWith("27") && recipientPhone.length() == 10) {
+            recipientPhone = "27" + recipientPhone.substring(1);
+        } else if ("NG".equalsIgnoreCase(countryIso) && !recipientPhone.startsWith("234") && recipientPhone.length() == 11) {
+            recipientPhone = "234" + recipientPhone.substring(1);
+        }
+        return recipientPhone;
+    }
 }
