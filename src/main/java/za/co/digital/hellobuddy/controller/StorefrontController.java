@@ -38,7 +38,7 @@ public class StorefrontController {
         // 2. Delegate product retrieval to HelloBuddyInnerMemory based on session state
         Map<String, List<ProductItemDTO>> catalogMap = isLoggedIn
                 ? innerMemory.getReloadlyProductsForRegisteredUsers(countryIso)            // Full catalog for logged-in users
-                : innerMemory.getReloadlyProductsForNonRegisteredUsers(countryIso);  // Profitable-only catalog for non-logged-in users
+                : innerMemory.getReloadlyProductsForRegisteredUsers(countryIso);  // getReloadlyProductsForNonRegisteredUsers(countryIso);
 
         model.addAttribute("catalogProducts", catalogMap);
 
