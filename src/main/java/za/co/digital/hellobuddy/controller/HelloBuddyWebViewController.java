@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -147,6 +148,7 @@ public class HelloBuddyWebViewController {
             // 2. Request Reloadly Delivery API
             ReloadlyTopupResult results = null;
             boolean requestTimedOut = false;
+            String transactionId = "HB-" + UUID.randomUUID().toString();
 
             try {
                 final String finalCleanSender = cleanSender;
@@ -162,6 +164,7 @@ public class HelloBuddyWebViewController {
                                 .queryParam("operatorId", productId)
                                 .queryParam("senderEmail", recipientEmail)
                                 .queryParam("useLocalAmount", false)
+                                .queryParam("transactionId", transactionId)
                                 .build())
                         .retrieve()
                         .body(new ParameterizedTypeReference<ReloadlyTopupResult>() {});

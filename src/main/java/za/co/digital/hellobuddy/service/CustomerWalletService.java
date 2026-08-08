@@ -38,10 +38,25 @@ public class CustomerWalletService {
     /**
      * Reverses a failed deduction and commits the restored balance to DB in an isolated transaction.
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    /*@Transactional(propagation = Propagation.REQUIRES_NEW)
     public BigDecimal reverseWalletDeduction(String username, BigDecimal amount) {
         CustomerWallet wallet = walletRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalStateException("Wallet not found during refund for user: " + username));
+
+        BigDecimal currentBalance = wallet.getWalletBalance() != null ? wallet.getWalletBalance() : BigDecimal.ZERO;
+        BigDecimal newBalance = currentBalance.add(amount);
+
+        wallet.setWalletBalance(newBalance);
+        walletRepository.saveAndFlush(wallet);
+
+        return newBalance;
+    }*/
+    
+    
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public BigDecimal reverseWalletDeduction(String walletId, BigDecimal amount) {
+        CustomerWallet wallet = walletRepository.findByReferenceNumber(walletId)
+                .orElseThrow(() -> new IllegalStateException("Wallet not found during refund for user: " + walletId));
 
         BigDecimal currentBalance = wallet.getWalletBalance() != null ? wallet.getWalletBalance() : BigDecimal.ZERO;
         BigDecimal newBalance = currentBalance.add(amount);

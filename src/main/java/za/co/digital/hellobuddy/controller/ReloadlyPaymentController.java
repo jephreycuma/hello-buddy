@@ -9,19 +9,27 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClient;
 
 import za.co.digital.hellobuddy.dto.CheckoutRequestDTO;
 import za.co.digital.hellobuddy.dto.ReloadlyTopupResult;
 import za.co.digital.hellobuddy.dto.TopupResponse;
+import za.co.digital.hellobuddy.enums.Countries;
+import za.co.digital.hellobuddy.enums.TransactionStatus;
+import za.co.digital.hellobuddy.model.CustomerTransaction;
 import za.co.digital.hellobuddy.model.CustomerWallet;
+import za.co.digital.hellobuddy.repository.CustomerTransactionRepository;
 import za.co.digital.hellobuddy.repository.CustomerWalletRepository;
 import za.co.digital.hellobuddy.service.CustomerWalletService;
 import za.co.digital.hellobuddy.service.ProfitValidator;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,6 +53,9 @@ public class ReloadlyPaymentController {
 
     @Autowired
     private CustomerWalletService walletService;
+
+    @Autowired
+    private CustomerTransactionRepository transactionRepository;
 
     @Value("${south.african.fx:15.35}")
     private String southAfricanFx;
@@ -110,6 +121,7 @@ public class ReloadlyPaymentController {
         String currencySymbol = redisTemplate.opsForValue().get(countryIso);
         String redisKey = "fx:" + countryIso + "_" + currencySymbol + "_" + requestDTO.getProductId();
         String fxRateStr = redisTemplate.opsForValue().get(redisKey);
+        String networkName = redisTemplate.opsForValue().get(requestDTO.getProductId());
 
         BigDecimal localToUsdFxRate = BigDecimal.ONE;
         if (fxRateStr != null && !fxRateStr.trim().isEmpty()) {
@@ -181,9 +193,28 @@ public class ReloadlyPaymentController {
                     .body(Map.of("status", "FAILED", "message", "Wallet transaction failed: " + e.getMessage()));
         }
 
-        // Calculate precise USD cost for Reloadly
         BigDecimal localPriceInUsd = profitValidator.convertCountryPriceToUsd(localPrice, localToUsdFxRate);
-
+        
+        String transactionId = "HB-" + UUID.randomUUID().toString();
+        
+        CustomerTransaction customerTx = new CustomerTransaction();
+        customerTx.setAmountInZAR(amountInZar);
+        customerTx.setLocalAmount(localPrice);
+        customerTx.setWalletId(customerWallet.getReferenceNumber() != null ? customerWallet.getReferenceNumber() : username);
+        customerTx.setNetwork(networkName);
+        customerTx.setProductDescription(requestDTO.getProductName());
+        customerTx.setCountry(Countries.getCountryName(countryIso));
+        customerTx.setTransactionStatus(TransactionStatus.PENDING);
+        customerTx.setErrorMessage(null);
+        customerTx.setTransactionDateTime(LocalDateTime.now());
+        customerTx.setSenderPhone(cleanSender);
+        customerTx.setReceiverPhone(cleanReceiver);
+        customerTx.setEmailAddress(requestDTO.getRecipientEmail() != null ? requestDTO.getRecipientEmail() : customerWallet.getEmail());
+        customerTx.setCustomIdentifier(transactionId);
+        
+        customerTx = transactionRepository.save(customerTx);
+        
+        
         ReloadlyTopupResult results;
 
         try {
@@ -198,12 +229,18 @@ public class ReloadlyPaymentController {
                             .queryParam("operatorId", productId)
                             .queryParam("senderEmail", requestDTO.getRecipientEmail())
                             .queryParam("useLocalAmount", false)
+                            .queryParam("transactionId", transactionId)
                             .build())
                     .retrieve()
                     .body(new ParameterizedTypeReference<ReloadlyTopupResult>() {});
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Reloadly API timeout or error: " + e.getMessage(), e);
+
+            // --- TODO 2: Update transaction record on Gateway Timeout / Error ---
+            customerTx.setTransactionStatus(TransactionStatus.PENDING);
+            customerTx.setErrorMessage("Reloadly API Timeout/Error: " + e.getMessage());
+            transactionRepository.save(customerTx);
 
             return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT)
                     .body(Map.of(
@@ -218,6 +255,11 @@ public class ReloadlyPaymentController {
         if (results != null && results.isSuccessful()) {
             TopupResponse successData = results.getTopupResponse();
 
+            // --- TODO 3: Update transaction record with SUCCESSFUL status ---
+            customerTx.setTransactionStatus(TransactionStatus.SUCCESSFUL);
+            customerTx.setErrorMessage(null);
+            transactionRepository.save(customerTx);
+
             return ResponseEntity.ok(Map.of(
                     "status", "SUCCESS",
                     "message", "Top-up completed successfully!",
@@ -226,8 +268,13 @@ public class ReloadlyPaymentController {
             ));
         } else {
             // Safe Refund via Proxy-Managed Service
-            BigDecimal restoredBalance = walletService.reverseWalletDeduction(username, amountInZar);
+            BigDecimal restoredBalance = walletService.reverseWalletDeduction(customerWallet.getReferenceNumber(), amountInZar);
             session.setAttribute("WALLET_BALANCE", restoredBalance);
+            
+            // --- TODO 4: Update transaction record with REVERSED / FAILED status ---
+            customerTx.setTransactionStatus(TransactionStatus.FAILED);
+            customerTx.setErrorMessage("Reloadly fulfillment failed. Funds returned to wallet.");
+            transactionRepository.save(customerTx);
 
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                     .body(Map.of(

@@ -169,6 +169,7 @@ public class HelloBuddyInnerMemory {
 
                         String commissionValue = (prod.getCommission() != null) ? prod.getCommission().toString() : "0.0";
                         redisTemplate.opsForValue().set(countryIso + ":" + prod.getId(), commissionValue, CACHE_TTL);
+                        redisTemplate.opsForValue().set(prod.getId(), cleanedNetwork, CACHE_TTL);
                     }
 
                     int sanitizedId = parseId(prod.getId());
@@ -289,6 +290,7 @@ public class HelloBuddyInnerMemory {
 
                         String commissionValue = (prod.getCommission() != null) ? prod.getCommission().toString() : "0.0";
                         redisTemplate.opsForValue().set(countryIso + ":" + prod.getId(), commissionValue, CACHE_TTL);
+                        redisTemplate.opsForValue().set(prod.getId(), cleanedNetwork, CACHE_TTL);
                     }
 
                     int sanitizedId = parseId(prod.getId());
