@@ -10,7 +10,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
-<body class="bg-gradient-to-b from-sky-400 to-sky-100 text-gray-800 font-sans min-h-screen flex flex-col">
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen flex flex-col">
 
 	<!-- Header Banner Section -->
 	<header class="w-full bg-gray-900 text-white py-6 shadow-md border-b border-red-600">
@@ -47,16 +47,16 @@
 	            <div th:if="${successMessage}" class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200" th:text="${successMessage}"></div>
 	
 	            <!-- Unauthenticated State: Login & Register Buttons -->
-	            <th:block th:if="${session.LOGGED_IN_CUSTOMER == null}">
-	                <div class="flex items-center space-x-2 ml-auto">
-	                    <a th:href="@{/wallet/login}" class="inline-flex items-center space-x-1 bg-gray-900 hover:bg-black text-white px-3 py-1.5 rounded-lg transition shadow-sm">
-	                        <span>Login</span>
-	                    </a>
-	                    <a th:href="@{/wallet/register}" class="inline-flex items-center space-x-1 bg-gray-900 hover:bg-black text-white px-3 py-1.5 rounded-lg transition shadow-sm">
-	                        <span>Register</span>
-	                    </a>
-	                </div>
-	            </th:block>
+				<th:block th:if="${session.LOGGED_IN_CUSTOMER == null}">
+				    <div class="flex items-center space-x-2 ml-auto">
+				        <a th:href="@{/wallet/login}" class="inline-flex items-center space-x-1 text-gray-600 hover:bg-gray-100 hover:shadow-md px-3 py-1.5 rounded-lg transition">
+				            <span>Login</span>
+				        </a>
+				        <a th:href="@{/wallet/register}" class="inline-flex items-center space-x-1 text-gray-600 hover:bg-gray-100 hover:shadow-md px-3 py-1.5 rounded-lg transition">
+				            <span>Register</span>
+				        </a>
+				    </div>
+				</th:block>
 	
 	            <!-- Authenticated State: Wallet Details -->
 	            <th:block th:if="${session.LOGGED_IN_CUSTOMER != null}">
@@ -220,10 +220,10 @@
                     modal.classList.add('hidden');
                 }
                 lastActivityTime = Date.now();
-            }
-        })();
-    </script>
-</th:block>
+         	     };
+        	})();
+    	</script>
+	</th:block>
 
     <!-- Navigation Tabs Section -->
     <nav class="w-full bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
@@ -246,7 +246,7 @@
 	                               href="#" 
 	                               data-category="TopUps"
 	                               th:data-network="${network}"
-	                               onclick="filterProducts(this.getAttribute('data-category'), this.getAttribute('data-network'))" 
+	                               onclick="handleMobileSelect(this, this.getAttribute('data-category'), this.getAttribute('data-network'))" 
 	                               th:text="${network}"
 	                               class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">
 	                                Dynamic Operator
@@ -272,7 +272,7 @@
 	                               href="#" 
 	                               data-category="Data"
 	                               th:data-network="${network}"
-	                               onclick="filterProducts(this.getAttribute('data-category'), this.getAttribute('data-network'))" 
+	                               onclick="handleMobileSelect(this, this.getAttribute('data-category'), this.getAttribute('data-network'))" 
 	                               th:text="${network}"
 	                               class="block px-4 py-2 hover:bg-red-50 hover:text-red-600 font-semibold transition">
 	                                Dynamic Operator
@@ -298,22 +298,18 @@
 	</nav>
 
     <!-- Main Workspace Display Canvas -->
-	  <main class="flex-grow max-w-7xl w-full mx-auto p-6">
-	    <div id="viewHeader" class="mb-6 text-center hidden">
-	        <h2 id="activeCategoryTitle" class="text-2xl font-bold text-gray-900">Category</h2>
-	        <p id="activeNetworkSubtitle" class="text-sm text-gray-500 mt-1">Select your item package below</p>
-	    </div>
-	
-	    <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-	        <div id="emptyState" class="col-span-full text-center py-8 text-gray-400">
-	            <!-- Height reduced to h-48 with object-contain, and mix-blend-multiply to blend background -->
-	            <img src="/images/hero-banner.png" alt="Hero Banner" class="w-1/2 h-48 object-contain mx-auto block mb-6 mix-blend-multiply" />
-	            <p class="text-base text-gray-600 font-medium">
-	                Hover over a menu tab above and select a network to view available products!
-	            </p>
-	        </div>
-	    </div>
-	</main>
+		<main class="flex-grow max-w-7xl w-full mx-auto p-6 h-full flex flex-col">
+		    <div id="viewHeader" class="mb-6 text-center hidden">
+		        <h2 id="activeCategoryTitle" class="text-2xl font-bold text-gray-900">Category</h2>
+		        <p id="activeNetworkSubtitle" class="text-sm text-gray-500 mt-1">Select your item package below</p>
+		    </div>
+		
+		    <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 flex-grow">
+		        <div id="emptyState" class="col-span-full text-center py-4 text-gray-400 flex flex-col items-center justify-center h-full">
+		            <img src="/images/hello-buddy.png" alt="Hello Buddy" class="w-1/2 max-h-[50vh] object-contain mx-auto block" />
+		        </div>
+		    </div>
+		</main>
 
     <!-- STEP 1: Recipient Phone Verification Modal -->
 		<div id="phoneModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4">
@@ -626,7 +622,7 @@
                             <span class="text-2xl">✉️</span>
                             <div>
                                 <span class="block font-bold text-gray-800 text-sm">Email Helpdesk Desk</span>
-                                <span class="text-xs text-gray-500">support@hellobuddy.co.za</span>
+                                <span class="text-xs text-gray-500">support@hellobuddy.africa</span>
                             </div>
                         </a>
                         <a href="tel:+27728703170" class="flex items-center space-x-4 bg-red-50 hover:bg-red-100 p-3.5 rounded-xl border border-red-200 transition">
@@ -647,9 +643,9 @@
 					    
 					    <p class="text-sm text-gray-600 leading-relaxed mb-3">
 					        To top up your account balance, please transfer funds to 
-					        <strong class="font-semibold text-gray-800">MABHASA MAHLO SYSTEMS</strong> 
+					        <strong class="font-semibold text-gray-800">MABHASA MAHLO SYSTEMS (PTY) LDT</strong> 
 					        (First National Bank | Account No: <strong class="font-semibold text-gray-800">63219594876</strong> | Branch Code: <strong class="font-semibold text-gray-800">250655</strong>). 
-					        Always use your <strong class="font-semibold text-gray-800">Unique User ID</strong> as the payment reference to ensure automated processing.
+					        Always use your <strong class="font-semibold text-gray-800">Wallet ID, which you received during registration</strong> as the payment reference.
 					    </p>
 					
 					    <p class="text-sm text-gray-600 leading-relaxed">
@@ -1597,6 +1593,28 @@
                 setInterval(fetchLatestBalance, FIVE_MINUTES_MS);
             }
         });
+        
+        function handleMobileSelect(element, category, network) {
+            // 1. Trigger your original filtering logic
+            filterProducts(category, network);
+
+            // 2. Remove focus from the link/button to break the sticky CSS :hover on touch screens
+            element.blur();
+            if (document.activeElement) {
+                document.activeElement.blur();
+            }
+
+            // 3. Temporarily hide the dropdown menu element so mobile immediately dismisses it
+            const dropdown = element.closest('.dropdown-menu');
+            if (dropdown) {
+                dropdown.style.display = 'none';
+                
+                // Reset display inline styling so future hover interactions still work smoothly
+                setTimeout(() => {
+                    dropdown.style.display = '';
+                }, 100);
+            }
+        }
         
     </script>
 </body>
