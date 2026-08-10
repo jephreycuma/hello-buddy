@@ -61,12 +61,31 @@
                 </p>
             </div>
 
+            <!-- Terms & Conditions Checkbox -->
+            <div class="flex items-center space-x-2 pt-1">
+                <input type="checkbox" id="termsCheckbox" required class="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500">
+                <label for="termsCheckbox" class="text-xs text-gray-600">
+                    I accept 
+                    <button type="button" onclick="openTermsModal()" class="text-gray-900 font-bold hover:underline focus:outline-none">
+                        Terms & Conditions
+                    </button>
+                </label>
+            </div>
+
+            <!-- Two Factor Authentication Checkbox -->
+            <div class="flex items-center space-x-2">
+                <input type="checkbox" id="isTwoFactorEnabled" name="isTwoFactorEnabled" value="true" class="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500">
+                <label for="isTwoFactorEnabled" class="text-xs text-gray-600 font-medium">
+                    I want to use Two Factor Authentication
+                </label>
+            </div>
+
             <!-- ACTION BUTTONS: Cancel (left) & Register Wallet (right) -->
             <div class="flex items-center space-x-3 pt-2">
                 <a th:href="@{/}" class="w-1/2 text-center bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm border border-gray-700">
                     Cancel
                 </a>
-                <button type="submit" id="submitBtn" class="w-1/2 bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm border border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                <button type="submit" id="submitBtn" disabled class="w-1/2 bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm border border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
                     Register Wallet
                 </button>
             </div>
@@ -80,17 +99,98 @@
         </form>
     </div>
 
+    <!-- TERMS & CONDITIONS MODAL -->
+    <div id="termsModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col border border-gray-100 overflow-hidden">
+            
+            <!-- Modal Header -->
+            <div class="bg-gray-900 text-white p-5 border-b-2 border-red-600 flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-extrabold tracking-wide">Terms & Conditions</h3>
+                    <p class="text-[11px] text-gray-400 mt-0.5">Mabhasa Mahlo Systems (Pty) Ltd | Hello Buddy Africa StoreFront</p>
+                </div>
+                <button type="button" onclick="closeTermsModal()" class="text-gray-400 hover:text-white text-xl font-bold p-1 focus:outline-none">&times;</button>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="p-6 overflow-y-auto space-y-4 text-xs text-gray-600 leading-relaxed">
+                <div>
+                    <h4 class="font-bold text-gray-900 text-sm mb-1">1. Introduction & Acceptance</h4>
+                    <p>Welcome to <strong>Hello Buddy Africa StoreFront</strong>, operated by <strong>Mabhasa Mahlo Systems (Pty) Ltd</strong>. By registering a Customer Wallet or using our services, you agree to comply with and be bound by these Terms and Conditions.</p>
+                </div>
+
+                <!-- 2FA & Weak Security Disclaimer Highlight -->
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-1.5 text-amber-900">
+                    <h4 class="font-extrabold text-xs uppercase flex items-center space-x-1.5 text-amber-800">
+                        <span>🔒</span>
+                        <span>Two Factor Authentication (2FA) Security Disclaimer</span>
+                    </h4>
+                    <p class="text-[11px] leading-relaxed">
+                        <strong>Mabhasa Mahlo Systems (Pty) Ltd</strong> and its <strong>Hello Buddy Africa StoreFront</strong> strongly encourage all users to enable Two Factor Authentication (2FA) for their wallet accounts. 
+                    </p>
+                    <p class="text-[11px] leading-relaxed font-semibold">
+                        If you opt not to use Two Factor Authentication, you explicitly accept all risks associated with using weak security controls on your wallet. Mabhasa Mahlo Systems (Pty) Ltd and Hello Buddy Africa StoreFront shall NOT be held liable for any loss of funds, unauthorized access, theft, or compromise resulting from unfortified accounts or disabled 2FA.
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-gray-900 text-sm mb-1">3. Account & Wallet Responsibilities</h4>
+                    <p>You are solely responsible for keeping your login credentials confidential. You agree to provide accurate, current, and complete information during registration and to maintain the security of your account.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-gray-900 text-sm mb-1">4. Transactions & Balance</h4>
+                    <p>Wallet top-ups, airtime/data purchases, and digital VAS transactions are finalized upon submission. Mabhasa Mahlo Systems (Pty) Ltd processes transactions based on the account details provided by the user.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-gray-900 text-sm mb-1">5. Limitation of Liability</h4>
+                    <p>To the maximum extent permitted by applicable South African law, Mabhasa Mahlo Systems (Pty) Ltd and Hello Buddy Africa StoreFront disclaim liability for indirect, incidental, or consequential damages resulting from platform downtime, service provider delays.</p>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                <button type="button" onclick="closeTermsModal()" class="text-xs text-gray-500 hover:text-gray-800 font-bold px-3 py-2">
+                    Decline
+                </button>
+                <button type="button" onclick="acceptTermsAndClose()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition shadow-sm">
+                    Accept & Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const passwordInput = document.getElementById('password');
         const confirmPasswordInput = document.getElementById('confirmPassword');
+        const termsCheckbox = document.getElementById('termsCheckbox');
         const errorMessage = document.getElementById('passwordMismatchError');
         const registerForm = document.getElementById('registerForm');
         const submitBtn = document.getElementById('submitBtn');
+        const termsModal = document.getElementById('termsModal');
 
         // Password Strength Elements
         const strengthContainer = document.getElementById('strengthContainer');
         const strengthBar = document.getElementById('strengthBar');
         const strengthText = document.getElementById('strengthText');
+
+        // Terms & Conditions Modal Functions
+        function openTermsModal() {
+            termsModal.classList.remove('hidden');
+            termsModal.classList.add('flex');
+        }
+
+        function closeTermsModal() {
+            termsModal.classList.add('hidden');
+            termsModal.classList.remove('flex');
+        }
+
+        function acceptTermsAndClose() {
+            termsCheckbox.checked = true;
+            validateForm();
+            closeTermsModal();
+        }
 
         function evaluatePasswordStrength() {
             const pwd = passwordInput.value;
@@ -135,43 +235,44 @@
             }
         }
 
-        function validatePasswords() {
+        function validateForm() {
             const pwd = passwordInput.value;
             const confirmPwd = confirmPasswordInput.value;
+            const isTermsAccepted = termsCheckbox.checked;
+            
+            let passwordsMatch = true;
 
-            // Only validate if user has started typing in confirm password
+            // Only validate matching state if user typed in confirm password
             if (confirmPwd.length === 0) {
                 errorMessage.classList.add('hidden');
                 confirmPasswordInput.classList.remove('border-red-500', 'border-emerald-500');
                 confirmPasswordInput.classList.add('border-gray-200');
-                submitBtn.disabled = false;
-                return true;
-            }
-
-            if (pwd !== confirmPwd) {
+            } else if (pwd !== confirmPwd) {
                 errorMessage.classList.remove('hidden');
                 confirmPasswordInput.classList.remove('border-gray-200', 'border-emerald-500');
                 confirmPasswordInput.classList.add('border-red-500');
-                submitBtn.disabled = true;
-                return false;
+                passwordsMatch = false;
             } else {
                 errorMessage.classList.add('hidden');
                 confirmPasswordInput.classList.remove('border-gray-200', 'border-red-500');
                 confirmPasswordInput.classList.add('border-emerald-500');
-                submitBtn.disabled = false;
-                return true;
             }
+
+            // Button enabled ONLY if T&C is checked and passwords match
+            submitBtn.disabled = !(isTermsAccepted && passwordsMatch);
+            return passwordsMatch && isTermsAccepted;
         }
 
         passwordInput.addEventListener('input', () => {
             evaluatePasswordStrength();
-            validatePasswords();
+            validateForm();
         });
 
-        confirmPasswordInput.addEventListener('input', validatePasswords);
+        confirmPasswordInput.addEventListener('input', validateForm);
+        termsCheckbox.addEventListener('change', validateForm);
 
         registerForm.addEventListener('submit', function(e) {
-            if (!validatePasswords()) {
+            if (!validateForm()) {
                 e.preventDefault();
             }
         });

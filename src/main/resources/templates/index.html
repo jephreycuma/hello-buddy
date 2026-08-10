@@ -637,25 +637,57 @@
                 </div>
 
                 <div id="addressView" class="hidden space-y-4 pt-2 text-center">
-                    <span class="text-4xl block">💳</span>
-                   <div>
-					    <h4 class="font-bold text-gray-800 text-base mb-2">Recharge Your Hello Buddy Wallet</h4>
-					    
-					    <p class="text-sm text-gray-600 leading-relaxed mb-3">
-					        To top up your account balance, please transfer funds to 
-					        <strong class="font-semibold text-gray-800">MABHASA MAHLO SYSTEMS (PTY) LDT</strong> 
-					        (First National Bank | Account No: <strong class="font-semibold text-gray-800">63219594876</strong> | Branch Code: <strong class="font-semibold text-gray-800">250655</strong>). 
-					        Always use your <strong class="font-semibold text-gray-800">Wallet ID, which you received during registration</strong> as the payment reference.
-					    </p>
-					
-					    <p class="text-sm text-gray-600 leading-relaxed">
-					        <strong class="font-semibold text-gray-700">International Deposits:</strong> 
-					        If you are depositing from outside South Africa, please initiate an international SWIFT transfer using SWIFT Code <strong class="font-semibold text-gray-800">FIRNZAJJ</strong>. 
-					        Select <strong class="font-semibold text-gray-800">OUR</strong> or <strong class="font-semibold text-gray-800">SHA</strong> for transfer fees to avoid short payments, and remember to include your Unique User ID in the transaction reference field.
-					    </p>
-					</div>
-                    <button type="button" onclick="closeContactInfoModal()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl transition text-sm mt-4">Close Info Panel</button>
-                </div>
+				    <span class="text-4xl block">💳</span>
+				    <div>
+				        <h4 class="font-bold text-gray-800 text-base mb-3">Recharge Your Hello Buddy Wallet</h4>
+				        
+				        <!-- BANK DETAILS CARD -->
+				        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-left space-y-2 mb-4">
+				            <div class="flex justify-between items-center text-xs pb-1 border-b border-gray-200">
+				                <span class="text-gray-500 uppercase font-bold">Account Holder:</span>
+				                <span class="font-bold text-gray-900">Mabhasa Mahlo Systems (PTY) LTD</span>
+				            </div>
+				            <div class="flex justify-between items-center text-xs pb-1 border-b border-gray-200">
+				                <span class="text-gray-500 uppercase font-bold">Bank Name:</span>
+				                <span class="font-semibold text-gray-800">FNB (First National Bank)</span>
+				            </div>
+				            <div class="flex justify-between items-center text-xs pb-1 border-b border-gray-200">
+				                <span class="text-gray-500 uppercase font-bold">Account Number:</span>
+				                <span class="font-extrabold text-gray-900 tracking-wide">63219594876</span>
+				            </div>
+				            <div class="flex justify-between items-center text-xs">
+				                <span class="text-gray-500 uppercase font-bold">Branch Code:</span>
+				                <span class="font-semibold text-gray-800">250655</span>
+				            </div>
+				        </div>
+				
+				        <!-- PAYMENT REFERENCE WARNING -->
+				        <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-left mb-3">
+				            <p class="text-xs text-red-700 leading-relaxed font-medium">
+				                ⚠️ <strong class="font-bold text-red-800">Payment Reference:</strong> 
+				                Always use your <strong class="font-extrabold text-red-900 underline">Wallet ID</strong> (received during registration) as the deposit reference to ensure automated allocation.
+				            </p>
+				        </div>
+				
+				        <!-- INTERNATIONAL DEPOSITS BOX -->
+				        <div class="bg-blue-50 border border-blue-100 rounded-xl p-3.5 text-left space-y-1 text-xs text-blue-900">
+				            <div class="flex items-center space-x-1.5 font-bold text-blue-950 uppercase text-[11px] mb-1">
+				                <span>🌐</span>
+				                <span>International Deposits</span>
+				            </div>
+				            <p class="leading-relaxed">
+				                For transfers outside South Africa, initiate an international SWIFT transfer using SWIFT Code: <strong class="font-bold text-gray-900">FIRNZAJJ</strong>.
+				            </p>
+				            <p class="leading-relaxed text-blue-800">
+				                Select <strong class="font-semibold text-blue-950">OUR</strong> or <strong class="font-semibold text-blue-950">SHA</strong> for transfer fees to avoid short payments, and remember to include your Unique User ID in the transaction reference field.
+				            </p>
+				        </div>
+				    </div>
+				
+				    <button type="button" onclick="closeContactInfoModal()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl transition text-sm mt-4">
+				        Close Info Panel
+				    </button>
+				</div>
 
             </div>
         </div>

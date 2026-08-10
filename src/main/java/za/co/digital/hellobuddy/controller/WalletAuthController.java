@@ -64,7 +64,12 @@ public class WalletAuthController {
     }
 
     @PostMapping("/register")
-    public String registerCustomer(@ModelAttribute CustomerWallet customer, HttpSession session, RedirectAttributes redirectAttributes) {
+    public String registerCustomer(
+            @ModelAttribute CustomerWallet customer,
+            @RequestParam(value = "isTwoFactorEnabled", required = false, defaultValue = "false") boolean isTwoFactorEnabled,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
         if (walletRepository.findByUsername(customer.getUsername()).isPresent()) {
             redirectAttributes.addFlashAttribute("error", "Username/Email already registered.");
             return "redirect:/wallet/register";
@@ -76,24 +81,34 @@ public class WalletAuthController {
 
         // 1. Generate unique reference ID
         String uniqueRef = generateWalletReference();
-        		//"HB-" + String.format("%06d", new SecureRandom().nextInt(1000000));
         customer.setReferenceNumber(uniqueRef);
         customer.setWalletBalance(BigDecimal.ZERO);
 
         // 2. Hash password using injected PasswordEncoder
         customer.setPassword(passwordEncoder.encode(customer.getPassword()));
 
-        // 3. Generate 2FA Secret Key
-        String secretKey = new DefaultSecretGenerator().generate();
-        customer.setSecretKey(secretKey);
+        // Set 2FA preference on customer entity
+        customer.setTwoFactorEnabled(isTwoFactorEnabled);
+
+        // 3. Generate 2FA Secret Key conditionally
+        if (isTwoFactorEnabled) {
+            String secretKey = new DefaultSecretGenerator().generate();
+            customer.setSecretKey(secretKey);
+        }
 
         // Save entity to DB
         walletRepository.save(customer);
 
-        // Store pending user in session for 2FA onboarding
-        session.setAttribute("SETUP_2FA_USER", customer.getUsername());
-
-        return "redirect:/wallet/setup-2fa";
+        // Handle post-registration flow based on 2FA preference
+        if (isTwoFactorEnabled) {
+            // Store pending user in session for 2FA onboarding
+            session.setAttribute("SETUP_2FA_USER", customer.getUsername());
+            return "redirect:/wallet/setup-2fa";
+        } else {
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Wallet successfully created! Your Unique Identifier is: " + customer.getReferenceNumber());
+            return "redirect:/wallet/login";
+        }
     }
 
     @GetMapping("/setup-2fa")
@@ -161,9 +176,19 @@ public class WalletAuthController {
 
         if (optionalUser.isPresent()) {
             CustomerWallet user = optionalUser.get();
+
             if (passwordEncoder.matches(password, user.getPassword())) {
-                session.setAttribute("PENDING_2FA_USER", username);
-                return "redirect:/wallet/verify-2fa";
+                if (user.isTwoFactorEnabled()) {
+                    // Require 2FA verification step
+                    session.setAttribute("PENDING_2FA_USER", username);
+                    return "redirect:/wallet/verify-2fa";
+                } else {
+                    // Direct login when 2FA is disabled
+                    session.setAttribute("LOGGED_IN_CUSTOMER", user.getUsername());
+                    session.setAttribute("CUSTOMER_REF", user.getReferenceNumber());
+                    session.setAttribute("WALLET_BALANCE", user.getWalletBalance());
+                    return "redirect:/?walletLogin=success";
+                }
             }
         }
 
@@ -301,7 +326,7 @@ public class WalletAuthController {
             model.addAttribute("error", "The information provided does not match our records.");
         }
 
-        return "wallet-forgot-password"; // returns the updated view
+        return "wallet-forgot-password";
     }
     
     @Transactional
@@ -310,10 +335,6 @@ public class WalletAuthController {
         return "HB-" + String.format("%06d", nextSeq); 
     }
     
-    /**
-     * Display the combined Root Top-Up page.
-     * Uses session check to determine whether to show login or top-up inputs.
-     */
     @GetMapping("/root-topup")
     public String showRootTopupForm(HttpSession session, Model model) {
         Boolean isRootLoggedIn = (Boolean) session.getAttribute("IS_ROOT_LOGGED_IN");
@@ -321,36 +342,28 @@ public class WalletAuthController {
         return "root-wallet-topup";
     }
 
-    /**
-     * Process Root User Login.
-     */
     @PostMapping("/root-login")
     public String processRootLogin(@RequestParam String rootUsername,
                                    @RequestParam String rootPassword,
                                    HttpSession session,
                                    RedirectAttributes redirectAttributes) {
 
-        // Validate Root Credentials (replace with your secure authentication mechanism / DB role check)
-    	if(rootUsername !=null && rootUsername.trim().equals(rootUser)) {
-        var optionalUser = walletRepository.findByUsername(rootUsername);
-	        if (optionalUser.isPresent()) {
-	            CustomerWallet user = optionalUser.get();
-	            if (passwordEncoder.matches(rootPassword, user.getPassword())) {
-	                // Set Root Session Flag
-	                session.setAttribute("IS_ROOT_LOGGED_IN", true);
-	                session.setAttribute("ROOT_USER", rootUsername);
-	                return "redirect:/wallet/root-topup";
-	            }
-	        }
-    	}
+        if(rootUsername != null && rootUsername.trim().equals(rootUser)) {
+            var optionalUser = walletRepository.findByUsername(rootUsername);
+            if (optionalUser.isPresent()) {
+                CustomerWallet user = optionalUser.get();
+                if (passwordEncoder.matches(rootPassword, user.getPassword())) {
+                    session.setAttribute("IS_ROOT_LOGGED_IN", true);
+                    session.setAttribute("ROOT_USER", rootUsername);
+                    return "redirect:/wallet/root-topup";
+                }
+            }
+        }
 
         redirectAttributes.addFlashAttribute("error", "Invalid root username or password.");
         return "redirect:/wallet/root-topup";
     }
 
-    /**
-     * Process Top-Up submission.
-     */
     @PostMapping("/root-topup")
     @Transactional
     public String processRootTopup(@RequestParam String referenceNumber,
@@ -358,20 +371,17 @@ public class WalletAuthController {
                                    HttpSession session,
                                    RedirectAttributes redirectAttributes) {
 
-        // 1. Enforce authentication
         Boolean isRootLoggedIn = (Boolean) session.getAttribute("IS_ROOT_LOGGED_IN");
         if (!Boolean.TRUE.equals(isRootLoggedIn)) {
             redirectAttributes.addFlashAttribute("error", "Unauthorized access. Please login as root first.");
             return "redirect:/wallet/root-topup";
         }
 
-        // 2. Validate input
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             redirectAttributes.addFlashAttribute("error", "Amount must be greater than zero.");
             return "redirect:/wallet/root-topup";
         }
 
-        // 3. Find customer by HB reference number
         Optional<CustomerWallet> optionalWallet = walletRepository.findByReferenceNumber(referenceNumber.trim());
 
         if (optionalWallet.isEmpty()) {
@@ -379,7 +389,6 @@ public class WalletAuthController {
             return "redirect:/wallet/root-topup";
         }
 
-        // 4. Perform atomic update
         CustomerWallet wallet = optionalWallet.get();
         BigDecimal currentBalance = wallet.getWalletBalance() == null ? BigDecimal.ZERO : wallet.getWalletBalance();
         BigDecimal newBalance = currentBalance.add(amount);
@@ -394,9 +403,6 @@ public class WalletAuthController {
         return "redirect:/wallet/root-topup";
     }
 
-    /**
-     * Handle Cancel / Logout Action.
-     */
     @PostMapping("/root-cancel")
     public String cancelAndLogout(HttpSession session, RedirectAttributes redirectAttributes) {
         session.removeAttribute("IS_ROOT_LOGGED_IN");
@@ -406,9 +412,6 @@ public class WalletAuthController {
         return "redirect:/wallet/root-topup";
     }
     
-    /**
-     * Endpoint to process Agent Registration submitted by Root User.
-     */
     @PostMapping("/register-agent")
     public String registerAgent(@RequestParam String fullName,
                                 @RequestParam String username,
@@ -417,21 +420,18 @@ public class WalletAuthController {
                                 HttpSession session,
                                 RedirectAttributes redirectAttributes) {
 
-        // Check root session authentication
         Boolean isRootLoggedIn = (Boolean) session.getAttribute("IS_ROOT_LOGGED_IN");
         if (!Boolean.TRUE.equals(isRootLoggedIn)) {
             redirectAttributes.addFlashAttribute("error", "Unauthorized access.");
             return "redirect:/wallet/root-topup";
         }
 
-        // Validate password matching
         if (!password.equals(confirmPassword)) {
             redirectAttributes.addFlashAttribute("error", "Passwords do not match.");
             return "redirect:/wallet/root-topup";
         }
 
         try {
-            // Call DatabaseSeeder to persist encrypted agent user
             databaseSeeder.registerNewAgent(fullName, username, password);
             redirectAttributes.addFlashAttribute("successMessage", "Agent '" + username + "' registered successfully!");
         } catch (IllegalArgumentException e) {

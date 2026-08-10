@@ -47,11 +47,13 @@ public class CustomerWallet {
 
 	@Column(name = "require_password_change", nullable = false)
 	private boolean requirePasswordChange = false;
+	@Column(name = "allow_two_factor", nullable = false)
+	private boolean isTwoFactorEnabled = false;
 
 	public CustomerWallet() {
 	}
 
-	public CustomerWallet(String email, String username, String password, String referenceNumber, String firstName, String lastName) {
+	public CustomerWallet(String email, String username, String password, String referenceNumber, String firstName, String lastName, boolean isTwoFactorEnabled) {
 		this.email = email;
 		this.username = username;
 		this.password = password;
@@ -60,6 +62,7 @@ public class CustomerWallet {
 		this.lastName = lastName;
 		this.walletBalance = BigDecimal.ZERO;
 		this.requirePasswordChange = false;
+		this.isTwoFactorEnabled = isTwoFactorEnabled;
 	}
 
 	// Getters and Setters
@@ -162,5 +165,13 @@ public class CustomerWallet {
 
 	public void setRequirePasswordChange(boolean requirePasswordChange) {
 		this.requirePasswordChange = requirePasswordChange;
+	}
+
+	public boolean isTwoFactorEnabled() {
+		return isTwoFactorEnabled;
+	}
+
+	public void setTwoFactorEnabled(boolean isTwoFactorEnabled) {
+		this.isTwoFactorEnabled = isTwoFactorEnabled;
 	}
 }
