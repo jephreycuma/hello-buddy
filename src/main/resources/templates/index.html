@@ -243,7 +243,7 @@
 	                    <th:block th:if="${catalogProducts != null and catalogProducts.get('TopUps') != null}">
 	                        <div th:with="uniqueAirtimeNetworks=${#sets.toSet(catalogProducts.get('TopUps').![network])}">
 	                            <a th:each="network : ${uniqueAirtimeNetworks}" 
-	                               href="#" 
+	                               href="javascript:void(0);" 
 	                               data-category="TopUps"
 	                               th:data-network="${network}"
 	                               onclick="handleMobileSelect(this, this.getAttribute('data-category'), this.getAttribute('data-network'))" 
@@ -1613,6 +1613,7 @@
         });
         
         function handleMobileSelect(element, category, network) {
+        	if (event) event.preventDefault();
             // 1. Trigger your original filtering logic
             filterProducts(category, network);
 
