@@ -513,7 +513,7 @@
             <p>&copy; 2026 Hello Buddy. All Rights Reserved.</p>
             <div class="flex space-x-8">
                 <a href="javascript:void(0);" onclick="openContactModal()" class="hover:text-red-500 font-medium transition">Contact Us</a>
-                <a href="javascript:void(0);" onclick="openAddressModal()" class="hover:text-red-500 font-medium transition">Top up Wallet</a>
+                <a href="javascript:void(0);" onclick="openAddressModal()" class="hover:text-red-500 font-medium transition">Fund Wallet</a>
                 <a href="javascript:void(0);" onclick="toggleLiveChat()" class="text-red-400 hover:text-red-500 font-bold transition flex items-center space-x-1">
                     <span class="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse"></span>
                     <span>Live Support Chat</span>
@@ -665,7 +665,7 @@
 				                For transfers outside South Africa, initiate an international SWIFT transfer using SWIFT Code: <strong class="font-bold text-gray-900">FIRNZAJJ</strong>.
 				            </p>
 				            <p class="leading-relaxed text-blue-800">
-				                Select <strong class="font-semibold text-blue-950">OUR</strong> or <strong class="font-semibold text-blue-950">SHA</strong> for transfer fees to avoid short payments, and remember to include your Unique User ID in the transaction reference field.
+				                Select <strong class="font-semibold text-blue-950">OUR</strong> or <strong class="font-semibold text-blue-950">SHA</strong> for transfer fees to avoid short payments, and remember to include your Wallet ID in the transaction reference field.
 				            </p>
 				        </div>
 				    </div>
@@ -1090,7 +1090,7 @@
             //const minLimit = productItem.minLimit || '2.00'; 
             //const maxLimit = productItem.maxLimit || '1000.00';
             const minLimit = productItem.minLimit !== undefined && productItem.minLimit !== null ? productItem.minLimit : 2.00; 
-   			const maxLimit = productItem.maxLimit !== undefined && productItem.maxLimit !== null ? productItem.maxLimit : 1000.00;
+            const maxLimit = productItem.maxLimit !== undefined && productItem.maxLimit !== null ? productItem.maxLimit : 1000.00;
 
             card.innerHTML = `
                 <div>
@@ -1100,7 +1100,7 @@
                         </span>
                     </div>
                     <h3 class="font-bold text-gray-900 text-base mb-1">Any Amount (${networkName})</h3>
-                    <p class="text-xs text-gray-500 mb-4">Enter your preferred custom recharge value below.</p>
+                    <p class="text-xs text-black font-bold mb-4">Enter your preferred custom recharge value below.</p>
                     
                     <div class="relative mt-2 rounded-xl shadow-sm">
                         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -1110,7 +1110,7 @@
                             class="w-full p-3 pl-8 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition" 
                             placeholder="0.00">
                     </div>
-                    <span class="text-[10px] text-gray-400 block mt-1 px-1">Limits: ${currencySymbol}${minLimit} to ${currencySymbol}${maxLimit}</span>
+                    <span class="text-[10px] text-black font-bold block mt-1 px-1">Limits: ${currencySymbol}${minLimit} to ${currencySymbol}${maxLimit}</span>
                 </div>
                 <div class="mt-4 pt-3 border-t border-gray-100">
                     <button onclick="handleAnyAmountPurchase('${networkName}', ${operatorId}, ${minLimit}, ${maxLimit})" 

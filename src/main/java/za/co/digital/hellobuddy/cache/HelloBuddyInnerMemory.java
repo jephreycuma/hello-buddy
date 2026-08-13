@@ -482,24 +482,16 @@ public class HelloBuddyInnerMemory {
         startAmount = BigDecimal.valueOf(startAmount).setScale(2, RoundingMode.HALF_UP).doubleValue();
         endAmount = BigDecimal.valueOf(endAmount).setScale(2, RoundingMode.HALF_UP).doubleValue();
 
-        //double fxRate = (prod.getFxRate() != null && prod.getFxRate() > 0) ? prod.getFxRate() : 1.0;
-        //BigDecimal localFxRate = BigDecimal.valueOf(fxRate);
-        //BigDecimal reloadlyDiscount = (prod.getCommission() != null) ? prod.getCommission() : BigDecimal.ZERO;
-
-       /* java.util.function.DoublePredicate isProfitable = (candidatePrice) -> {
-            BigDecimal price = BigDecimal.valueOf(candidatePrice);
-            ProfitValidator.EvaluationResult result = profitValidator.evaluateProduct(price, localFxRate, usdToZarRate, reloadlyDiscount);
-            return result.isAllowOnStorefront();
-        };*/
-
         if (Double.compare(startAmount, endAmount) != 0) {
             numericDenominations.add(endAmount);
         }
+        
+        numericDenominations.add(startAmount);
 
         boolean useMultiplesOf10 = (endAmount >= 10) || (endAmount % 10 == 0);
         int maxAttempts = 100, attempts = 0;
 
-        while (numericDenominations.size() < 4 && attempts < maxAttempts) {
+        while (numericDenominations.size() < 3 && attempts < maxAttempts) {
             attempts++;
             double randomValue;
 
@@ -519,7 +511,7 @@ public class HelloBuddyInnerMemory {
 
             randomValue = BigDecimal.valueOf(randomValue).setScale(2, RoundingMode.HALF_UP).doubleValue();
 
-            if (randomValue >= startAmount && randomValue <= endAmount) {
+            if (randomValue > startAmount && randomValue < endAmount) {
                 numericDenominations.add(randomValue);
             }
         }
