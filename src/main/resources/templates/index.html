@@ -508,19 +508,20 @@
     </div>
 
     <!-- Footer Section -->
-    <footer class="w-full bg-gray-800 text-gray-300 py-6 border-t border-gray-700">
-        <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-            <p>&copy; 2026 Hello Buddy. All Rights Reserved.</p>
-            <div class="flex space-x-8">
-                <a href="javascript:void(0);" onclick="openContactModal()" class="hover:text-red-500 font-medium transition">Contact Us</a>
-                <a href="javascript:void(0);" onclick="openAddressModal()" class="hover:text-red-500 font-medium transition">Fund Wallet</a>
-                <a href="javascript:void(0);" onclick="toggleLiveChat()" class="text-red-400 hover:text-red-500 font-bold transition flex items-center space-x-1">
-                    <span class="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse"></span>
-                    <span>Live Support Chat</span>
-                </a>
-            </div>
-        </div>
-    </footer>
+   <footer class="w-full bg-gray-800 text-gray-300 py-6 border-t border-gray-700">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
+        <p>&copy; 2026 Hello Buddy. All Rights Reserved.</p>
+        <div class="flex space-x-8">
+            <a href="javascript:void(0);" onclick="openAboutUsModal()" class="hover:text-red-500 font-medium transition">About Us</a>
+            <a href="javascript:void(0);" onclick="openContactModal()" class="hover:text-red-500 font-medium transition">Contact Us</a>
+            <a href="javascript:void(0);" onclick="openAddressModal()" class="hover:text-red-500 font-medium transition">Fund Wallet</a>
+            <a href="javascript:void(0);" onclick="toggleLiveChat()" class="text-red-400 hover:text-red-500 font-bold transition flex items-center space-x-1">
+                <span class="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse"></span>
+                <span>Live Support Chat</span>
+            </a>
+       	 </div>
+    	</div>
+	</footer>
     
     <button onclick="toggleLiveChat()" class="fixed bottom-6 right-6 bg-red-600 hover:bg-red-700 text-white p-4 rounded-full shadow-2xl z-[150] transition hover:scale-110 focus:outline-none flex items-center justify-center">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -603,81 +604,128 @@
         </div>
     </div>
 
-    <div id="contactInfoModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden items-center justify-center z-50 p-4 overflow-y-auto">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-100 my-8">
-            <div class="p-6 space-y-4">
-                
-                <div id="contactUsView" class="hidden space-y-4 pt-2">
-                    <h3 class="font-black text-gray-900 text-lg text-center">Contact Channels</h3>
-                    <p class="text-sm text-gray-600 text-center">Get in touch with our helpdesk channels instantly:</p>
-                    <div class="space-y-3">
-                        <a href="mailto:support@hellobuddy.africa" class="flex items-center space-x-4 bg-blue-50 hover:bg-blue-100 p-3.5 rounded-xl border border-blue-200 transition">
-                            <span class="text-2xl">✉️</span>
-                            <div>
-                                <span class="block font-bold text-gray-800 text-sm">Email Helpdesk Desk</span>
-                                <span class="text-xs text-gray-500">support@hellobuddy.africa</span>
-                            </div>
-                        </a>
-                    </div>
-                    <button type="button" onclick="closeContactInfoModal()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl transition text-sm mt-4">Close Info Panel</button>
-                </div>
-
-                <div id="addressView" class="hidden space-y-4 pt-2 text-center">
-				    <span class="text-4xl block">💳</span>
-				    <div>
-				        <h4 class="font-bold text-gray-800 text-base mb-3">Recharge Your Hello Buddy Wallet</h4>
-				        
-				        <!-- BANK DETAILS CARD -->
-				        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-left space-y-2 mb-4">
-				            <div class="flex justify-between items-center text-xs pb-1 border-b border-gray-200">
-				                <span class="text-gray-500 uppercase font-bold">Account Holder:</span>
-				                <span class="font-bold text-gray-900">Mabhasa Mahlo Systems (PTY) LTD</span>
-				            </div>
-				            <div class="flex justify-between items-center text-xs pb-1 border-b border-gray-200">
-				                <span class="text-gray-500 uppercase font-bold">Bank Name:</span>
-				                <span class="font-semibold text-gray-800">FNB (First National Bank)</span>
-				            </div>
-				            <div class="flex justify-between items-center text-xs pb-1 border-b border-gray-200">
-				                <span class="text-gray-500 uppercase font-bold">Account Number:</span>
-				                <span class="font-extrabold text-gray-900 tracking-wide">63219594876</span>
-				            </div>
-				            <div class="flex justify-between items-center text-xs">
-				                <span class="text-gray-500 uppercase font-bold">Branch Code:</span>
-				                <span class="font-semibold text-gray-800">250655</span>
-				            </div>
-				        </div>
-				
-				        <!-- PAYMENT REFERENCE WARNING -->
-				        <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-left mb-3">
-				            <p class="text-xs text-red-700 leading-relaxed font-medium">
-				                ⚠️ <strong class="font-bold text-red-800">Payment Reference:</strong> 
-				                Always use your <strong class="font-extrabold text-red-900 underline">Wallet ID</strong> (received during registration) as the deposit reference to ensure automated allocation.
-				            </p>
-				        </div>
-				
-				        <!-- INTERNATIONAL DEPOSITS BOX -->
-				        <div class="bg-blue-50 border border-blue-100 rounded-xl p-3.5 text-left space-y-1 text-xs text-blue-900">
-				            <div class="flex items-center space-x-1.5 font-bold text-blue-950 uppercase text-[11px] mb-1">
-				                <span>🌐</span>
-				                <span>International Deposits</span>
-				            </div>
-				            <p class="leading-relaxed">
-				                For transfers outside South Africa, initiate an international SWIFT transfer using SWIFT Code: <strong class="font-bold text-gray-900">FIRNZAJJ</strong>.
-				            </p>
-				            <p class="leading-relaxed text-blue-800">
-				                Select <strong class="font-semibold text-blue-950">OUR</strong> or <strong class="font-semibold text-blue-950">SHA</strong> for transfer fees to avoid short payments, and remember to include your Wallet ID in the transaction reference field.
-				            </p>
-				        </div>
-				    </div>
-				
-				    <button type="button" onclick="closeContactInfoModal()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl transition text-sm mt-4">
-				        Close Info Panel
-				    </button>
-				</div>
-
-            </div>
-        </div>
-    </div>
+	   <div id="contactInfoModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden items-center justify-center z-50 p-4 overflow-y-auto">
+	    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-100 my-8">
+	        <div class="p-6 space-y-4">
+	            
+	            <!-- ABOUT US VIEW -->
+	            <div id="aboutUsView" class="hidden space-y-4 pt-2 text-left">
+	                <div class="text-center">
+	                    <span class="text-4xl block mb-1">🌍</span>
+	                    <h3 class="font-black text-gray-900 text-lg">About Hello Buddy</h3>
+	                </div>
+	
+	                <div class="space-y-3 text-xs text-gray-600 leading-relaxed">
+	                    <!-- Company Overview -->
+	                    <div>
+	                        <h5 class="font-bold text-gray-900 uppercase tracking-wider text-[11px] mb-1">Company Overview</h5>
+	                        <p>
+	                            Hello Buddy Africa is the premier digital storefront operated by <strong>Mabhasa Mahlo Systems (PTY) LTD Reg No:2019/210036/07</strong>. We specialize in instant cross-border delivery of mobile airtime and data bundles across Africa. Our platform empowers users to purchase airtime and data seamlessly for themselves or send directly to family and friends domestically and internationally.
+	                        </p>
+	                    </div>
+	
+	                    <!-- How To Use -->
+	                    <div>
+	                        <h5 class="font-bold text-gray-900 uppercase tracking-wider text-[11px] mb-1">How to Use Hello Buddy Digital Storefront</h5>
+	                        <ol class="list-decimal list-inside space-y-1 font-medium text-gray-700">
+	                            <li><a th:href="@{/wallet/register}" class="text-red-600 font-bold hover:underline">Register an account</a> to get started.</li>
+	                            <li><a href="javascript:void(0);" onclick="openAddressModal()" class="text-red-600 font-bold hover:underline">Fund your Buddy Wallet</a> via bank transfer or deposit.</li>
+	                            <li>Once funds reflect in your wallet, begin transacting instantly!</li>
+	                        </ol>
+	                    </div>
+	
+	                    <!-- Our Purpose -->
+	                    <div>
+	                        <h5 class="font-bold text-gray-900 uppercase tracking-wider text-[11px] mb-1">Our Purpose</h5>
+	                        <p>
+	                            Bridging distances and fostering seamless communication between families, friends, and communities within and across African borders.
+	                        </p>
+	                    </div>
+	
+	                    <!-- Our Objective -->
+	                    <div>
+	                        <h5 class="font-bold text-gray-900 uppercase tracking-wider text-[11px] mb-1">Our Objective</h5>
+	                        <p>
+	                            To establish the leading pan-African digital marketplace for airtime, mobile data, remittance, bill payments, and utility electricity solutions across borders.
+	                        </p>
+	                    </div>
+	                </div>
+	
+	                <button type="button" onclick="closeContactInfoModal()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl transition text-sm mt-4">
+	                    Close Info Panel
+	                </button>
+	            </div>
+	
+	            <!-- CONTACT US VIEW -->
+	            <div id="contactUsView" class="hidden space-y-4 pt-2">
+	                <h3 class="font-black text-gray-900 text-lg text-center">Contact Channels</h3>
+	                <p class="text-sm text-gray-600 text-center">Get in touch with our helpdesk channels instantly:</p>
+	                <div class="space-y-3">
+	                    <a href="mailto:support@hellobuddy.africa" class="flex items-center space-x-4 bg-blue-50 hover:bg-blue-100 p-3.5 rounded-xl border border-blue-200 transition">
+	                        <span class="text-2xl">✉️</span>
+	                        <div>
+	                            <span class="block font-bold text-gray-800 text-sm">Email Helpdesk Desk</span>
+	                            <span class="text-xs text-gray-500">support@hellobuddy.africa</span>
+	                        </div>
+	                    </a>
+	                </div>
+	                <button type="button" onclick="closeContactInfoModal()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl transition text-sm mt-4">Close Info Panel</button>
+	            </div>
+	
+	            <!-- FUND WALLET / ADDRESS VIEW -->
+	            <div id="addressView" class="hidden space-y-4 pt-2 text-center">
+	                <span class="text-4xl block">💳</span>
+	                <div>
+	                    <h4 class="font-bold text-gray-800 text-base mb-3">Recharge Your Hello Buddy Wallet</h4>
+	                    
+	                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-left space-y-2 mb-4">
+	                        <div class="flex justify-between items-center text-xs pb-1 border-b border-gray-200">
+	                            <span class="text-gray-500 uppercase font-bold">Account Holder:</span>
+	                            <span class="font-bold text-gray-900">Mabhasa Mahlo Systems (PTY) LTD</span>
+	                        </div>
+	                        <div class="flex justify-between items-center text-xs pb-1 border-b border-gray-200">
+	                            <span class="text-gray-500 uppercase font-bold">Bank Name:</span>
+	                            <span class="font-semibold text-gray-800">FNB (First National Bank)</span>
+	                        </div>
+	                        <div class="flex justify-between items-center text-xs pb-1 border-b border-gray-200">
+	                            <span class="text-gray-500 uppercase font-bold">Account Number:</span>
+	                            <span class="font-extrabold text-gray-900 tracking-wide">63219594876</span>
+	                        </div>
+	                        <div class="flex justify-between items-center text-xs">
+	                            <span class="text-gray-500 uppercase font-bold">Branch Code:</span>
+	                            <span class="font-semibold text-gray-800">250655</span>
+	                        </div>
+	                    </div>
+	
+	                    <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-left mb-3">
+	                        <p class="text-xs text-red-700 leading-relaxed font-medium">
+	                            ⚠️ <strong class="font-bold text-red-800">Payment Reference:</strong> 
+	                            Always use your <strong class="font-extrabold text-red-900 underline">Wallet ID</strong> (received during registration) as the deposit reference to ensure automated allocation.
+	                        </p>
+	                    </div>
+	
+	                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-3.5 text-left space-y-1 text-xs text-blue-900">
+	                        <div class="flex items-center space-x-1.5 font-bold text-blue-950 uppercase text-[11px] mb-1">
+	                            <span>🌐</span>
+	                            <span>International Deposits</span>
+	                        </div>
+	                        <p class="leading-relaxed">
+	                            For transfers outside South Africa, initiate an international SWIFT transfer using SWIFT Code: <strong class="font-bold text-gray-900">FIRNZAJJ</strong>.
+	                        </p>
+	                        <p class="leading-relaxed text-blue-800">
+	                            Select <strong class="font-semibold text-blue-950">OUR</strong> or <strong class="font-semibold text-blue-950">SHA</strong> for transfer fees to avoid short payments, and remember to include your Wallet ID in the transaction reference field.
+	                        </p>
+	                    </div>
+	                </div>
+	
+	                <button type="button" onclick="closeContactInfoModal()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-xl transition text-sm mt-4">
+	                    Close Info Panel
+	                </button>
+	            </div>
+	
+	        </div>
+	    </div>
+	</div>
     <script th:inline="javascript">
     
     let stompClient = null;
@@ -940,8 +988,22 @@
      * inside the informational modal sheet.
      */
     function resetContactInfoViews() {
+    	document.getElementById('aboutUsView').classList.add('hidden');
         document.getElementById('contactUsView').classList.add('hidden');
         document.getElementById('addressView').classList.add('hidden');
+    }
+    
+    /**
+     * Uncovers the structural layout container and mounts the About Us view
+     */
+    function openAboutUsModal() {
+        resetContactInfoViews();
+        
+        document.getElementById('aboutUsView').classList.remove('hidden');
+        
+        const modal = document.getElementById('contactInfoModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
     }
 
     /**
