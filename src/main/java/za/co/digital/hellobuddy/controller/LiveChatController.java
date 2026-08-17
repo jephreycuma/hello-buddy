@@ -6,6 +6,7 @@ import za.co.digital.hellobuddy.model.ChatMessage;
 import za.co.digital.hellobuddy.repository.AgentRepository;
 import za.co.digital.hellobuddy.repository.ChatMessageRepository;
 
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -20,7 +21,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 @Controller
 public class LiveChatController {
@@ -28,16 +34,30 @@ public class LiveChatController {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatMessageRepository messageRepository;
     private final AgentRepository agentRepository;
-    private final PasswordEncoder passwordEncoder; // Injected PasswordEncoder
+    private final PasswordEncoder passwordEncoder;
+    private final ChatClient chatClient;
+
+    // Persona pool for random assignment
+    private static final List<String> AI_PERSONAS = List.of(
+        "Kwetsima Cuma",
+        "Nhlamulo Cuma",
+        "Lesedi Mokoena",
+        "Buhle Dlamini"
+    );
+
+    // Track assigned persona per threadId so the name stays consistent throughout a single conversation thread
+    private final Map<String, String> threadPersonaMap = new ConcurrentHashMap<>();
 
     public LiveChatController(SimpMessagingTemplate messagingTemplate, 
                                ChatMessageRepository messageRepository, 
                                AgentRepository agentRepository,
-                               PasswordEncoder passwordEncoder) {
+                               PasswordEncoder passwordEncoder,
+                               ChatClient.Builder chatClientBuilder) {
         this.messagingTemplate = messagingTemplate;
         this.messageRepository = messageRepository;
         this.agentRepository = agentRepository;
         this.passwordEncoder = passwordEncoder;
+        this.chatClient = chatClientBuilder.build();
     }
 
     // ==========================================
@@ -46,7 +66,7 @@ public class LiveChatController {
 
     @GetMapping("/agent/login")
     public String showLoginPage() {
-        return "agent-login"; // Renders templates/agent-login.html
+        return "agent-login";
     }
 
     @PostMapping("/agent/login")
@@ -56,7 +76,6 @@ public class LiveChatController {
                                Model model) {
         Optional<Agent> agentOpt = agentRepository.findByUsername(username);
         
-        // Use passwordEncoder.matches() instead of .equals()
         if (agentOpt.isPresent() && passwordEncoder.matches(password, agentOpt.get().getPassword())) {
             session.setAttribute("loggedInAgent", agentOpt.get());
             return "redirect:/agent/workspace";
@@ -70,14 +89,14 @@ public class LiveChatController {
     public String showWorkspace(HttpSession session, Model model) {
         Agent agent = (Agent) session.getAttribute("loggedInAgent");
         if (agent == null) {
-            return "redirect:/agent/login"; // Redirect to login if not authenticated
+            return "redirect:/agent/login";
         }
         model.addAttribute("agent", agent);
-        return "agent-workspace"; // Renders templates/agent-workspace.html
+        return "agent-workspace";
     }
 
     // ==========================================
-    // 2. WEBSOCKET & CHAT PERSISTENCE
+    // 2. WEBSOCKET & CHAT PERSISTENCE + AI RESPONSE
     // ==========================================
 
     @MessageMapping("/chat.send")
@@ -88,11 +107,80 @@ public class LiveChatController {
             message.setTimestamp(System.currentTimeMillis());
         }
 
-        messageRepository.saveAndFlush(message);
-        messagingTemplate.convertAndSend("/topic/thread/" + message.getThreadId(), message);
-        System.out.println(">>> SUCCESSFULLY SAVED MESSAGE ID TO DB: " + message.getId());
+        // Save and broadcast incoming customer message
+        ChatMessage savedCustomerMessage = messageRepository.saveAndFlush(message);
+        messagingTemplate.convertAndSend("/topic/thread/" + message.getThreadId(), savedCustomerMessage);
+        
         String assignedAgentId = "1"; 
-        messagingTemplate.convertAndSend("/topic/agent-" + assignedAgentId, message);
+        messagingTemplate.convertAndSend("/topic/agent-" + assignedAgentId, savedCustomerMessage);
+
+        // If the sender is a customer, trigger AI response asynchronously
+        if (!"AI_AGENT".equalsIgnoreCase(message.getSender()) && !"HUMAN_AGENT".equalsIgnoreCase(message.getSender())) {
+            CompletableFuture.runAsync(() -> generateAndSendAiResponse(savedCustomerMessage));
+        }
+    }
+
+    private void generateAndSendAiResponse(ChatMessage customerMessage) {
+        try {
+            String threadId = customerMessage.getThreadId();
+
+            // Assign or retrieve a persistent persona name for this conversation thread
+            String assignedPersona = threadPersonaMap.computeIfAbsent(threadId, id -> 
+                AI_PERSONAS.get(ThreadLocalRandom.current().nextInt(AI_PERSONAS.size()))
+            );
+
+            // Fetch recent thread history to provide conversational context to Spring AI
+            List<ChatMessage> history = messageRepository.findByThreadIdOrderByTimestampAsc(threadId);
+            String conversationContext = history.stream()
+                .map(msg -> msg.getSenderName() + ": " + msg.getMessage())
+                .collect(Collectors.joining("\n"));
+
+            boolean isFirstMessage = history.stream().noneMatch(m -> "AI_AGENT".equalsIgnoreCase(m.getSender()));
+
+            // Build dynamic System Prompt instructing the LLM about identity and greeting rules
+            String systemPrompt = String.format(
+                "You are an AI customer support representative for Hello Buddy Africa (hellobuddy.africa). " +
+                "Your assigned agent name is '%s'. " +
+                "%s " +
+                "Assist customers with airtime top-ups, data bundles, electricity purchases, and bill payment issues. " +
+                "Be polite, professional, concise, and helpful.",
+                assignedPersona,
+                isFirstMessage ? "This is the start of the chat, so greet the customer introduced as: 'Hello, you are talking to " + assignedPersona + ". How can I help you today?'" 
+                               : "Do not repeat full formal greetings if you have already greeted the customer in this chat thread."
+            );
+
+            // Invoke Spring AI ChatClient
+            String aiResponseText = chatClient.prompt()
+                .system(systemPrompt)
+                .user("Conversation History:\n" + conversationContext + "\n\nRespond to the latest customer message.")
+                .call()
+                .content();
+
+            // Construct and persist AI ChatMessage entity
+            ChatMessage aiMessage = new ChatMessage();
+            aiMessage.setThreadId(threadId);
+            aiMessage.setSender("AI_AGENT");
+            aiMessage.setSenderName(assignedPersona);
+            aiMessage.setMessage(aiResponseText);
+            aiMessage.setTimestamp(System.currentTimeMillis());
+            aiMessage.setParentId(customerMessage.getId());
+            aiMessage.setParentMessage(customerMessage.getMessage());
+
+            ChatMessage savedAiMessage = messageRepository.saveAndFlush(aiMessage);
+
+            // Broadcast AI response via WebSockets to customer thread and agent dashboard
+            messagingTemplate.convertAndSend("/topic/thread/" + threadId, savedAiMessage);
+            messagingTemplate.convertAndSend("/topic/agent-1", savedAiMessage);
+
+        } catch (Exception e) {
+        	//("AI Generation Exception Root Cause: ", e); // Log full stack trace
+            System.err.println("Detailed Exception Message: " + e.getMessage());
+            if (e.getCause() != null) {
+                System.err.println("Root Cause: " + e.getCause().getMessage());
+            }
+        
+            System.err.println("Error generating AI chat response: " + e.getMessage());
+        }
     }
 
     // ==========================================
@@ -113,17 +201,14 @@ public class LiveChatController {
     
     @MessageMapping("/chat.edit")
     public void processMessageEdit(@Payload ChatMessage message) {
-        // 1. Fetch the original message from DB and update its text
         Optional<ChatMessage> existingOpt = messageRepository.findById(message.getId());
         if (existingOpt.isPresent()) {
             ChatMessage existing = existingOpt.get();
             existing.setMessage(message.getMessage());
-            messageRepository.save(existing); // Update in database
+            messageRepository.save(existing);
 
-            // 2. Broadcast the edited message to the customer thread
             messagingTemplate.convertAndSend("/topic/thread/" + message.getThreadId(), message);
 
-            // 3. Forward the edit payload to the active agent dashboard
             String assignedAgentId = "1"; 
             messagingTemplate.convertAndSend("/topic/agent-" + assignedAgentId, message);
         }
