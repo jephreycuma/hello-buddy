@@ -60,7 +60,9 @@
 	
 	            <!-- Authenticated State: Wallet Details -->
 	            <th:block th:if="${session.LOGGED_IN_CUSTOMER != null}">
-	                <div class="inline-flex items-center bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-xs space-x-2.5">
+	                <!-- Wrap elements cleanly when row length exceeds container width -->
+	                <div class="flex flex-wrap items-center bg-white border border-gray-200 p-1.5 sm:px-3 sm:py-1.5 rounded-lg shadow-sm text-xs gap-2">
+	                    
 	                    <!-- User -->
 	                    <span class="flex items-center space-x-1 text-gray-600 font-semibold">
 	                        <span>💳</span>
@@ -75,10 +77,11 @@
 	                        ID: <strong class="text-black-600 font-mono tracking-wider" th:text="${session.CUSTOMER_REF != null ? session.CUSTOMER_REF : 'N/A'}">HB-000000</strong>
 	                    </span>
 	
-	                    <span class="text-gray-300">|</span>
+	                    <!-- Hide vertical pipe on small screens if Balance wraps to a new line -->
+	                    <span class="text-gray-300 hidden sm:inline">|</span>
 	
-	                    <!-- Balance Container -->
-	                    <span class="font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100 flex items-center space-x-1 shrink-0">
+	                    <!-- Balance Container (Wraps to next row when space runs out) -->
+	                    <span class="font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-100 flex items-center space-x-1 shrink-0 w-full sm:w-auto">
 	                        <span>Balance:</span>
 	                        <span id="walletBalanceDisplay" th:text="${session.WALLET_BALANCE != null ? 'R ' + #numbers.formatDecimal(session.WALLET_BALANCE, 1, 'COMMA', 2, 'POINT') : 'R 0.00'}">R 0.00</span>
 	                    </span>

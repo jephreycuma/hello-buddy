@@ -38,7 +38,11 @@ import org.springframework.boot.test.mock.mockito.MockBean;
     "spring.datasource.url=jdbc:h2:mem:hellobuddy;DB_CLOSE_DELAY=-1;MODE=MariaDB",
     "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa",
     "spring.datasource.password=",
-    "spring.jpa.database-platform=org.hibernate.dialect.MariaDBDialect"
+    "spring.jpa.database-platform=org.hibernate.dialect.MariaDBDialect",
+    "spring.ai.openai.base-url=https://api.groq.com/openai",
+    "spring.ai.openai.api-key=test-key",
+    "spring.ai.openai.chat.options.model=llama-3.3-70b-versatile",
+    "spring.ai.openai.chat.options.temperature=0.7"
 })
 @EnableAutoConfiguration(exclude = {
     org.springframework.ai.autoconfigure.vertexai.gemini.VertexAiGeminiAutoConfiguration.class

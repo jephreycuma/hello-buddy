@@ -5,6 +5,7 @@ import za.co.digital.hellobuddy.model.Agent;
 import za.co.digital.hellobuddy.model.ChatMessage;
 import za.co.digital.hellobuddy.repository.AgentRepository;
 import za.co.digital.hellobuddy.repository.ChatMessageRepository;
+import za.co.digital.hellobuddy.stripe.AiPrompt;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -138,12 +139,7 @@ public class LiveChatController {
             boolean isFirstMessage = history.stream().noneMatch(m -> "AI_AGENT".equalsIgnoreCase(m.getSender()));
 
             // Build dynamic System Prompt instructing the LLM about identity and greeting rules
-            String systemPrompt = String.format(
-                "You are an AI customer support representative for Hello Buddy Africa (hellobuddy.africa). " +
-                "Your assigned agent name is '%s'. " +
-                "%s " +
-                "Assist customers with airtime top-ups, data bundles, electricity purchases, and bill payment issues. " +
-                "Be polite, professional, concise, and helpful.",
+            String systemPrompt = String.format(AiPrompt.PROMPT,
                 assignedPersona,
                 isFirstMessage ? "This is the start of the chat, so greet the customer introduced as: 'Hello, you are talking to " + assignedPersona + ". How can I help you today?'" 
                                : "Do not repeat full formal greetings if you have already greeted the customer in this chat thread."
